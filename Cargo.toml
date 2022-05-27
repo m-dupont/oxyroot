@@ -1,0 +1,19 @@
+[package]
+name = "oxyroot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+log = "0.4.17"
+num = "0.4.0"
+uuid = "1.0.0"
+thiserror = "1.0"
+chrono = "0.4.19"
+
+
+[dev-dependencies]
+test-log = "0.2.10"
+env_logger = "*"
