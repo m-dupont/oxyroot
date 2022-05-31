@@ -1,7 +1,6 @@
 use crate::rbytes::Unmarshaler;
 use anyhow::Result;
-use log::trace;
-use std::io::{Error, Read};
+use std::io::Read;
 use std::mem::size_of;
 use std::str::from_utf8;
 
@@ -58,6 +57,10 @@ impl<'a> RBuffer<'a> {
         }
     }
 
+    pub fn len(&self) -> i64 {
+        self.r.p.len() as i64 - self.r.c as i64
+    }
+
     pub fn read_u8(&mut self) -> Result<u8> {
         const size: usize = size_of::<u8>();
         let buf = self.r.extract_as_array::<size>()?;
@@ -111,11 +114,12 @@ impl<'a> RBuffer<'a> {
             return Ok("");
         }
 
-        trace!("read_string, n = {}", n);
+        // trace!("read_string, n = {}", n);
 
         let buf = self.r.extract_n(n as usize)?;
+
         if let Ok(s) = from_utf8(buf) {
-            trace!("classname = {}", s);
+            // trace!("classname = {}", s);
             return Ok(s);
         }
         return Ok("");

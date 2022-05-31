@@ -36,20 +36,22 @@ impl Default for TDirectoryFile {
         TDirectoryFile {
             ctime: NaiveDateTime::from_timestamp(0, 0),
             mtime: NaiveDateTime::from_timestamp(0, 0),
-            ..Default::default()
+            n_bytes_keys: 0,
+            n_bytes_name: 0,
+            dir: TDirectory::default(),
+            seek_dir: 0,
+            seek_parent: 0,
+            seek_keys: 0,
+            class_name: String::new(),
         }
     }
 }
 
 impl TDirectoryFile {
     pub fn read_dir_info(file: &mut RootFile) -> Result<()> {
-        let header = file
-            .header
-            .as_ref()
-            .ok_or(anyhow!("Header must exists here"))?;
-        let nbytesname = header.n_bytes_name as i64;
-        let nbytes = nbytesname as u64 + TDirectoryFile::record_size(header.version) as u64;
-        let begin = header.begin as u64;
+        let nbytesname = file.n_bytes_name as i64;
+        let nbytes = nbytesname as u64 + TDirectoryFile::record_size(file.version) as u64;
+        let begin = file.begin as u64;
 
         trace!(
             "have to read nbytes = {} from {} to {}",
@@ -58,7 +60,7 @@ impl TDirectoryFile {
             begin + nbytes
         );
 
-        if (nbytes + begin) > (header.end as u64) {
+        if (nbytes + begin) > (file.end as u64) {
             return Err(anyhow!("file has an incorrect header length"));
         }
 

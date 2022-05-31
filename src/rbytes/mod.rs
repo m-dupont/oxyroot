@@ -5,5 +5,5 @@ pub mod rbuffer;
 
 pub trait Unmarshaler {
     type Item;
-    fn unmarshal_root(buffer: &mut RBuffer) -> Result<Self::Item>;
+    fn unmarshal_root(r: &mut RBuffer) -> Result<Self::Item>;
 }

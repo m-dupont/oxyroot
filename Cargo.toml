@@ -12,7 +12,8 @@ num = "0.4.0"
 uuid = "1.0.0"
 thiserror = "1.0"
 chrono = "0.4.19"
-
+flate2 = "1.0"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 test-log = "0.2.10"

@@ -1,6 +1,6 @@
 use chrono::Local;
 use env_logger::{Builder, Target, WriteStyle};
-use log::{error, info, trace, Level, LevelFilter, Log, MetadataBuilder, Record};
+use log::{error, trace, LevelFilter};
 use oxyroot::file::RootFile;
 use std::io::Write;
 
