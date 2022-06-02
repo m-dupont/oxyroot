@@ -1,5 +1,6 @@
 extern crate core;
 
+// mod as_any;
 mod error;
 mod gen_factory;
 mod rbase;
@@ -8,7 +9,7 @@ mod rcompress;
 mod rcont;
 mod riofs;
 mod root;
-mod rtypes;
+pub mod rtypes;
 mod utils;
 
 pub use riofs::file;

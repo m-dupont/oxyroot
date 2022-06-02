@@ -1,5 +1,5 @@
 use crate::file::RootFile;
-use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::rbuffer::{RBuffer, Rbuff};
 use crate::rbytes::Unmarshaler;
 use crate::rcompress;
 use crate::root::{objects, traits};
@@ -194,6 +194,13 @@ impl Key {
         ))?;
 
         let v = fct();
+        //obj, ok := v.Interface().(root.Object)
+        let obj: Box<dyn rtypes::FactoryItem> = v;
+
+        // vv, ok := obj.(rbytes.Unmarshaler)
+        let mut vv: Box<dyn rtypes::FactoryItem> = obj;
+
+        vv.unmarshal_root2(&mut RBuffer::new(&buf, 0));
 
         // let vv: Box<dyn Unmarshaler> = v.downcast();
 
