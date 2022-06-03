@@ -1,30 +1,26 @@
 use crate::rbase;
-use crate::rbytes::Unmarshaler2;
+use crate::rbytes::Unmarshaler;
 use lazy_static::lazy_static;
 // use std::any::Any;
 use std::collections::HashMap;
 
 // use crate::as_any::{AsAny, Downcast};
-use crate::rcont::list::List;
+
 use crate::root::objects;
 use crate::root::traits;
 use trait_set::trait_set;
 
 use downcast::{downcast, Any};
 
-use anyhow::{bail, Result};
-
-enum Value {
-    Tlist(List),
-    NotInitialized,
-}
+use anyhow::{bail, ensure, Result};
+use log::trace;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
 pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItem>;
 
 trait_set! {
     /// Trait of values stored in the Factory
-    pub trait FactoryItem = Any + Unmarshaler2 + traits::Named;
+    pub trait FactoryItem = Any + Unmarshaler + traits::Named;
 }
 
 downcast!(dyn FactoryItem);
@@ -48,10 +44,15 @@ impl<'a> Factory<'a> {
     }
 
     pub fn add(&mut self, s: &'a str, f: FactoryBuilderValue) {
-        self.map.insert(s, f);
+        let ret = self.map.insert(s, f);
+
+        if (ret.is_some()) {
+            panic!("key '{}' was already in factory", s);
+        }
     }
 
     pub fn get(&self, s: &'a str) -> Option<&FactoryBuilderValue> {
+        trace!("get: s: {}", s);
         self.map.get(s)
     }
 
@@ -102,10 +103,22 @@ impl<'a> Factory<'a> {
 }
 
 lazy_static! {
+
     pub static ref FACTORY: Factory<'static> = {
+        use crate::rcont::list::List;
+        use crate::rcont::objarray::ObjArray;
+        use crate::rdict::StreamerInfo;
+        use crate::rdict::StreamerBase;
+        use crate::rdict::StreamerString;
+
         let mut f = Factory::new();
         // f.add(List::make_factory_name(), List::make_factory_builder());
         List::register(&mut f);
+        ObjArray::register(&mut f);
+        StreamerInfo::register(&mut f);
+        StreamerBase::register(&mut f);
+        StreamerString::register(&mut f);
+
 
         f
     };
@@ -121,7 +134,7 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     // use crate::as_any::Downcast;
-    use crate::rbytes::Unmarshaler2;
+    use crate::rbytes::Unmarshaler;
     use crate::rcont::list::List;
     use crate::root::traits;
     use crate::root::traits::{Named, Object};
@@ -154,6 +167,9 @@ mod tests {
         assert!(vec.is_ok());
 
         let vec = boxf.downcast::<List>();
+        assert!(vec.is_ok());
+
+        let vec = vec.unwrap();
 
         // let component: dyn FactoryItem = *vec;
         // let vec = component.downcast_ref::<List>();
@@ -170,7 +186,7 @@ mod tests {
 
     #[test]
     fn factory_get_typed() {
-        assert_eq!(FACTORY.len(), 1);
+        // assert_eq!(FACTORY.len(), 1);
         assert!(FACTORY.get("TList").is_some());
         assert!(FACTORY.get_as_box("TList").is_some());
 
@@ -178,7 +194,7 @@ mod tests {
         // assert!(FACTORY.get_as_boxtyped::<dyn Unmarshaler2>("TList").is_ok());
 
         if let Ok(v) = FACTORY.get_as_boxtyped::<List>("TList") {
-            assert_eq!(v.class().unwrap(), "TList");
+            assert_eq!(v.class(), "TList");
             assert_eq!(v.name(), "TList");
         } else {
         }
@@ -196,7 +212,7 @@ mod tests {
             .is_ok());
 
         if let Ok(v) = (*FACTORY.get_as_box("TList").unwrap()).downcast_ref::<List>() {
-            assert_eq!(v.class().unwrap(), "TList");
+            assert_eq!(v.class(), "TList");
             assert_eq!(v.name(), "TList");
         } else {
         }

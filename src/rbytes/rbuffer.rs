@@ -1,9 +1,17 @@
-use crate::rbytes::Unmarshaler;
-use anyhow::Result;
+use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag};
+use crate::rbytes::rbuffer::RBufferRefsItem::Func;
+use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
+use crate::rtypes::factory::FactoryBuilderValue;
+use crate::rtypes::FactoryItem;
+use crate::{root, rtypes};
+use anyhow::{anyhow, ensure, Result};
+use log::trace;
+use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
 use std::str::from_utf8;
 
+#[derive(Default)]
 pub struct Rbuff<'a> {
     p: &'a [u8],
     c: usize,
@@ -19,6 +27,19 @@ impl<'a> Rbuff<'a> {
     pub fn extract_n(&mut self, n: usize) -> Result<&[u8]> {
         let buf = &self.p[self.c..(self.c + n)];
         self.c += n;
+        Ok(buf)
+    }
+
+    pub fn extract_until<F>(&mut self, n: usize, pred: F) -> Result<&'a [u8]>
+    where
+        F: FnMut(&u8) -> bool,
+    {
+        let buf = &self.p[self.c..(self.c + n)];
+        let mut iter = buf.split(pred);
+        if let Some(buf) = iter.next() {
+            self.c += buf.len() + 1;
+            return Ok(buf);
+        }
         Ok(buf)
     }
 }
@@ -44,9 +65,17 @@ impl<'a> Read for Rbuff<'a> {
     }
 }
 
+enum RBufferRefsItem<'a> {
+    Func(&'a FactoryBuilderValue),
+    Obj(&'a Box<dyn FactoryItem>),
+}
+
+#[derive(Default)]
 pub struct RBuffer<'a> {
     r: Rbuff<'a>,
     offset: u32,
+    sictx: Option<&'a dyn StreamerInfoContext>,
+    refs: HashMap<i64, RBufferRefsItem<'a>>,
 }
 
 impl<'a> RBuffer<'a> {
@@ -54,6 +83,7 @@ impl<'a> RBuffer<'a> {
         RBuffer {
             r: Rbuff { p: data, c: 0 },
             offset,
+            ..Default::default()
         }
     }
 
@@ -61,44 +91,159 @@ impl<'a> RBuffer<'a> {
         self.r.p.len() as i64 - self.r.c as i64
     }
 
+    pub fn pos(&self) -> i64 {
+        return self.r.c as i64 + self.offset as i64;
+    }
+
+    pub fn set_pos(&mut self, pos: i64) {
+        let pos = pos - self.offset as i64;
+        assert!(pos > 0);
+        self.r.c = pos as usize;
+    }
+
     pub fn read_u8(&mut self) -> Result<u8> {
-        const size: usize = size_of::<u8>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<u8>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(u8::from_be_bytes(buf))
     }
 
     pub fn read_u16(&mut self) -> Result<u16> {
-        const size: usize = size_of::<u16>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<u16>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(u16::from_be_bytes(buf))
     }
 
     pub fn read_i16(&mut self) -> Result<i16> {
-        const size: usize = size_of::<i16>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<i16>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(i16::from_be_bytes(buf))
     }
 
     pub fn read_i32(&mut self) -> Result<i32> {
-        const size: usize = size_of::<i32>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<i32>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(i32::from_be_bytes(buf))
     }
 
+    pub fn read_array_i32(&mut self, arr: &mut [i32]) -> Result<()> {
+        for i in (0..arr.len()) {
+            arr[i] = self.read_i32()?;
+        }
+
+        Ok(())
+    }
+
     pub fn read_u32(&mut self) -> Result<u32> {
-        const size: usize = size_of::<u32>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<u32>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(u32::from_be_bytes(buf))
     }
 
     pub fn read_i64(&mut self) -> Result<i64> {
-        const size: usize = size_of::<i64>();
-        let buf = self.r.extract_as_array::<size>()?;
+        const SIZE: usize = size_of::<i64>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(i64::from_be_bytes(buf))
     }
 
-    pub fn read_object<T: Unmarshaler<Item = T>>(&mut self) -> Result<T> {
-        T::unmarshal_root(self)
+    pub fn read_f64(&mut self) -> Result<f64> {
+        const SIZE: usize = size_of::<f64>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
+        Ok(f64::from_be_bytes(buf))
+    }
+
+    pub fn read_object_into<T: UnmarshalerInto<Item = T>>(&mut self) -> Result<T> {
+        T::unmarshal_into(self)
+    }
+
+    pub fn read_object<T: Unmarshaler>(&mut self, obj: &mut T) -> Result<()> {
+        obj.unmarshal(self)
+    }
+
+    pub fn read_boxed_object(&mut self, obj: &mut Box<dyn rtypes::FactoryItem>) -> Result<()> {
+        obj.unmarshal(self)
+    }
+
+    pub fn read_object_any_into(&mut self) -> Result<Box<dyn FactoryItem>> {
+        let beg = self.pos();
+        let mut bcnt = self.read_u32()?;
+        let mut vers = 0;
+        let mut tag = 0;
+        let mut start = 0;
+
+        if bcnt as i64 & kByteCountMask == 0 || bcnt as i64 == kNewClassTag {
+            tag = bcnt;
+            bcnt = 0;
+        } else {
+            vers = 1;
+            start = self.pos();
+            tag = self.read_u32()?;
+        }
+
+        trace!(
+            "\t\t beg = {} bcnt = {} start = {} tag = {}",
+            beg,
+            bcnt,
+            start,
+            tag
+        );
+
+        let tag64 = tag as i64;
+
+        trace!("read_object_any_into: before case, pos = {}", self.pos());
+
+        if tag64 & kClassMask == 0 {
+            todo!()
+        } else if tag64 == kNewClassTag {
+            let cname = self.read_cstring(80)?;
+
+            // trace!("cname = {}", cname);
+            let fct = rtypes::FACTORY
+                .get(cname)
+                .ok_or(anyhow!("rbufer: no registered factory for class {}", cname,))?;
+
+            if vers > 0 {
+                self.refs.insert(start + kMapOffset, Func(fct));
+                // todo!()
+            } else {
+                todo!()
+            }
+
+            let mut obj: Box<dyn rtypes::FactoryItem> = fct();
+
+            trace!("read_object_any_into: after cname pos = {}", self.pos());
+            // obj.unmarshal(self);
+            self.read_boxed_object(&mut obj)?;
+
+            return Ok(obj);
+        } else {
+            let uref = tag64 & !kClassMask;
+            trace!("read_object_any_into, uref = {}", uref);
+
+            let fct = self.refs.get(&uref);
+            assert!(fct.is_some());
+            let fct = fct.unwrap();
+
+            let fct = if let Func(fct) = fct {
+                fct
+            } else {
+                unimplemented!()
+            };
+            let mut obj: Box<dyn rtypes::FactoryItem> = fct();
+            self.read_boxed_object(&mut obj)?;
+            return Ok(obj);
+
+            // match fct {
+            //     Func(fct) => {
+            //
+            //
+            //     }
+            //     RBufferRefsItem::Obj(_) => {}
+            // }
+
+            todo!()
+        }
+
+        todo!()
     }
 
     pub fn read_string(&mut self) -> Result<&str> {
@@ -123,6 +268,63 @@ impl<'a> RBuffer<'a> {
             return Ok(s);
         }
         return Ok("");
+    }
+
+    pub fn read_cstring(&mut self, n: usize) -> Result<&'a str> {
+        let buf = self.r.extract_until(n, |a| *a == 0)?;
+        if let Ok(s) = from_utf8(buf) {
+            return Ok(s);
+        }
+
+        Ok("")
+    }
+
+    pub fn read_header(&mut self, class: &str) -> Result<Header> {
+        let mut hdr = Header {
+            name: String::from(class),
+            pos: self.pos(),
+            ..Default::default()
+        };
+
+        trace!(">>read_header, pos = {}", self.pos());
+
+        let bcnt = self.read_u32()? as i64;
+
+        if bcnt & kByteCountMask != 0 {
+            hdr.len = (bcnt & !kByteCountMask) as u32;
+            hdr.vers = self.read_u16()? as i16;
+        } else {
+            self.set_pos(hdr.pos);
+            hdr.vers = self.read_u16()? as i16;
+        }
+
+        if hdr.vers <= 0 {
+            todo!();
+            if hdr.name != "" {}
+        }
+
+        trace!("hdr = {:?}", hdr);
+
+        trace!("<<read_header, pos = {}", self.pos());
+
+        Ok(hdr)
+    }
+
+    pub fn check_header(&self, hdr: &Header) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn skip_version(&mut self, class: &str) -> Result<()> {
+        let version = self.read_i16()?;
+
+        if ((version as i64) & kByteCountMask) != 0 {
+            self.read_u16()?;
+            self.read_u16()?;
+        }
+
+        ensure!(!(class != "" && version <= 1), "not implemented");
+
+        Ok(())
     }
 }
 

@@ -1,9 +1,7 @@
 pub mod traits {
     // Object represents a ROOT object
     pub trait Object {
-        fn class(&self) -> Option<String> {
-            None
-        }
+        fn class(&self) -> &'_ str;
     }
 
     pub trait Named: Object {

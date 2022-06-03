@@ -1,6 +1,6 @@
 use crate::file::RootFile;
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcompress;
 use crate::root::{objects, traits};
 use crate::rtypes;
@@ -84,17 +84,13 @@ impl Default for Key {
 }
 
 impl Unmarshaler for Key {
-    type Item = Self;
-
-    fn unmarshal_root(r: &mut RBuffer) -> anyhow::Result<Self::Item> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         let n_bytes = r.read_i32()?;
 
         if n_bytes < 0 {
-            return Ok(Key {
-                n_bytes,
-                class: String::from("[GAP]"),
-                ..Default::default()
-            });
+            self.n_bytes = n_bytes;
+            self.class = String::from("[GAP]");
+            return Ok(());
         }
 
         let rvers = r.read_i16()?;
@@ -119,24 +115,75 @@ impl Unmarshaler for Key {
         let name = r.read_string()?.to_string();
         let title = r.read_string()?.to_string();
 
-        Ok(Key {
-            rvers,
-            n_bytes,
-            obj_len,
-            datetime,
-            key_len,
-            cycle,
-            seek_key,
-            seek_pdir,
-            class,
-            name,
-            title,
-            obj: None,
-        })
-
-        // todo!()
+        self.rvers = rvers;
+        self.n_bytes = n_bytes;
+        self.obj_len = obj_len;
+        self.datetime = datetime;
+        self.key_len = key_len;
+        self.cycle = cycle;
+        self.seek_key = seek_key;
+        self.seek_pdir = seek_pdir;
+        self.class = class;
+        self.name = name;
+        self.title = title;
+        Ok(())
     }
 }
+
+// impl UnmarshalerInto for Key {
+//     type Item = Self;
+//
+//     fn unmarshal_into(r: &mut RBuffer) -> anyhow::Result<Self::Item> {
+//         let n_bytes = r.read_i32()?;
+//
+//         if n_bytes < 0 {
+//             return Ok(Key {
+//                 n_bytes,
+//                 class: String::from("[GAP]"),
+//                 ..Default::default()
+//             });
+//         }
+//
+//         let rvers = r.read_i16()?;
+//         let obj_len = r.read_i32()?;
+//         let datetime = NaiveDateTime::from_timestamp(r.read_u32()? as i64, 0);
+//         let key_len = r.read_i16()? as i32;
+//         let cycle = r.read_i16()?;
+//
+//         let is_big_file = rvers > 1000;
+//         let seek_key = if is_big_file {
+//             r.read_i64()?
+//         } else {
+//             r.read_i32()? as i64
+//         };
+//         let seek_pdir = if is_big_file {
+//             r.read_i64()?
+//         } else {
+//             r.read_i32()? as i64
+//         };
+//
+//         let class = r.read_string()?.to_string();
+//         let name = r.read_string()?.to_string();
+//         let title = r.read_string()?.to_string();
+//
+//         Ok(Key {
+//             rvers,
+//             n_bytes,
+//             obj_len,
+//             datetime,
+//             key_len,
+//             cycle,
+//             seek_key,
+//             seek_pdir,
+//             class,
+//             name,
+//             title,
+//             obj: None,
+//         })
+//
+//         // todo!()
+//     }
+// }
 
 impl Key {
     fn is_compressed(&self) -> bool {
@@ -200,7 +247,7 @@ impl Key {
         // vv, ok := obj.(rbytes.Unmarshaler)
         let mut vv: Box<dyn rtypes::FactoryItem> = obj;
 
-        vv.unmarshal_root2(&mut RBuffer::new(&buf, 0));
+        vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
 
         // let vv: Box<dyn Unmarshaler> = v.downcast();
 

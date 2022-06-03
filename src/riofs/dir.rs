@@ -3,7 +3,7 @@ use std::io::Read;
 
 use crate::rbase::named::Named;
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use log::trace;
@@ -68,7 +68,7 @@ impl TDirectoryFile {
         let nbytesname = nbytesname as usize;
 
         let mut r = RBuffer::new(&data[nbytesname..], 0);
-        let mut dir = r.read_object::<TDirectoryFile>()?;
+        let mut dir = r.read_object_into::<TDirectoryFile>()?;
 
         let mut nk = 4; // Key::fNumberOfBytes
         let mut r = RBuffer::new(&data[nk..], 0);
@@ -128,8 +128,7 @@ impl TDirectoryFile {
 }
 
 impl Unmarshaler for TDirectoryFile {
-    type Item = TDirectoryFile;
-    fn unmarshal_root(r: &mut RBuffer) -> Result<TDirectoryFile> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         let version = r.read_i16()?;
         trace!("version: {}", version);
 
@@ -166,20 +165,76 @@ impl Unmarshaler for TDirectoryFile {
         r.read(&mut uuid);
         let uuid = Uuid::from_bytes(uuid);
 
-        Ok(TDirectoryFile {
-            ctime,
-            mtime,
-            n_bytes_keys,
-            n_bytes_name,
-            seek_dir,
-            seek_parent,
-            seek_keys,
-            dir: TDirectory {
-                uuid,
-                rvers: version,
-                ..Default::default()
-            },
+        self.ctime = ctime;
+        self.mtime = mtime;
+        self.n_bytes_keys = n_bytes_keys;
+        self.n_bytes_name = n_bytes_name;
+        self.seek_dir = seek_dir;
+        self.seek_parent = seek_parent;
+        self.seek_keys = seek_keys;
+        self.dir = TDirectory {
+            uuid,
+            rvers: version,
             ..Default::default()
-        })
+        };
+
+        Ok(())
     }
 }
+
+// impl UnmarshalerInto for TDirectoryFile {
+//     type Item = TDirectoryFile;
+//     fn unmarshal_into(r: &mut RBuffer) -> Result<TDirectoryFile> {
+//         let version = r.read_i16()?;
+//         trace!("version: {}", version);
+//
+//         let ctime = r.read_u32()?;
+//         let mtime = r.read_u32()?;
+//
+//         let ctime = NaiveDateTime::from_timestamp(ctime as i64, 0);
+//         let mtime = NaiveDateTime::from_timestamp(mtime as i64, 0);
+//         trace!("read ctime = {}", ctime);
+//
+//         let n_bytes_keys = r.read_i32()?;
+//         let n_bytes_name = r.read_i32()?;
+//
+//         let is_big_file = version > 1000;
+//
+//         let seek_dir = if is_big_file {
+//             r.read_i64()?
+//         } else {
+//             r.read_i32()? as i64
+//         };
+//         let seek_parent = if is_big_file {
+//             r.read_i64()?
+//         } else {
+//             r.read_i32()? as i64
+//         };
+//         let seek_keys = if is_big_file {
+//             r.read_i64()?
+//         } else {
+//             r.read_i32()? as i64
+//         };
+//
+//         let _ = r.read_u16()?;
+//         let mut uuid: [u8; 16] = [0; 16];
+//         r.read(&mut uuid);
+//         let uuid = Uuid::from_bytes(uuid);
+//
+//         Ok(TDirectoryFile {
+//             ctime,
+//             mtime,
+//             n_bytes_keys,
+//             n_bytes_name,
+//             seek_dir,
+//             seek_parent,
+//             seek_keys,
+//             dir: TDirectory {
+//                 uuid,
+//                 rvers: version,
+//                 ..Default::default()
+//             },
+//             ..Default::default()
+//         })
+//     }
+// }

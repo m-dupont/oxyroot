@@ -7,9 +7,12 @@ mod rbase;
 mod rbytes;
 mod rcompress;
 mod rcont;
+mod rdict;
 mod riofs;
+mod rmeta;
 mod root;
 pub mod rtypes;
+mod rvers;
 mod utils;
 
 pub use riofs::file;

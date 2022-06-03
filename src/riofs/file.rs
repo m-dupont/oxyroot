@@ -137,7 +137,7 @@ impl RootFile {
         }
 
         let mut r = RBuffer::new(&buf, 0);
-        let key = r.read_object::<Key>()?;
+        let key = r.read_object_into::<Key>()?;
         println!("key = {:?}", key);
 
         let buf = key.bytes(self, None)?;
@@ -147,7 +147,7 @@ impl RootFile {
         trace!("rbuf len = {}", rbuf.len());
 
         while rbuf.len() > 0 {
-            let span = rbuf.read_object::<FreeSegments>()?;
+            let span = rbuf.read_object_into::<FreeSegments>()?;
 
             self.spans.append(span);
         }
@@ -179,10 +179,10 @@ impl RootFile {
             ));
         }
 
-        let si_key = RBuffer::new(&buf, 0).read_object::<Key>()?;
+        let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
         trace!("si_key = {:?}", si_key);
 
-        let ogj = si_key.object(self);
+        let ogj = si_key.object(self)?;
 
         todo!()
     }

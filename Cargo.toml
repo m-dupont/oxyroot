@@ -17,6 +17,8 @@ lazy_static = "1.4.0"
 trait-set = "0.3.0"
 #as-any = "0.3.0"
 downcast = "0.11.0"
+num-traits = "0.2"
+num-derive = "0.3"
 
 [dev-dependencies]
 test-log = "0.2.10"
