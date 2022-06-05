@@ -42,19 +42,19 @@ macro_rules! factory_register_impl {
             }
         }
 
-        impl traits::Object for $t {
+        impl crate::root::traits::Object for $t {
             fn class(&self) -> &'_ str {
                 $n
             }
         }
 
-        impl root::traits::Named for $t {}
+        impl crate::root::traits::Named for $t {}
 
-        impl FactoryBuilder for $t {
-            fn register(factory: &mut Factory) {
+        impl crate::rtypes::factory::FactoryBuilder for $t {
+            fn register(factory: &mut crate::rtypes::factory::Factory) {
                 let f = || {
                     let v: Self = Self::new();
-                    let b: Box<dyn FactoryItem> = Box::new(v);
+                    let b: Box<dyn crate::rtypes::factory::FactoryItem> = Box::new(v);
                     b
                 };
 
@@ -165,6 +165,7 @@ lazy_static! {
         StreamerObjectAny::register(&mut f);
         StreamerBasicPointer::register(&mut f);
         crate::rdict::StreamerSTL::register(&mut f);
+        crate::rbase::ObjString::register(&mut f);
 
 
         f

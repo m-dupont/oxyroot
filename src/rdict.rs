@@ -1,5 +1,5 @@
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
 use crate::{factory_register_impl, rbase};
@@ -10,7 +10,7 @@ use log::{info, trace};
 use crate::rbytes;
 use crate::rcont;
 use crate::rmeta;
-use crate::rmeta::Enum;
+use crate::rmeta::{ESTLType, Enum, EnumNamed};
 use crate::root;
 use crate::root::traits;
 use crate::root::traits::Named;
@@ -199,7 +199,7 @@ impl Unmarshaler for StreamerElement {
         // = Enum::from_i32();
 
         // self.etype = num::FromPrimitive::from_i32(r.read_i32()?).unwrap();
-        self.etype = Enum::from_i32(r.read_i32()?)?;
+        self.etype = Enum::from_i32(r.read_i32()?);
 
         trace!("StreamerElement:unmarshal self.etype = {:?}", self.etype);
 
@@ -221,13 +221,16 @@ impl Unmarshaler for StreamerElement {
         self.ename = r.read_string()?.to_string();
         trace!("StreamerElement:unmarshal self.ename = {:?}", self.ename);
 
-        match self.etype {
-            Enum::UChar => {
-                if self.ename == "Bool_t" || self.ename == "bool" {
-                    self.etype = rmeta::Enum::Bool;
+        match &self.etype {
+            Enum::Named(ty) => match ty {
+                EnumNamed::UChar => {
+                    if self.ename == "Bool_t" || self.ename == "bool" {
+                        self.etype = Enum::Named(EnumNamed::Bool);
+                    }
                 }
-            }
 
+                _ => {}
+            },
             _ => {}
         }
 
@@ -331,39 +334,39 @@ impl Unmarshaler for StreamerBasicType {
 
         r.read_object(&mut self.element)?;
 
-        let mut etype = self.element.etype.to_i32()?;
+        let mut etype = self.element.etype.to_i32();
 
         trace!("etype = {etype}");
 
-        if Enum::OffsetL.to_i32()? < etype && etype < Enum::OffsetP.to_i32()? {
-            etype -= Enum::OffsetL.to_i32()?;
+        if EnumNamed::OffsetL.to_i32()? < etype && etype < EnumNamed::OffsetP.to_i32()? {
+            etype -= EnumNamed::OffsetL.to_i32()?;
         }
         trace!("etype = {etype}");
 
         let mut basic = true;
 
-        let etype = Enum::from_i32(etype)?;
+        let etype = EnumNamed::from_i32(etype)?;
 
         match etype {
-            Enum::Bool | Enum::UChar | Enum::Char => {
+            EnumNamed::Bool | EnumNamed::UChar | EnumNamed::Char => {
                 self.element.esize = 1;
             }
-            Enum::Short | Enum::UShort => {
+            EnumNamed::Short | EnumNamed::UShort => {
                 self.element.esize = 2;
             }
-            Enum::Bits | Enum::UInt | Enum::Int | Enum::Counter => {
+            EnumNamed::Bits | EnumNamed::UInt | EnumNamed::Int | EnumNamed::Counter => {
                 self.element.esize = 4;
             }
-            Enum::ULong | Enum::ULong64 | Enum::Long | Enum::Long64 => {
+            EnumNamed::ULong | EnumNamed::ULong64 | EnumNamed::Long | EnumNamed::Long64 => {
                 self.element.esize = 8;
             }
-            Enum::Float | Enum::Float16 => {
+            EnumNamed::Float | EnumNamed::Float16 => {
                 self.element.esize = 4;
             }
-            Enum::Double | Enum::Double32 => {
+            EnumNamed::Double | EnumNamed::Double32 => {
                 self.element.esize = 8;
             }
-            Enum::CharStar => {
+            EnumNamed::CharStar => {
                 // unimplemented!()
                 self.element.esize = 8;
                 // self.element.esize =
@@ -510,37 +513,57 @@ impl Unmarshaler for StreamerBasicPointer {
 #[derive(Default)]
 pub struct StreamerSTL {
     element: StreamerElement,
-    /// version number of the class with the counter
-    cvers: i32,
-    /// name of data member holding the array count
-    cname: String,
-    /// name of the class with the counter
-    ccls: String,
+    /// type of STL vector
+    vtype: rmeta::ESTLType,
+    /// STL contained type
+    ctype: rmeta::Enum,
 }
 
 factory_register_impl!(StreamerSTL, "TStreamerSTL");
 
+impl RVersioner for StreamerSTL {
+    fn rversion() -> i16 {
+        rvers::StreamerSTL
+    }
+}
+
 impl Unmarshaler for StreamerSTL {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
         info!("StreamerSTL:unmarshal");
-        todo!();
 
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::StreamerBasicPointer,
+            hdr.vers <= rvers::StreamerSTL,
             "rcont: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::StreamerBasicPointer
+            StreamerSTL::rversion()
         );
 
         r.read_object(&mut self.element)?;
 
-        self.cvers = r.read_i32()?;
-        self.cname = r.read_string()?.to_string();
-        self.ccls = r.read_string()?.to_string();
+        self.vtype = rmeta::ESTLType::from_i32(r.read_i32()?).unwrap();
+        self.ctype = Enum::from_i32(r.read_i32()?);
 
-        trace!("ccls = {}", self.ccls);
+        match self.vtype {
+            ESTLType::STLmultimap | ESTLType::STLset => {
+                if self.element.name().starts_with("std::set")
+                    || self.element.name().starts_with("set")
+                {
+                    self.vtype = ESTLType::STLset;
+                }
+
+                if self.element.name().starts_with("std::multimap")
+                    || self.element.name().starts_with("multimap")
+                {
+                    self.vtype = ESTLType::STLmultimap;
+                }
+            }
+            _ => {}
+        }
+
+        trace!("self.vtype = {:?}", self.vtype);
+        trace!("self.ctype = {:?}", self.ctype);
 
         r.check_header(&hdr)?;
         Ok(())

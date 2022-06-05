@@ -8,7 +8,8 @@ pub const ROOT: i32 = 62600;
 // Datime                   = 1  // ROOT version for TDatime
 // Named                    = 1  // ROOT version for TNamed
 // Object                   = 1  // ROOT version for TObject
-// ObjString                = 1  // ROOT version for TObjString
+/// ROOT version for TObjString
+pub const ObjString: i16 = 1;
 // ProcessID                = 1  // ROOT version for TProcessID
 // ProcessUUID              = 1  // ROOT version for TProcessUUID
 // Ref                      = 1  // ROOT version for TRef
@@ -55,7 +56,8 @@ pub const StreamerObjectAny: i16 = 2;
 // StreamerObjectAnyPointer = 1  // ROOT version for TStreamerObjectAnyPointer
 /// ROOT version for TStreamerString
 pub const StreamerString: i16 = 2;
-// StreamerSTL              = 3  // ROOT version for TStreamerSTL
+/// ROOT version for TStreamerSTL
+pub const StreamerSTL: i16 = 3;
 // StreamerSTLstring        = 2  // ROOT version for TStreamerSTLstring
 // StreamerArtificial       = 0  // ROOT version for TStreamerArtificial
 // Axis                     = 10 // ROOT version for TAxis

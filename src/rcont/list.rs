@@ -77,7 +77,8 @@ impl Unmarshaler for List {
             // todo!()
         }
 
-        todo!()
+        r.check_header(&hdr)?;
+        Ok(())
 
         // ensure!()
     }

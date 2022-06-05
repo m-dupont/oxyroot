@@ -1,10 +1,43 @@
+use crate::rmeta::consts::Enum::Named;
 use anyhow::{anyhow, Result};
 use num;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
 
-#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+#[derive(Debug)]
 pub enum Enum {
+    Named(EnumNamed),
+    Int(i32),
+}
+
+impl Default for Enum {
+    fn default() -> Self {
+        Self::Named(EnumNamed::default())
+    }
+}
+
+impl Enum {
+    pub fn from_i32(i: i32) -> Self {
+        match EnumNamed::from_i32(i) {
+            Ok(ii) => Named(ii),
+            Err(_) => Enum::Int(i),
+        }
+
+        // .ok_or(anyhow!("Cant make enum from {i}"))
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        // match  { }
+
+        match self {
+            Named(o) => num::ToPrimitive::to_i32(o).unwrap(),
+            Enum::Int(i) => *i,
+        }
+    }
+}
+
+#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+pub enum EnumNamed {
     #[default]
     Base = 0,
     // Base class
@@ -33,8 +66,8 @@ pub enum Enum {
     OffsetL = 20,
     /// Fixed size array
     OffsetP = 40,
-    OffsetP_3 = 43,
-    OffsetP_16 = 56,
+    // OffsetP_3 = 43,
+    // OffsetP_16 = 56,
     /// Pointer to object
     Object = 61,
     // Class  derived from TObject, or for TStreamerSTL::fCtype non-pointer elements
@@ -81,7 +114,44 @@ pub enum Enum {
     Missing = 99999,
 }
 
-impl Enum {
+impl EnumNamed {
+    pub fn from_i32(i: i32) -> Result<Self> {
+        num::FromPrimitive::from_i32(i).ok_or(anyhow!("Cant make enum from {i}"))
+    }
+
+    pub fn to_i32(&self) -> Result<i32> {
+        num::ToPrimitive::to_i32(self).ok_or(anyhow!("Cant make a i32 from {:?}", self))
+    }
+}
+
+#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+pub enum ESTLType {
+    #[default]
+    NotSTL = 0,
+    STLvector = 1,
+    STLlist = 2,
+    STLdeque = 3,
+    STLmap = 4,
+    STLmultimap = 5,
+    STLset = 6,
+    STLmultiset = 7,
+    STLbitset = 8,
+    // Here the c++11 containers start. Order counts. For example,
+    // tstreamerelements in written rootfiles carry a value and we cannot
+    // introduce shifts.
+    STLforwardlist = 9,
+    STLunorderedset = 10,
+    STLunorderedmultiset = 11,
+    STLunorderedmap = 12,
+    STLunorderedmultimap = 13,
+    STLend = 14,
+    STLany = 300,
+    /* TVirtualStreamerInfo::kSTL */
+    STLstdstring = 365,
+    /* TVirtualStreamerInfo::kSTLstring */
+}
+
+impl ESTLType {
     pub fn from_i32(i: i32) -> Result<Self> {
         num::FromPrimitive::from_i32(i).ok_or(anyhow!("Cant make enum from {i}"))
     }
