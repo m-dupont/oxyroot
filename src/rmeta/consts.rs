@@ -1,6 +1,9 @@
+use anyhow::{anyhow, Result};
+use num;
 use num_derive::FromPrimitive;
+use num_derive::ToPrimitive;
 
-#[derive(FromPrimitive, Default, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
 pub enum Enum {
     #[default]
     Base = 0,
@@ -28,9 +31,11 @@ pub enum Enum {
     Bool = 18,
     Float16 = 19,
     OffsetL = 20,
-    // Fixed size array
+    /// Fixed size array
     OffsetP = 40,
-    // Pointer to object
+    OffsetP_3 = 43,
+    OffsetP_16 = 56,
+    /// Pointer to object
     Object = 61,
     // Class  derived from TObject, or for TStreamerSTL::fCtype non-pointer elements
     Any = 62,
@@ -74,4 +79,14 @@ pub enum Enum {
 
     NeedObjectForVirtualBaseClass = 99997,
     Missing = 99999,
+}
+
+impl Enum {
+    pub fn from_i32(i: i32) -> Result<Self> {
+        num::FromPrimitive::from_i32(i).ok_or(anyhow!("Cant make enum from {i}"))
+    }
+
+    pub fn to_i32(&self) -> Result<i32> {
+        num::ToPrimitive::to_i32(self).ok_or(anyhow!("Cant make a i32 from {:?}", self))
+    }
 }

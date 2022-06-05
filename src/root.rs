@@ -5,8 +5,12 @@ pub mod traits {
     }
 
     pub trait Named: Object {
-        fn name(&self) -> &'_ str;
-        fn title(&self) -> &'_ str;
+        fn name(&self) -> &'_ str {
+            unimplemented!()
+        }
+        fn title(&self) -> &'_ str {
+            unimplemented!()
+        }
     }
 }
 

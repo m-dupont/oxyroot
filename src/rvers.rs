@@ -41,12 +41,17 @@ pub const StreamerInfo: i16 = 9;
 pub const StreamerElement: i16 = 4;
 /// ROOT version for TStreamerBase
 pub const StreamerBase: i16 = 3;
-// StreamerBasicType        = 2  // ROOT version for TStreamerBasicType
-// StreamerBasicPointer     = 2  // ROOT version for TStreamerBasicPointer
+/// ROOT version for TStreamerBasicType
+pub const StreamerBasicType: i16 = 2;
+/// ROOT version for TStreamerBasicPointer
+pub const StreamerBasicPointer: i16 = 2;
 // StreamerLoop             = 2  // ROOT version for TStreamerLoop
-// StreamerObject           = 2  // ROOT version for TStreamerObject
-// StreamerObjectPointer    = 2  // ROOT version for TStreamerObjectPointer
-// StreamerObjectAny        = 2  // ROOT version for TStreamerObjectAny
+/// ROOT version for TStreamerObject
+pub const StreamerObject: i16 = 2;
+/// ROOT version for TStreamerObjectPointer
+pub const StreamerObjectPointer: i16 = 2;
+/// ROOT version for TStreamerObjectAny
+pub const StreamerObjectAny: i16 = 2;
 // StreamerObjectAnyPointer = 1  // ROOT version for TStreamerObjectAnyPointer
 /// ROOT version for TStreamerString
 pub const StreamerString: i16 = 2;

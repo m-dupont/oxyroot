@@ -14,7 +14,7 @@ use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 pub struct List {
     name: Option<String>,
     obj: rbase::Object,
-    objs: Vec<objects::Object>,
+    objs: Vec<Box<dyn FactoryItem>>,
 }
 
 impl List {
@@ -65,7 +65,16 @@ impl Unmarshaler for List {
         for i in 0..size {
             debug!("List:unmarshal: {}", i);
             let obj = r.read_object_any_into()?;
-            todo!()
+            self.objs.push(obj);
+
+            let n = r.read_u8()?;
+            trace!("n = {}", n);
+
+            if n > 0 {
+                unimplemented!()
+            }
+
+            // todo!()
         }
 
         todo!()

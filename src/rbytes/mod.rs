@@ -1,4 +1,5 @@
 use crate::root;
+use crate::rtypes::FactoryItem;
 use anyhow::Result;
 use rbuffer::RBuffer;
 
@@ -27,6 +28,11 @@ pub trait RVersioner {
 
 /// StreamerElement describes a ROOT StreamerElement
 pub trait StreamerElement: root::traits::Named {}
+
+/// Implement StreamerElement for ROOT objects
+
+// impl<T> StreamerElement for T where T: FactoryItem {}
+// impl<T> StreamerElement for T where T: root::traits::Named {}
 
 /// StreamerInfoContext defines the protocol to retrieve a ROOT StreamerInfo
 /// metadata type by name.

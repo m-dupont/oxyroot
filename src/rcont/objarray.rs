@@ -5,7 +5,7 @@ use crate::root::{objects, traits};
 use crate::rvers;
 use crate::{rbase, root};
 use anyhow::ensure;
-use log::{debug, trace};
+use log::{debug, info, trace};
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -13,7 +13,7 @@ use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 pub struct ObjArray {
     obj: rbase::Object,
     name: Option<String>,
-    objs: Vec<Box<dyn FactoryItem>>,
+    pub objs: Vec<Box<dyn FactoryItem>>,
     last: i32,
     low: i32,
 }
@@ -56,7 +56,7 @@ impl traits::Named for ObjArray {
 
 impl Unmarshaler for ObjArray {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("ObjArray:unmarshal");
+        info!("ObjArray:unmarshal");
 
         let hdr = r.read_header(self.class())?;
 

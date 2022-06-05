@@ -1,4 +1,3 @@
-use crate::rbase;
 use crate::rbytes::Unmarshaler;
 use lazy_static::lazy_static;
 // use std::any::Any;
@@ -31,6 +30,43 @@ pub trait FactoryBuilder {
 
     fn register(factory: &mut Factory);
 }
+
+#[macro_export]
+macro_rules! factory_register_impl {
+    (  $t:ty, $n:literal  ) => {
+        impl $t {
+            pub fn new() -> Self {
+                Self {
+                    ..Default::default()
+                }
+            }
+        }
+
+        impl traits::Object for $t {
+            fn class(&self) -> &'_ str {
+                $n
+            }
+        }
+
+        impl root::traits::Named for $t {}
+
+        impl FactoryBuilder for $t {
+            fn register(factory: &mut Factory) {
+                let f = || {
+                    let v: Self = Self::new();
+                    let b: Box<dyn FactoryItem> = Box::new(v);
+                    b
+                };
+
+                factory.add($n, f);
+            }
+        }
+    };
+}
+
+// impl<T> FactoryBuilder for T {
+//
+// }
 
 pub struct Factory<'a> {
     map: HashMap<&'a str, FactoryBuilderValue>,
@@ -110,6 +146,11 @@ lazy_static! {
         use crate::rdict::StreamerInfo;
         use crate::rdict::StreamerBase;
         use crate::rdict::StreamerString;
+        use crate::rdict::StreamerBasicType;
+        use crate::rdict::StreamerObject;
+        use crate::rdict::StreamerObjectPointer;
+        use crate::rdict::StreamerObjectAny;
+        use crate::rdict::StreamerBasicPointer;
 
         let mut f = Factory::new();
         // f.add(List::make_factory_name(), List::make_factory_builder());
@@ -118,6 +159,12 @@ lazy_static! {
         StreamerInfo::register(&mut f);
         StreamerBase::register(&mut f);
         StreamerString::register(&mut f);
+        StreamerBasicType::register(&mut f);
+        StreamerObject::register(&mut f);
+        StreamerObjectPointer::register(&mut f);
+        StreamerObjectAny::register(&mut f);
+        StreamerBasicPointer::register(&mut f);
+        crate::rdict::StreamerSTL::register(&mut f);
 
 
         f
