@@ -2,12 +2,15 @@ use crate::file::RootFile;
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcompress;
+use crate::riofs::dir::{TDirectory, TDirectoryFile};
 use crate::root::{objects, traits};
 use crate::rtypes;
+use crate::rtypes::FactoryItem;
 use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use log::trace;
 use std::fmt;
+use std::fmt::{Debug, Formatter};
 
 // pub struct KeyObject(Option<Box<dyn Object>>);
 
@@ -61,7 +64,16 @@ pub struct Key {
     // name of the object
     title: String, // title of the object
 
-    obj: Option<objects::Object>,
+    obj: Option<Box<dyn FactoryItem>>,
+}
+
+impl Debug for Box<dyn FactoryItem> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Box<dyn FactoryItem>")
+            .field("class", &self.class())
+            .finish()
+        // Ok(())
+    }
 }
 
 impl Default for Key {
@@ -185,7 +197,17 @@ impl Unmarshaler for Key {
 //     }
 // }
 
+impl traits::Object for Key {
+    fn class(&self) -> &'_ str {
+        &self.class
+    }
+}
+
 impl Key {
+    pub fn obj_len(&self) -> i32 {
+        self.obj_len
+    }
+
     fn is_compressed(&self) -> bool {
         self.obj_len != self.n_bytes - self.key_len
     }
@@ -221,12 +243,12 @@ impl Key {
         Ok(buf)
     }
 
-    pub fn object(&self, file: &mut RootFile) -> Result<Option<&objects::Object>> {
+    pub fn object(mut self, file: &mut RootFile) -> Result<Option<Box<dyn FactoryItem>>> {
         // return &self.obj;
 
-        if let Some(ref obj) = self.obj {
-            return Ok(Some(&obj));
-        }
+        // if let Some(ref obj) = self.obj {
+        //     return Ok(Some(obj));
+        // }
 
         let buf = self
             .bytes(file, None)
@@ -249,14 +271,31 @@ impl Key {
 
         vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
 
-        todo!();
+        // self.objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
+
+        trace!("class = {}", self.class);
+
+        self.obj = Some(vv);
+
+        if let Ok(obj) = self.obj.as_ref().unwrap().downcast_ref::<TDirectoryFile>() {
+            trace!("TDirectoryFile = true");
+            todo!();
+        }
+
+        // todo!();
 
         // let vv: Box<dyn Unmarshaler> = v.downcast();
 
         // if let Some(fct) = rtypes::FACTORY.get(&self.class);
 
-        Ok(None)
+        Ok(self.obj)
 
         // Err(anyhow!("euh"))
+    }
+    pub fn key_len(&self) -> i32 {
+        self.key_len
+    }
+    pub fn set_class(&mut self, class: &str) {
+        self.class = class.to_string();
     }
 }

@@ -12,6 +12,8 @@ pub mod traits {
             unimplemented!()
         }
     }
+
+    pub trait List: Object {}
 }
 
 pub mod objects {

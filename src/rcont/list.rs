@@ -24,6 +24,14 @@ impl List {
             ..Default::default()
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.objs.len()
+    }
+
+    pub fn at(&mut self, i: usize) -> Box<dyn FactoryItem> {
+        self.objs.remove(i)
+    }
 }
 
 impl traits::Object for List {

@@ -4,7 +4,9 @@ use std::io::Read;
 use crate::rbase::named::Named;
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
-use anyhow::{anyhow, Result};
+use crate::riofs::key::Key;
+use crate::root::traits::Object;
+use anyhow::{anyhow, bail, Result};
 use chrono::NaiveDateTime;
 use log::trace;
 use uuid::Uuid;
@@ -29,6 +31,7 @@ pub struct TDirectoryFile {
     pub seek_parent: i64,
     pub seek_keys: i64,
     class_name: String,
+    keys: Vec<Key>,
 }
 
 impl Default for TDirectoryFile {
@@ -43,12 +46,51 @@ impl Default for TDirectoryFile {
             seek_parent: 0,
             seek_keys: 0,
             class_name: String::new(),
+            keys: Vec::new(),
         }
     }
 }
 
 impl TDirectoryFile {
-    pub fn read_dir_info(file: &mut RootFile) -> Result<()> {
+    pub fn read_keys(&mut self, file: &mut RootFile) -> Result<()> {
+        if self.seek_keys <= 0 {
+            bail!("SeekKeys <= 0");
+        }
+
+        let data = file.read_at(self.seek_keys as u64, self.n_bytes_keys as u64)?;
+        trace!("read_keys data = {:?}", data);
+
+        let mut r = RBuffer::new(&data, 0);
+
+        let hdr = r.read_object_into::<Key>()?;
+
+        trace!("read_keys: hdr = {:?}", hdr);
+
+        let data = file.read_at(
+            self.seek_keys as u64 + hdr.key_len() as u64,
+            hdr.obj_len() as u64,
+        )?;
+
+        let mut r = RBuffer::new(&data, 0);
+        let nkeys = r.read_i32()?;
+
+        trace!("read_keys: nkeys = {:?}", nkeys);
+
+        for i in 0..nkeys {
+            trace!("read_keys: i = {:?}", i);
+            let mut k = r.read_object_into::<Key>()?;
+            trace!("read_keys: k = {:?}", k);
+            if k.class() == "TDirectory" {
+                k.set_class("TDirectoryFile");
+            }
+
+            self.keys.push(k);
+        }
+
+        todo!()
+    }
+
+    pub fn read_dir_info(file: &mut RootFile) -> Result<TDirectoryFile> {
         let nbytesname = file.n_bytes_name as i64;
         let nbytes = nbytesname as u64 + TDirectoryFile::record_size(file.version) as u64;
         let begin = file.begin as u64;
@@ -69,6 +111,7 @@ impl TDirectoryFile {
 
         let mut r = RBuffer::new(&data[nbytesname..], 0);
         let mut dir = r.read_object_into::<TDirectoryFile>()?;
+        // r.read_object(&mut file.dir);
 
         let mut nk = 4; // Key::fNumberOfBytes
         let mut r = RBuffer::new(&data[nk..], 0);
@@ -96,7 +139,7 @@ impl TDirectoryFile {
             return Err(anyhow!("riofs: can't read directory info"));
         }
 
-        Ok(())
+        Ok(dir)
     }
 
     pub fn record_size(version: i32) -> i64 {

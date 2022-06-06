@@ -2,11 +2,14 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rcont::list::List;
+use crate::rdict::StreamerInfo;
 use crate::riofs::blocks::{FreeList, FreeSegments};
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::key::Key;
+use crate::root;
 use anyhow::{anyhow, Result};
-use log::trace;
+use log::{debug, trace};
 use uuid::Uuid;
 
 const HEADER_LEN: u64 = 64;
@@ -30,6 +33,8 @@ pub struct RootFile {
     n_bytes_info: i32,
     uuid: Uuid,
     spans: FreeList,
+    sinfos: Vec<StreamerInfo>,
+    // pub(crate) dir: TDirectoryFile,
 }
 
 impl RootFile {
@@ -111,7 +116,7 @@ impl RootFile {
 
         trace!("uuid = {}", self.uuid);
 
-        let t = TDirectoryFile::read_dir_info(self);
+        let mut dir = TDirectoryFile::read_dir_info(self)?;
 
         if self.seek_free > 0 {
             self.read_free_segments()?;
@@ -120,6 +125,8 @@ impl RootFile {
         if self.seek_info > 0 {
             self.read_streamer_info()?;
         }
+
+        dir.read_keys(self)?;
 
         // f.version %= 1000000
 
@@ -179,11 +186,26 @@ impl RootFile {
             ));
         }
 
-        let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
+        let mut si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
         trace!("si_key = {:?}", si_key);
 
-        let ogj = si_key.object(self)?;
+        let mut ogj = si_key.object(self)?.unwrap();
 
-        todo!()
+        let mut objs = ogj.downcast::<List>().unwrap();
+
+        for i in objs.len()..0 {
+            debug!(" i = {i}");
+            let obj = objs.at(i);
+
+            let obj = obj.downcast::<StreamerInfo>().unwrap();
+
+            self.sinfos.push(*obj);
+
+            // todo!()
+        }
+
+        Ok(())
+
+        // todo!()
     }
 }
