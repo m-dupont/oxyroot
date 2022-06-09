@@ -1,31 +1,54 @@
 /// ROOT version
 pub const ROOT: i32 = 62600;
 
-// AttAxis                  = 4  // ROOT version for TAttAxis
-// AttFill                  = 2  // ROOT version for TAttFill
-// AttLine                  = 2  // ROOT version for TAttLine
-// AttMarker                = 2  // ROOT version for TAttMarker
-// Datime                   = 1  // ROOT version for TDatime
-// Named                    = 1  // ROOT version for TNamed
-// Object                   = 1  // ROOT version for TObject
+pub const AttAxis: i16 = 4;
+// ROOT version for TAttAxis
+pub const AttFill: i16 = 2;
+// ROOT version for TAttFill
+/// ROOT version for TAttLine
+pub const AttLine: i16 = 2;
+pub const AttMarker: i16 = 2;
+// ROOT version for TAttMarker
+pub const Datime: i16 = 1;
+// ROOT version for TDatime
+pub const Named: i16 = 1;
+// ROOT version for TNamed
+pub const Object: i16 = 1;
+// ROOT version for TObject
 /// ROOT version for TObjString
 pub const ObjString: i16 = 1;
-// ProcessID                = 1  // ROOT version for TProcessID
-// ProcessUUID              = 1  // ROOT version for TProcessUUID
-// Ref                      = 1  // ROOT version for TRef
-// UUID                     = 1  // ROOT version for TUUID
-// String                   = 2  // ROOT version for TString
-// Array                    = 1  // ROOT version for TArray
-// ArrayC                   = 1  // ROOT version for TArrayC
-// ArrayS                   = 1  // ROOT version for TArrayS
-// ArrayI                   = 1  // ROOT version for TArrayI
-// ArrayL                   = 1  // ROOT version for TArrayL
-// ArrayL64                 = 1  // ROOT version for TArrayL64
-// ArrayF                   = 1  // ROOT version for TArrayF
-// ArrayD                   = 1  // ROOT version for TArrayD
-// Bits                     = 1  // ROOT version for TBits
-// Collection               = 3  // ROOT version for TCollection
-// ClonesArray              = 4  // ROOT version for TClonesArray
+pub const ProcessID: i16 = 1;
+// ROOT version for TProcessID
+pub const ProcessUUID: i16 = 1;
+// ROOT version for TProcessUUID
+pub const Ref: i16 = 1;
+// ROOT version for TRef
+pub const UUID: i16 = 1;
+// ROOT version for TUUID
+pub const String: i16 = 2;
+// ROOT version for TString
+pub const Array: i16 = 1;
+// ROOT version for TArray
+pub const ArrayC: i16 = 1;
+// ROOT version for TArrayC
+pub const ArrayS: i16 = 1;
+// ROOT version for TArrayS
+pub const ArrayI: i16 = 1;
+// ROOT version for TArrayI
+pub const ArrayL: i16 = 1;
+// ROOT version for TArrayL
+pub const ArrayL64: i16 = 1;
+// ROOT version for TArrayL64
+pub const ArrayF: i16 = 1;
+// ROOT version for TArrayF
+pub const ArrayD: i16 = 1;
+// ROOT version for TArrayD
+pub const Bits: i16 = 1;
+// ROOT version for TBits
+pub const Collection: i16 = 3;
+// ROOT version for TCollection
+pub const ClonesArray: i16 = 4;
+// ROOT version for TClonesArray
 /// ROOT version for TList
 pub const List: i16 = 5;
 // HashList                 = 0  // ROOT version for THashList
@@ -101,20 +124,28 @@ pub const StreamerSTL: i16 = 3;
 // LorentzVector            = 4  // ROOT version for TLorentzVector
 // Vector2                  = 3  // ROOT version for TVector2
 // Vector3                  = 3  // ROOT version for TVector3
-// ROOT_IOFeatures          = 1  // ROOT version for ROOT::TIOFeatures
-// Basket                   = 3  // ROOT version for TBasket
-// Branch                   = 13 // ROOT version for TBranch
-// BranchElement            = 10 // ROOT version for TBranchElement
-// BranchObject             = 1  // ROOT version for TBranchObject
-// BranchRef                = 1  // ROOT version for TBranchRef
+/// ROOT version for ROOT::TIOFeatures
+pub const ROOT_IOFeatures: i16 = 1;
+/// ROOT version for TBasket
+pub const Basket: i16 = 3;
+/// ROOT version for TBranch
+pub const Branch: i16 = 13;
+/// ROOT version for TBranchElement
+pub const BranchElement: i16 = 10;
+/// ROOT version for TBranchObject
+pub const BranchObject: i16 = 1;
+/// ROOT version for TBranchRef
+pub const BranchRef: i16 = 1;
 // Chain                    = 5  // ROOT version for TChain
-// Leaf                     = 2  // ROOT version for TLeaf
+/// ROOT version for TLeaf
+pub const Leaf: i16 = 2;
 // LeafElement              = 1  // ROOT version for TLeafElement
 // LeafObject               = 4  // ROOT version for TLeafObject
 // LeafO                    = 1  // ROOT version for TLeafO
 // LeafB                    = 1  // ROOT version for TLeafB
 // LeafS                    = 1  // ROOT version for TLeafS
-// LeafI                    = 1  // ROOT version for TLeafI
+/// ROOT version for TLeafI
+pub const LeafI: i16 = 1;
 // LeafL                    = 1  // ROOT version for TLeafL
 // LeafF                    = 1  // ROOT version for TLeafF
 // LeafD                    = 1  // ROOT version for TLeafD
@@ -123,4 +154,5 @@ pub const StreamerSTL: i16 = 3;
 // LeafC                    = 1  // ROOT version for TLeafC
 // Ntuple                   = 2  // ROOT version for TNtuple
 // NtupleD                  = 1  // ROOT version for TNtupleD
-// Tree                     = 20 // ROOT version for TTree
+/// ROOT version for TTree
+pub const Tree: i16 = 20;

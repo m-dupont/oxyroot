@@ -1,7 +1,8 @@
+use crate::factotry_all_for_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
-use crate::{factory_register_impl, rbase, rvers};
+use crate::{rbase, rvers};
 use anyhow::ensure;
 use log::{info, trace};
 
@@ -11,7 +12,7 @@ pub struct ObjString {
     str: String,
 }
 
-factory_register_impl!(ObjString, "TObjString");
+factotry_all_for_register_impl!(ObjString, "TObjString");
 
 impl RVersioner for ObjString {
     fn rversion() -> i16 {

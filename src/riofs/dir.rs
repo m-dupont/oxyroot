@@ -1,21 +1,25 @@
-use crate::file::RootFile;
+use crate::file::{RootFile, RootFileReader};
 use std::io::Read;
 
-use crate::rbase::named::Named;
+use crate::rbase::named::Named as ObjNamed;
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::{Unmarshaler, UnmarshalerInto};
+use crate::rbytes::{StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::riofs::key::Key;
+use crate::riofs::utils::decodeNameCycle;
+use crate::root::traits::Named;
 use crate::root::traits::Object;
 use anyhow::{anyhow, bail, Result};
 use chrono::NaiveDateTime;
 use log::trace;
 use uuid::Uuid;
 
+use crate::rtypes::FactoryItem;
+
 #[derive(Default)]
 pub struct TDirectory {
     rvers: i16,
     uuid: Uuid,
-    named: Named,
+    named: ObjNamed,
 }
 
 pub struct TDirectoryFile {
@@ -87,13 +91,14 @@ impl TDirectoryFile {
             self.keys.push(k);
         }
 
-        todo!()
+        // todo!()
+        Ok(())
     }
 
     pub fn read_dir_info(file: &mut RootFile) -> Result<TDirectoryFile> {
-        let nbytesname = file.n_bytes_name as i64;
-        let nbytes = nbytesname as u64 + TDirectoryFile::record_size(file.version) as u64;
-        let begin = file.begin as u64;
+        let nbytesname = file.n_bytes_name() as i64;
+        let nbytes = nbytesname as u64 + TDirectoryFile::record_size(file.version()) as u64;
+        let begin = file.begin() as u64;
 
         trace!(
             "have to read nbytes = {} from {} to {}",
@@ -102,7 +107,7 @@ impl TDirectoryFile {
             begin + nbytes
         );
 
-        if (nbytes + begin) > (file.end as u64) {
+        if (nbytes + begin) > (file.end() as u64) {
             return Err(anyhow!("file has an incorrect header length"));
         }
 
@@ -140,6 +145,53 @@ impl TDirectoryFile {
         }
 
         Ok(dir)
+    }
+
+    pub fn get_object(
+        &mut self,
+        namecycle: &str,
+        file: &mut RootFileReader,
+        ctx: Option<&dyn StreamerInfoContext>,
+    ) -> Result<Box<dyn FactoryItem>> {
+        trace!("get_object, namecycle = {}", namecycle);
+
+        let (name, cycle) = decodeNameCycle(namecycle)?;
+        trace!("get_object, name = {}", name);
+        trace!("self.keys.len = {}", self.keys.len());
+
+        let mut keys = Vec::new();
+
+        for i in (0..self.keys.len()) {
+            let k = self.keys.remove(i);
+            if k.name() == name {
+                if cycle != 9999 {
+                    todo!();
+                    continue;
+                }
+                keys.push(k);
+
+                // todo!()
+            }
+        }
+
+        let key = match keys.len() {
+            0 => {
+                unimplemented!()
+            }
+            1 => keys.remove(0),
+            _ => {
+                unimplemented!()
+            }
+        };
+
+        let obj = key.object(file, ctx)?;
+
+        match obj {
+            None => {
+                bail!("no object named = {}", namecycle);
+            }
+            Some(o) => Ok(o),
+        }
     }
 
     pub fn record_size(version: i32) -> i64 {

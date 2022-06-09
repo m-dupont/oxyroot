@@ -32,7 +32,7 @@ pub trait FactoryBuilder {
 }
 
 #[macro_export]
-macro_rules! factory_register_impl {
+macro_rules! factotry_fn_register_impl {
     (  $t:ty, $n:literal  ) => {
         impl $t {
             pub fn new() -> Self {
@@ -48,8 +48,6 @@ macro_rules! factory_register_impl {
             }
         }
 
-        impl crate::root::traits::Named for $t {}
-
         impl crate::rtypes::factory::FactoryBuilder for $t {
             fn register(factory: &mut crate::rtypes::factory::Factory) {
                 let f = || {
@@ -61,6 +59,15 @@ macro_rules! factory_register_impl {
                 factory.add($n, f);
             }
         }
+    };
+}
+
+#[macro_export]
+macro_rules! factotry_all_for_register_impl {
+    (  $t:ty, $n:literal  ) => {
+        impl crate::root::traits::Named for $t {}
+
+        crate::factotry_fn_register_impl! {$t, $n}
     };
 }
 
@@ -166,6 +173,13 @@ lazy_static! {
         StreamerBasicPointer::register(&mut f);
         crate::rdict::StreamerSTL::register(&mut f);
         crate::rbase::ObjString::register(&mut f);
+        crate::rbase::AttLine::register(&mut f);
+        crate::rbase::AttFill::register(&mut f);
+        crate::rbase::AttMarker::register(&mut f);
+        crate::rtree::tree::Tree::register(&mut f);
+        crate::rtree::branch::TBranch::register(&mut f);
+        crate::rtree::leaf::TLeaf::register(&mut f);
+        crate::rtree::leaf::LeafI::register(&mut f);
 
 
         f

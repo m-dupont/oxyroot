@@ -72,7 +72,7 @@ impl Unmarshaler for List {
 
         for i in 0..size {
             debug!("List:unmarshal: {}", i);
-            let obj = r.read_object_any_into()?;
+            let obj = r.read_object_any_into()?.expect("something is wrong");
             self.objs.push(obj);
 
             let n = r.read_u8()?;

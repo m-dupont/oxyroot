@@ -9,7 +9,7 @@ use log::{debug, info, trace};
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ObjArray {
     obj: rbase::Object,
     name: Option<String>,
@@ -33,6 +33,12 @@ impl ObjArray {
     pub fn at(&self, i: usize) -> &Box<dyn FactoryItem> {
         return self.objs.get(i).unwrap();
     }
+
+    pub fn take_objs(&mut self) -> Vec<Box<dyn FactoryItem>> {
+        std::mem::take(&mut self.objs)
+    }
+
+    // pub fn into_iter_as(&mut self) -> Iter
 }
 
 impl traits::Object for ObjArray {
@@ -81,7 +87,10 @@ impl Unmarshaler for ObjArray {
         for i in 0..nobjs {
             debug!("ObjArray:unmarshal: {}", i);
             let obj = r.read_object_any_into()?;
-            self.objs.push(obj);
+            if obj.is_some() {
+                self.objs.push(obj.unwrap());
+            }
+
             // todo!()
         }
 

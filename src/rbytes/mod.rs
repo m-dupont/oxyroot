@@ -1,3 +1,4 @@
+use crate::rdict::StreamerInfo;
 use crate::root;
 use crate::rtypes::FactoryItem;
 use anyhow::Result;
@@ -36,10 +37,21 @@ pub trait StreamerElement: root::traits::Named {}
 
 /// StreamerInfoContext defines the protocol to retrieve a ROOT StreamerInfo
 /// metadata type by name.
-pub trait StreamerInfoContext {}
+pub trait StreamerInfoContext {
+    /// StreamerInfo returns the named StreamerInfo.
+    /// If version is negative, the latest version should be returned.
+    fn streamer_info(&self, name: &str, version: i32) -> Option<&StreamerInfo>;
+}
 
 pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
+}
+
+impl Unmarshaler for i32 {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        *self = r.read_i32()?;
+        Ok(())
+    }
 }
 
 /// Automatically implemented if [Unmarshaler] is implemented

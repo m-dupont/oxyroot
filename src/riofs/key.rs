@@ -1,8 +1,9 @@
-use crate::file::RootFile;
+use crate::file::{RootFile, RootFileReader};
 use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::{Unmarshaler, UnmarshalerInto};
+use crate::rbytes::{StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rcompress;
 use crate::riofs::dir::{TDirectory, TDirectoryFile};
+use crate::root::traits::Named;
 use crate::root::{objects, traits};
 use crate::rtypes;
 use crate::rtypes::FactoryItem;
@@ -124,8 +125,12 @@ impl Unmarshaler for Key {
         };
 
         let class = r.read_string()?.to_string();
+        trace!("class = {}", class);
         let name = r.read_string()?.to_string();
+        trace!("name = {}", name);
         let title = r.read_string()?.to_string();
+
+        // todo!();
 
         self.rvers = rvers;
         self.n_bytes = n_bytes;
@@ -203,6 +208,16 @@ impl traits::Object for Key {
     }
 }
 
+impl Named for Key {
+    fn name(&self) -> &'_ str {
+        &self.name
+    }
+
+    fn title(&self) -> &'_ str {
+        &self.title
+    }
+}
+
 impl Key {
     pub fn obj_len(&self) -> i32 {
         self.obj_len
@@ -212,11 +227,11 @@ impl Key {
         self.obj_len != self.n_bytes - self.key_len
     }
 
-    pub fn bytes(&self, file: &mut RootFile, buf: Option<&[u8]>) -> Result<Vec<u8>> {
+    pub fn bytes(&self, file: &mut RootFileReader, buf: Option<&[u8]>) -> Result<Vec<u8>> {
         self.load(file)
     }
 
-    fn load(&self, file: &mut RootFile) -> Result<Vec<u8>> {
+    fn load(&self, file: &mut RootFileReader) -> Result<Vec<u8>> {
         if self.is_compressed() {
             let mut buf = vec![0 as u8; self.obj_len as usize];
             trace!("load, is_compressed");
@@ -243,7 +258,11 @@ impl Key {
         Ok(buf)
     }
 
-    pub fn object(mut self, file: &mut RootFile) -> Result<Option<Box<dyn FactoryItem>>> {
+    pub fn object(
+        mut self,
+        file: &mut RootFileReader,
+        ctx: Option<&dyn StreamerInfoContext>,
+    ) -> Result<Option<Box<dyn FactoryItem>>> {
         // return &self.obj;
 
         // if let Some(ref obj) = self.obj {
@@ -269,7 +288,8 @@ impl Key {
         // vv, ok := obj.(rbytes.Unmarshaler)
         let mut vv: Box<dyn rtypes::FactoryItem> = obj;
 
-        vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
+        // vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
+        vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32).with_info_context(ctx))?;
 
         // self.objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
 

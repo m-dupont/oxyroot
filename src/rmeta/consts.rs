@@ -19,7 +19,7 @@ impl Default for Enum {
 impl Enum {
     pub fn from_i32(i: i32) -> Self {
         match EnumNamed::from_i32(i) {
-            Ok(ii) => Named(ii),
+            Ok(ii) => Self::Named(ii),
             Err(_) => Enum::Int(i),
         }
 
@@ -30,7 +30,7 @@ impl Enum {
         // match  { }
 
         match self {
-            Named(o) => num::ToPrimitive::to_i32(o).unwrap(),
+            Self::Named(o) => num::ToPrimitive::to_i32(o).unwrap(),
             Enum::Int(i) => *i,
         }
     }

@@ -2,7 +2,7 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
-use crate::{factory_register_impl, rbase};
+use crate::{factotry_all_for_register_impl, rbase};
 use anyhow::ensure;
 use anyhow::Result;
 use log::{info, trace};
@@ -18,7 +18,6 @@ use crate::root::traits::Object;
 use crate::rtypes::factory::FactoryItem;
 use crate::rtypes::factory::{Factory, FactoryBuilder};
 use crate::rvers;
-use crate::rvers::StreamerElement;
 
 use num;
 
@@ -60,7 +59,7 @@ impl Unmarshaler for StreamerInfo {
         self.chksum = r.read_u32()?;
         self.clsver = r.read_i32()?;
 
-        let objs: Box<dyn FactoryItem> = r.read_object_any_into()?;
+        let objs: Box<dyn FactoryItem> = r.read_object_any_into()?.expect("something is wrong");
 
         // let objs: Box<rcont::objarray::ObjArray> =
 
@@ -74,7 +73,7 @@ impl Unmarshaler for StreamerInfo {
     }
 }
 
-factory_register_impl!(StreamerInfo, "TStreamerInfo");
+factotry_all_for_register_impl!(StreamerInfo, "TStreamerInfo");
 
 pub struct Element {
     name: rbase::Named,
@@ -285,7 +284,7 @@ impl Unmarshaler for StreamerBase {
     }
 }
 
-factory_register_impl!(StreamerBase, "TStreamerBase");
+factotry_all_for_register_impl!(StreamerBase, "TStreamerBase");
 
 #[derive(Default)]
 pub struct StreamerString {
@@ -312,7 +311,7 @@ impl Unmarshaler for StreamerString {
     }
 }
 
-factory_register_impl!(StreamerString, "TStreamerString");
+factotry_all_for_register_impl!(StreamerString, "TStreamerString");
 
 #[derive(Default)]
 pub struct StreamerBasicType {
@@ -391,7 +390,7 @@ impl Unmarshaler for StreamerBasicType {
     }
 }
 
-factory_register_impl!(StreamerBasicType, "TStreamerBasicType");
+factotry_all_for_register_impl!(StreamerBasicType, "TStreamerBasicType");
 
 #[derive(Default)]
 pub struct StreamerObject {
@@ -417,7 +416,7 @@ impl Unmarshaler for StreamerObject {
     }
 }
 
-factory_register_impl!(StreamerObject, "TStreamerObject");
+factotry_all_for_register_impl!(StreamerObject, "TStreamerObject");
 
 #[derive(Default)]
 pub struct StreamerObjectPointer {
@@ -443,7 +442,7 @@ impl Unmarshaler for StreamerObjectPointer {
     }
 }
 
-factory_register_impl!(StreamerObjectPointer, "TStreamerObjectPointer");
+factotry_all_for_register_impl!(StreamerObjectPointer, "TStreamerObjectPointer");
 
 #[derive(Default)]
 pub struct StreamerObjectAny {
@@ -469,7 +468,7 @@ impl Unmarshaler for StreamerObjectAny {
     }
 }
 
-factory_register_impl!(StreamerObjectAny, "TStreamerObjectAny");
+factotry_all_for_register_impl!(StreamerObjectAny, "TStreamerObjectAny");
 
 #[derive(Default)]
 pub struct StreamerBasicPointer {
@@ -482,7 +481,7 @@ pub struct StreamerBasicPointer {
     ccls: String,
 }
 
-factory_register_impl!(StreamerBasicPointer, "TStreamerBasicPointer");
+factotry_all_for_register_impl!(StreamerBasicPointer, "TStreamerBasicPointer");
 
 impl Unmarshaler for StreamerBasicPointer {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
@@ -519,7 +518,7 @@ pub struct StreamerSTL {
     ctype: rmeta::Enum,
 }
 
-factory_register_impl!(StreamerSTL, "TStreamerSTL");
+factotry_all_for_register_impl!(StreamerSTL, "TStreamerSTL");
 
 impl RVersioner for StreamerSTL {
     fn rversion() -> i16 {

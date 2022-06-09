@@ -5,13 +5,16 @@ mod error;
 mod gen_factory;
 mod rbase;
 mod rbytes;
+mod rcolors;
 mod rcompress;
 mod rcont;
 mod rdict;
 mod riofs;
 mod rmeta;
 mod root;
+mod rtree;
 pub mod rtypes;
+mod rusty;
 mod rvers;
 mod utils;
 

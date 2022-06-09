@@ -1,11 +1,11 @@
-use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag};
-use crate::rbytes::rbuffer::RBufferRefsItem::Func;
+use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag, kNullTag};
+use crate::rbytes::rbuffer::RBufferRefsItem::{Func, Obj};
 use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
 use crate::{root, rtypes};
-use anyhow::{anyhow, ensure, Result};
-use log::trace;
+use anyhow::{anyhow, bail, ensure, Result};
+use log::{trace, warn};
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -65,6 +65,7 @@ impl<'a> Read for Rbuff<'a> {
     }
 }
 
+#[derive(Debug)]
 enum RBufferRefsItem<'a> {
     Func(&'a FactoryBuilderValue),
     Obj(&'a Box<dyn FactoryItem>),
@@ -87,6 +88,11 @@ impl<'a> RBuffer<'a> {
         }
     }
 
+    pub fn with_info_context(mut self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
+        self.sictx = ctx;
+        self
+    }
+
     pub fn len(&self) -> i64 {
         self.r.p.len() as i64 - self.r.c as i64
     }
@@ -105,6 +111,16 @@ impl<'a> RBuffer<'a> {
         const SIZE: usize = size_of::<u8>();
         let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(u8::from_be_bytes(buf))
+    }
+
+    pub fn read_i8(&mut self) -> Result<i8> {
+        const SIZE: usize = size_of::<i8>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
+        Ok(i8::from_be_bytes(buf))
+    }
+
+    pub fn read_bool(&mut self) -> Result<bool> {
+        Ok(self.read_i8()? != 0)
     }
 
     pub fn read_u16(&mut self) -> Result<u16> {
@@ -145,10 +161,24 @@ impl<'a> RBuffer<'a> {
         Ok(i64::from_be_bytes(buf))
     }
 
+    pub fn read_array_i64(&mut self, arr: &mut [i64]) -> Result<()> {
+        for i in (0..arr.len()) {
+            arr[i] = self.read_i64()?;
+        }
+
+        Ok(())
+    }
+
     pub fn read_f64(&mut self) -> Result<f64> {
         const SIZE: usize = size_of::<f64>();
         let buf = self.r.extract_as_array::<SIZE>()?;
         Ok(f64::from_be_bytes(buf))
+    }
+
+    pub fn read_f32(&mut self) -> Result<f32> {
+        const SIZE: usize = size_of::<f32>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
+        Ok(f32::from_be_bytes(buf))
     }
 
     pub fn read_object_into<T: UnmarshalerInto<Item = T>>(&mut self) -> Result<T> {
@@ -163,14 +193,14 @@ impl<'a> RBuffer<'a> {
         obj.unmarshal(self)
     }
 
-    pub fn read_object_any_into(&mut self) -> Result<Box<dyn FactoryItem>> {
+    pub fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
         let beg = self.pos();
         let mut bcnt = self.read_u32()?;
         let mut vers = 0;
         let mut tag = 0;
         let mut start = 0;
 
-        if bcnt as i64 & kByteCountMask == 0 || bcnt as i64 == kNewClassTag {
+        if (bcnt as i64) & kByteCountMask == 0 || (bcnt as i64) == kNewClassTag {
             tag = bcnt;
             bcnt = 0;
         } else {
@@ -189,9 +219,29 @@ impl<'a> RBuffer<'a> {
 
         let tag64 = tag as i64;
 
-        trace!("read_object_any_into: before case, pos = {}", self.pos());
+        trace!(
+            "read_object_any_into: before case, pos = {}, tag64 = {tag64}",
+            self.pos()
+        );
 
         if tag64 & kClassMask == 0 {
+            if tag64 == kNullTag {
+                return Ok(None);
+            }
+
+            if tag == 1 {
+                bail!("rbytes: tag == 1 means 'self'; not implemented yet");
+            }
+
+            warn!("Sadly return None");
+
+            return Ok(None);
+
+            let o = &self.refs.get(&tag64);
+
+            trace!("self.refs = {:?}", self.refs);
+            trace!("o = {:?}", o);
+
             todo!()
         } else if tag64 == kNewClassTag {
             let cname = self.read_cstring(80)?;
@@ -214,7 +264,16 @@ impl<'a> RBuffer<'a> {
             // obj.unmarshal(self);
             self.read_boxed_object(&mut obj)?;
 
-            return Ok(obj);
+            if vers > 0 {
+                trace!(">store: have to store object at {}", beg + kMapOffset);
+
+                // self.refs.insert(beg + kMapOffset, Obj(&obj));
+                // todo!()
+            } else {
+                todo!()
+            }
+
+            return Ok(Some(obj));
         } else {
             let uref = tag64 & !kClassMask;
             trace!("read_object_any_into, uref = {}", uref);
@@ -230,17 +289,7 @@ impl<'a> RBuffer<'a> {
             };
             let mut obj: Box<dyn rtypes::FactoryItem> = fct();
             self.read_boxed_object(&mut obj)?;
-            return Ok(obj);
-
-            // match fct {
-            //     Func(fct) => {
-            //
-            //
-            //     }
-            //     RBufferRefsItem::Obj(_) => {}
-            // }
-
-            todo!()
+            return Ok(Some(obj));
         }
 
         todo!()
@@ -263,8 +312,10 @@ impl<'a> RBuffer<'a> {
 
         let buf = self.r.extract_n(n as usize)?;
 
+        trace!("read_string: buf = {:?}", buf);
+
         if let Ok(s) = from_utf8(buf) {
-            // trace!("classname = {}", s);
+            trace!("read_string = {}", s);
             return Ok(s);
         }
         return Ok("");
@@ -299,8 +350,14 @@ impl<'a> RBuffer<'a> {
         }
 
         if hdr.vers <= 0 {
-            todo!();
-            if hdr.name != "" {}
+            // todo!();
+
+            self.sictx.unwrap().streamer_info(&hdr.name, -1);
+            if hdr.name != "" && self.sictx.is_some() {
+                if let Some(si) = self.sictx.unwrap().streamer_info(&hdr.name, -1) {
+                    todo!()
+                }
+            }
         }
 
         trace!("hdr = {:?}", hdr);

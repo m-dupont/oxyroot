@@ -32,5 +32,17 @@ fn main() {
     error!("info");
     println!("example of opening file");
 
-    RootFile::open("old.root").unwrap();
+    // let s = "/home/mdupont/Documents/DocumentsSync/soft/xpad_montecarlo_rust/old.root";
+    let s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/0/cernstaff.root";
+    let s =
+        "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/root-6.14.06/cernstaff.root";
+    let s =
+        "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/root-6.10.08/cernstaff.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s).unwrap();
+
+    // f.get_object("Spectrum").unwrap();
+    // f.get_object("T").unwrap();
+    f.get_tree("T").unwrap();
 }
