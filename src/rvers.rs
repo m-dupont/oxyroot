@@ -139,11 +139,16 @@ pub const BranchRef: i16 = 1;
 // Chain                    = 5  // ROOT version for TChain
 /// ROOT version for TLeaf
 pub const Leaf: i16 = 2;
-// LeafElement              = 1  // ROOT version for TLeafElement
-// LeafObject               = 4  // ROOT version for TLeafObject
-// LeafO                    = 1  // ROOT version for TLeafO
-// LeafB                    = 1  // ROOT version for TLeafB
-// LeafS                    = 1  // ROOT version for TLeafS
+pub const LeafElement: i16 = 1;
+// ROOT version for TLeafElement
+pub const LeafObject: i16 = 4;
+// ROOT version for TLeafObject
+pub const LeafO: i16 = 1;
+// ROOT version for TLeafO
+pub const LeafB: i16 = 1;
+// ROOT version for TLeafB
+pub const LeafS: i16 = 1;
+// ROOT version for TLeafS
 /// ROOT version for TLeafI
 pub const LeafI: i16 = 1;
 // LeafL                    = 1  // ROOT version for TLeafL

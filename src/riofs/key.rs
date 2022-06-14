@@ -125,9 +125,9 @@ impl Unmarshaler for Key {
         };
 
         let class = r.read_string()?.to_string();
-        trace!("class = {}", class);
+
         let name = r.read_string()?.to_string();
-        trace!("name = {}", name);
+        trace!("class = '{}', name = '{}'", class, name);
         let title = r.read_string()?.to_string();
 
         // todo!();
@@ -237,10 +237,10 @@ impl Key {
             trace!("load, is_compressed");
             let start = self.seek_key as u64 + self.key_len as u64;
             let mut sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
-            trace!("sr = {:?}", sr);
+            // trace!("sr[0..16] = {:?}", &sr[0..16]);
 
             if let Ok(a) = rcompress::decompress(&mut buf, &sr) {
-                trace!("buf = {:?}..", &buf);
+                // trace!("buf = {:?}..", &buf[0..16]);
                 return Ok(buf);
             } else {
                 return Err(anyhow!("riofs: could not decompress key payload"));
@@ -251,10 +251,10 @@ impl Key {
 
         let start = self.seek_key as u64 + self.key_len as u64;
 
-        trace!("read from {} for {}", start, self.obj_len);
+        // trace!("read from {} for {}", start, self.obj_len);
 
         let buf = file.read_at(start, self.obj_len as u64)?;
-        trace!("buf = {:?}", buf);
+        // trace!("buf = {:?}", buf);
         Ok(buf)
     }
 

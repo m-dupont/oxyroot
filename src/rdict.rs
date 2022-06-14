@@ -65,6 +65,8 @@ impl Unmarshaler for StreamerInfo {
 
         self.objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
 
+        // self.objarr = r.read_object_into::<rcont::objarray::ObjArray>()?;
+
         self.elems.append(&mut self.objarr.objs);
 
         Ok(())
@@ -209,7 +211,7 @@ impl Unmarshaler for StreamerElement {
         if hdr.vers == 1 {
             todo!();
         } else {
-            r.read_array_i32(&mut self.max_idx);
+            r.read_array_i32(&mut self.max_idx)?;
         }
 
         trace!(

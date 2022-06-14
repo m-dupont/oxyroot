@@ -74,7 +74,7 @@ impl Unmarshaler for ObjArray {
         );
 
         if hdr.vers > 2 {
-            r.read_object(&mut self.obj);
+            r.read_object(&mut self.obj)?;
         }
 
         if hdr.vers > 1 {

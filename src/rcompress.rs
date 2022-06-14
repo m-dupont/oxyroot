@@ -1,7 +1,9 @@
 use anyhow::Result;
+use flate2::read::DeflateDecoder;
 use flate2::read::ZlibDecoder;
 use log::trace;
 use std::io::Read;
+use xz2::read::XzDecoder;
 
 // Note: this contains ZL[src][dst] where src and dst are 3 bytes each.
 const HeaderSize: usize = 9;
@@ -69,11 +71,12 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
             Kind::ZLIB => {
                 trace!("case zlib");
                 let mut d = ZlibDecoder::new(src);
-                d.read_exact(dst.as_mut());
+                d.read_exact(dst.as_mut())?;
                 return Ok(0);
             }
             Kind::LZMA => {
-                unimplemented!()
+                let mut d = XzDecoder::new(src);
+                d.read_exact(dst.as_mut())?;
             }
             Kind::OldCompression => {
                 unimplemented!()

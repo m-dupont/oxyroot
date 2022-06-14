@@ -14,7 +14,7 @@ use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
 use crate::rtypes::FactoryItem;
 use crate::rvers::String;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use log::{debug, trace};
 use uuid::Uuid;
 
@@ -77,10 +77,34 @@ impl RootFileHeader {
 
 #[derive(Default)]
 pub struct RootFileReader {
+    path: String,
     reader: Option<BufReader<File>>,
 }
 
+impl Drop for RootFileReader {
+    fn drop(&mut self) {
+        println!("Drop RootFileReader")
+    }
+}
+
 impl RootFileReader {
+    pub fn new(path: &str) -> Result<Self> {
+        let f = File::open(path)?;
+
+        let buf_reader = BufReader::new(f);
+
+        let reader = Self {
+            path: path.to_string(),
+            reader: Some(buf_reader),
+        };
+
+        Ok(reader)
+    }
+
+    // pub fn copy(&self) -> Self {
+    //     RootFileReader::new(self.path.as_str()).unwrap()
+    // }
+
     pub(crate) fn read_at(&mut self, start: u64, len: u64) -> Result<Vec<u8>> {
         self.reader
             .as_mut()
@@ -89,6 +113,13 @@ impl RootFileReader {
         let mut buf = vec![0; len as usize];
         self.reader.as_mut().expect("ERROR").read_exact(&mut buf)?;
         Ok(buf)
+    }
+}
+
+impl Clone for RootFileReader {
+    fn clone(&self) -> Self {
+        debug!("create new RootFileReader");
+        RootFileReader::new(self.path.as_str()).unwrap()
     }
 }
 
@@ -125,12 +156,15 @@ impl RootFile {
 
     pub fn open(path: &str) -> Result<Self> {
         trace!("Open file, '{}'", path);
-        let f = File::open(path)?;
-        let buf_reader = BufReader::new(f);
+        // let f = File::open(path)?;
 
-        let reader = RootFileReader {
-            reader: Some(buf_reader),
-        };
+        // let buf_reader = BufReader::new(f);
+
+        // let reader = RootFileReader {
+        //     reader: Some(buf_reader),
+        // };
+
+        let reader = RootFileReader::new(path)?;
 
         let inner = RootFileInner {
             reader,
@@ -156,7 +190,7 @@ impl RootFile {
         let buf = self.read_at(0, HEADER_LEN + HEADER_EXTRA_LEN)?;
         let mut r = RBuffer::new(&buf, 0);
         let mut magic: [u8; 4] = [0; 4];
-        r.read(&mut magic);
+        r.read(&mut magic)?;
 
         trace!("magic = {:?}", magic);
 
@@ -320,15 +354,23 @@ impl RootFile {
         Ok(obj)
     }
 
-    pub fn get_tree(&mut self, name: &str) -> Option<Tree> {
-        match self.get_object(name) {
-            Ok(obj) => match obj.downcast::<Tree>() {
-                Ok(o) => Some(*o),
-                Err(e) => None,
-            },
+    pub fn get_tree(&mut self, name: &str) -> Result<Option<Tree>> {
+        let objet = self.get_object(name)?;
+        let mut objet: Tree = *objet.downcast::<Tree>().unwrap();
+        objet.set_reader(Some(self.inner.reader.clone()));
+        Ok(Some(objet))
 
-            Err(e) => None,
-        }
+        // match self.get_object(name) {
+        //     Ok(obj) => match obj.downcast::<Tree>() {
+        //         Ok(mut o) => {
+        //             (*o).set_reader(Some(self.inner.reader.clone()));
+        //             Ok(Some(*o))
+        //         }
+        //         Err(e) => bail!(" Can not retreive TTree because : {e} "),
+        //     },
+        //
+        //     Err(e) => e,
+        // }
     }
 }
 

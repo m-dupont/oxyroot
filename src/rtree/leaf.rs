@@ -2,11 +2,55 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::{factotry_all_for_register_impl, rbase, root};
+use crate::rtypes::FactoryItem;
+use crate::{factotry_all_for_register_impl, rbase};
 use crate::{factotry_fn_register_impl, rvers};
 use anyhow::ensure;
 use log::trace;
-use regex::Regex;
+
+pub enum Leaf {
+    Base(TLeaf),
+    Element(LeafElement),
+    I(LeafI),
+}
+
+impl Leaf {
+    pub fn etype(&self) -> i32 {
+        let l: &TLeaf = self.into();
+        l.etype
+    }
+}
+
+impl<'a> From<&'a Leaf> for &'a TLeaf {
+    fn from(l: &'a Leaf) -> Self {
+        match l {
+            Leaf::Base(ll) => ll,
+            Leaf::Element(le) => &le.tleaf,
+            Leaf::I(li) => &li.tleaf,
+        }
+    }
+}
+
+impl From<Leaf> for TLeaf {
+    fn from(l: Leaf) -> Self {
+        match l {
+            Leaf::Base(ll) => ll,
+            Leaf::Element(le) => le.tleaf,
+            Leaf::I(li) => li.tleaf,
+        }
+    }
+}
+
+impl From<Box<dyn FactoryItem>> for Leaf {
+    fn from(obj: Box<dyn FactoryItem>) -> Self {
+        match obj.class() {
+            "TLeaf" => Leaf::Base(*obj.downcast::<TLeaf>().unwrap()),
+            "TLeafI" => Leaf::I(*obj.downcast::<LeafI>().unwrap()),
+            "TLeafElement" => Leaf::Element(*obj.downcast::<LeafElement>().unwrap()),
+            &_ => todo!(),
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct TLeaf {
@@ -85,7 +129,7 @@ impl Unmarshaler for TLeaf {
             self.len = 1;
         }
 
-        r.check_header(&hdr);
+        r.check_header(&hdr)?;
 
         Ok(())
     }
@@ -120,7 +164,7 @@ impl Unmarshaler for LeafI {
         r.read_object(&mut self.min)?;
         r.read_object(&mut self.max)?;
 
-        r.check_header(&hdr);
+        r.check_header(&hdr)?;
 
         Ok(())
 
@@ -129,3 +173,44 @@ impl Unmarshaler for LeafI {
 }
 
 factotry_all_for_register_impl!(LeafI, "TLeafI");
+
+/// LeafElement is a Leaf for a general object derived from Object.
+#[derive(Default)]
+pub struct LeafElement {
+    rvers: i16,
+    tleaf: TLeaf,
+
+    /// element serial number in fInfo
+    id: i32,
+    /// leaf type
+    ltype: i32,
+    // ptr: &i32;
+}
+
+impl Unmarshaler for LeafElement {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+        let hdr = r.read_header(self.class())?;
+        ensure!(
+            hdr.vers <= rvers::LeafElement,
+            "rtree: invalid {} version={} > {}",
+            self.class(),
+            hdr.vers,
+            rvers::LeafElement
+        );
+
+        self.rvers = hdr.vers;
+
+        r.read_object(&mut self.tleaf)?;
+
+        r.read_object(&mut self.id)?;
+        r.read_object(&mut self.ltype)?;
+
+        r.check_header(&hdr)?;
+
+        Ok(())
+
+        // todo!()
+    }
+}
+
+factotry_all_for_register_impl!(LeafElement, "TLeafElement");

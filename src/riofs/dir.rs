@@ -2,8 +2,8 @@ use crate::file::{RootFile, RootFileReader};
 use std::io::Read;
 
 use crate::rbase::named::Named as ObjNamed;
-use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::{StreamerInfoContext, Unmarshaler, UnmarshalerInto};
+use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::{StreamerInfoContext, Unmarshaler};
 use crate::riofs::key::Key;
 use crate::riofs::utils::decodeNameCycle;
 use crate::root::traits::Named;
@@ -161,7 +161,7 @@ impl TDirectoryFile {
 
         let mut keys = Vec::new();
 
-        for i in (0..self.keys.len()) {
+        for i in 0..self.keys.len() {
             let k = self.keys.remove(i);
             if k.name() == name {
                 if cycle != 9999 {

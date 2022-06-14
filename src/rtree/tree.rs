@@ -1,11 +1,12 @@
 use crate::factotry_all_for_register_impl;
+use crate::file::RootFileReader;
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::rcont::objarray::ObjArray;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::rtree::branch::TBranch;
+use crate::rtree::branch::{Branch, TBranch, TBranchElement};
 use crate::rvers;
 use anyhow::{bail, ensure};
 use log::{debug, trace};
@@ -107,7 +108,35 @@ pub struct Tree {
     clusters: Clusters,
     iobits: TioFeatures,
 
-    branches: Vec<TBranch>,
+    branches: Vec<Branch>,
+
+    reader: Option<RootFileReader>,
+}
+
+impl Tree {
+    pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
+        if let Some(ref r) = reader {
+            for b in self.branches.iter_mut() {
+                b.set_reader(Some(r.clone()));
+            }
+            self.reader = reader;
+        }
+    }
+
+    pub fn get_branch(&self, name: &str) -> Option<&Branch> {
+        for b in self.branches.iter() {
+            if b.name() == name {
+                return Some(b.into());
+            }
+        }
+        None
+    }
+
+    pub fn branches(&self) -> impl Iterator<Item = &TBranch> {
+        // self.branches.iter().map()
+
+        self.branches.iter().map(|b| b.into())
+    }
 }
 
 impl Unmarshaler for Tree {
@@ -225,7 +254,7 @@ impl Unmarshaler for Tree {
             self.branches = branches
                 .take_objs()
                 .into_iter()
-                .map(|obj| *obj.downcast::<TBranch>().unwrap())
+                .map(|obj| obj.into())
                 .collect();
         }
 

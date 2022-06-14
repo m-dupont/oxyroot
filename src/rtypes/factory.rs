@@ -178,8 +178,10 @@ lazy_static! {
         crate::rbase::AttMarker::register(&mut f);
         crate::rtree::tree::Tree::register(&mut f);
         crate::rtree::branch::TBranch::register(&mut f);
+        crate::rtree::branch::TBranchElement::register(&mut f);
         crate::rtree::leaf::TLeaf::register(&mut f);
         crate::rtree::leaf::LeafI::register(&mut f);
+        crate::rtree::leaf::LeafElement::register(&mut f);
 
 
         f

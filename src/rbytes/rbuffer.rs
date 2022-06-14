@@ -113,6 +113,14 @@ impl<'a> RBuffer<'a> {
         Ok(u8::from_be_bytes(buf))
     }
 
+    pub fn read_array_u8(&mut self, arr: &mut [u8]) -> Result<()> {
+        for i in (0..arr.len()) {
+            arr[i] = self.read_u8()?;
+        }
+
+        Ok(())
+    }
+
     pub fn read_i8(&mut self) -> Result<i8> {
         const SIZE: usize = size_of::<i8>();
         let buf = self.r.extract_as_array::<SIZE>()?;
@@ -312,10 +320,10 @@ impl<'a> RBuffer<'a> {
 
         let buf = self.r.extract_n(n as usize)?;
 
-        trace!("read_string: buf = {:?}", buf);
+        // trace!("read_string: buf = {:?}", buf);
 
         if let Ok(s) = from_utf8(buf) {
-            trace!("read_string = {}", s);
+            // trace!("read_string = {}", s);
             return Ok(s);
         }
         return Ok("");
