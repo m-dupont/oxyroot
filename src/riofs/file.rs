@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 
@@ -9,12 +8,10 @@ use crate::rdict::StreamerInfo;
 use crate::riofs::blocks::{FreeList, FreeSegments};
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::key::Key;
-use crate::root;
 use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
 use crate::rtypes::FactoryItem;
-use crate::rvers::String;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use log::{debug, trace};
 use uuid::Uuid;
 
@@ -233,7 +230,7 @@ impl RootFile {
 
         let _ = r.read_u16()?;
         let mut uuid: [u8; 16] = [0; 16];
-        r.read(&mut uuid);
+        r.read(&mut uuid)?;
         self.inner.header.uuid = Uuid::from_bytes(uuid);
 
         trace!("uuid = {}", self.inner.header.uuid);
@@ -316,10 +313,10 @@ impl RootFile {
             ));
         }
 
-        let mut si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
+        let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
         trace!("si_key = {:?}", si_key);
 
-        let mut ogj = si_key.object(&mut self.inner.reader, None)?.unwrap();
+        let ogj = si_key.object(&mut self.inner.reader, None)?.unwrap();
 
         let mut objs = ogj.downcast::<List>().unwrap();
 
@@ -384,7 +381,7 @@ impl RootFileStreamerInfoContext {
 }
 
 impl StreamerInfoContext for RootFileStreamerInfoContext {
-    fn streamer_info(&self, name: &str, version: i32) -> Option<&StreamerInfo> {
+    fn streamer_info(&self, name: &str, _version: i32) -> Option<&StreamerInfo> {
         if self.0.len() == 0 {
             return None;
         }

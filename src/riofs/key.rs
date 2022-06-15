@@ -1,8 +1,8 @@
-use crate::file::{RootFile, RootFileReader};
-use crate::rbytes::rbuffer::{RBuffer, Rbuff};
-use crate::rbytes::{StreamerInfoContext, Unmarshaler, UnmarshalerInto};
+use crate::file::RootFileReader;
+use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::{StreamerInfoContext, Unmarshaler};
 use crate::rcompress;
-use crate::riofs::dir::{TDirectory, TDirectoryFile};
+use crate::riofs::dir::TDirectoryFile;
 use crate::root::traits::Named;
 use crate::root::{objects, traits};
 use crate::rtypes;
@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use log::trace;
 use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 // pub struct KeyObject(Option<Box<dyn Object>>);
 

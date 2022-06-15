@@ -1,11 +1,11 @@
+use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
+use crate::root::traits;
 use crate::root::traits::Object;
-use crate::root::{objects, traits};
 use crate::rvers;
-use crate::{rbase, root};
 use anyhow::ensure;
-use log::{debug, info, trace};
+use log::{debug, info};
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -14,7 +14,7 @@ pub struct ObjArray {
     obj: rbase::Object,
     name: Option<String>,
     pub objs: Vec<Box<dyn FactoryItem>>,
-    last: i32,
+    _last: i32,
     low: i32,
 }
 
@@ -26,13 +26,13 @@ impl ObjArray {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.objs.len()
-    }
-
-    pub fn at(&self, i: usize) -> &Box<dyn FactoryItem> {
-        return self.objs.get(i).unwrap();
-    }
+    // pub fn len(&self) -> usize {
+    //     self.objs.len()
+    // }
+    //
+    // pub fn at(&self, i: usize) -> &Box<dyn FactoryItem> {
+    //     return self.objs.get(i).unwrap();
+    // }
 
     pub fn take_objs(&mut self) -> Vec<Box<dyn FactoryItem>> {
         std::mem::take(&mut self.objs)
@@ -41,7 +41,7 @@ impl ObjArray {
     // pub fn into_iter_as(&mut self) -> Iter
 }
 
-impl traits::Object for ObjArray {
+impl Object for ObjArray {
     fn class(&self) -> &'_ str {
         "TObjArray"
     }

@@ -1,9 +1,8 @@
+use crate::factotry_fn_register_impl;
 use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
-use crate::riofs;
 use crate::root::traits::Named;
-use crate::{factotry_all_for_register_impl, factotry_fn_register_impl};
 use log::trace;
 
 #[derive(Default)]

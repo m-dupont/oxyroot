@@ -1,5 +1,4 @@
 use anyhow::Result;
-use flate2::read::DeflateDecoder;
 use flate2::read::ZlibDecoder;
 use log::trace;
 use std::io::Read;
@@ -54,7 +53,7 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
         // let _ = src.read_exact(dst)?;
         trace!("decompress: hdr = {:?}", hdr);
 
-        let srcsz = hdr[3] as i64 | (hdr[4] as i64) << 8 | (hdr[5] as i64) << 16;
+        let _srcsz = hdr[3] as i64 | (hdr[4] as i64) << 8 | (hdr[5] as i64) << 16;
         let tgtsz = hdr[6] as i64 | (hdr[7] as i64) << 8 | (hdr[8] as i64) << 16;
         // let tgtsz = hdr[6]) | int64(hdr[7])<<8 | int64(hdr[8])<<16
         end += tgtsz;

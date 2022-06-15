@@ -5,13 +5,12 @@ use std::collections::HashMap;
 
 // use crate::as_any::{AsAny, Downcast};
 
-use crate::root::objects;
 use crate::root::traits;
 use trait_set::trait_set;
 
 use downcast::{downcast, Any};
 
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, Result};
 use log::trace;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
@@ -89,7 +88,7 @@ impl<'a> Factory<'a> {
     pub fn add(&mut self, s: &'a str, f: FactoryBuilderValue) {
         let ret = self.map.insert(s, f);
 
-        if (ret.is_some()) {
+        if ret.is_some() {
             panic!("key '{}' was already in factory", s);
         }
     }

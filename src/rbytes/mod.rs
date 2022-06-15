@@ -1,6 +1,5 @@
 use crate::rdict::StreamerInfo;
 use crate::root;
-use crate::rtypes::FactoryItem;
 use anyhow::Result;
 use rbuffer::RBuffer;
 

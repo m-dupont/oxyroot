@@ -4,7 +4,6 @@ use crate::rbytes::{RVersioner, Unmarshaler};
 /// to generate new streamers meta data from user types.
 use crate::{factotry_all_for_register_impl, rbase};
 use anyhow::ensure;
-use anyhow::Result;
 use log::{info, trace};
 
 use crate::rbytes;
@@ -16,10 +15,7 @@ use crate::root::traits;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtypes::factory::FactoryItem;
-use crate::rtypes::factory::{Factory, FactoryBuilder};
 use crate::rvers;
-
-use num;
 
 #[derive(Default)]
 pub struct StreamerInfo {
@@ -77,28 +73,28 @@ impl Unmarshaler for StreamerInfo {
 
 factotry_all_for_register_impl!(StreamerInfo, "TStreamerInfo");
 
-pub struct Element {
-    name: rbase::Named,
-    // Type:   rmeta.Enum, // element type
-    /// size of element
-    size: i32,
-    /// cumulative size of all array dims
-    arr_len: i32,
-    /// number of array dimensions
-    arr_dim: i32,
-    /// maximum array index for array dimension "dim"
-    max_idx: [i32; 5],
-    /// element offset in class
-    offset: i32,
-    /// data type name of data member
-    ename: String,
-    /// minimum of data member if a range is specified [xmin.xmax.nbits]
-    xmin: f64,
-    /// maximum of data member if a range is specified [xmin.xmax.nbits]
-    xmax: f64,
-    /// conversion factor if a range is specified. factor = (1<<nbits/(xmax-xmin))
-    factor: f64,
-}
+// pub struct Element {
+//     name: rbase::Named,
+//     // Type:   rmeta.Enum, // element type
+//     /// size of element
+//     size: i32,
+//     /// cumulative size of all array dims
+//     arr_len: i32,
+//     /// number of array dimensions
+//     arr_dim: i32,
+//     /// maximum array index for array dimension "dim"
+//     max_idx: [i32; 5],
+//     /// element offset in class
+//     offset: i32,
+//     /// data type name of data member
+//     ename: String,
+//     /// minimum of data member if a range is specified [xmin.xmax.nbits]
+//     xmin: f64,
+//     /// maximum of data member if a range is specified [xmin.xmax.nbits]
+//     xmax: f64,
+//     /// conversion factor if a range is specified. factor = (1<<nbits/(xmax-xmin))
+//     factor: f64,
+// }
 
 #[derive(Default, Debug)]
 pub struct StreamerElement {

@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-pub fn decodeNameCycle(namecycle: &str) -> Result<(&str, u16)> {
+pub fn decode_name_cycle(namecycle: &str) -> Result<(&str, u16)> {
     let toks: Vec<_> = namecycle.split(";").collect();
 
     match toks.len() {

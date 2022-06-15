@@ -1,4 +1,5 @@
 use crate::file::RootFileReader;
+use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::rcont::objarray::ObjArray;
@@ -7,18 +8,12 @@ use crate::rtree::basket::Basket;
 use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
-use crate::{factotry_all_for_register_impl, rbase};
 use crate::{factotry_fn_register_impl, rvers};
 use anyhow::ensure;
-use chrono::format::Item;
-use itertools::{enumerate, izip, IntoChunks, Itertools};
-use log::{debug, trace};
-use num::range;
-use std::cmp;
+use itertools::izip;
+use log::trace;
 use std::fmt::Debug;
-use std::iter::{repeat, Map};
 use std::marker::PhantomData;
-use std::vec::IntoIter;
 
 pub enum Branch {
     Base(TBranch),
@@ -252,7 +247,7 @@ where
             let (n, chunk_size, buf) = data;
             trace!("n = {}", n);
 
-            self.output_buffers[num_branch] = (Some((n, chunk_size, buf)));
+            self.output_buffers[num_branch] = Some((n, chunk_size, buf));
             self.nb_entries[num_branch] = n;
             self.current_size[num_branch] = 0;
 
@@ -395,7 +390,7 @@ impl TBranch {
         );
 
         if size_leaves.len() != self.basketSeek.len() {
-            for i in (1..self.basketSeek.len()) {
+            for i in 1..self.basketSeek.len() {
                 size_leaves.push(size_leaves[0]);
             }
         }

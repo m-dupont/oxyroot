@@ -5,7 +5,7 @@ use crate::rbase::named::Named as ObjNamed;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{StreamerInfoContext, Unmarshaler};
 use crate::riofs::key::Key;
-use crate::riofs::utils::decodeNameCycle;
+use crate::riofs::utils::decode_name_cycle;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use anyhow::{anyhow, bail, Result};
@@ -155,7 +155,7 @@ impl TDirectoryFile {
     ) -> Result<Box<dyn FactoryItem>> {
         trace!("get_object, namecycle = {}", namecycle);
 
-        let (name, cycle) = decodeNameCycle(namecycle)?;
+        let (name, cycle) = decode_name_cycle(namecycle)?;
         trace!("get_object, name = {}", name);
         trace!("self.keys.len = {}", self.keys.len());
 
@@ -257,7 +257,7 @@ impl Unmarshaler for TDirectoryFile {
 
         let _ = r.read_u16()?;
         let mut uuid: [u8; 16] = [0; 16];
-        r.read(&mut uuid);
+        r.read(&mut uuid)?;
         let uuid = Uuid::from_bytes(uuid);
 
         self.ctime = ctime;

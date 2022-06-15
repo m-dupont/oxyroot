@@ -6,7 +6,7 @@ use crate::rbytes::Unmarshaler;
 use crate::rcont::objarray::ObjArray;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::rtree::branch::{Branch, TBranch, TBranchElement};
+use crate::rtree::branch::{Branch, TBranch};
 use crate::rvers;
 use anyhow::{bail, ensure};
 use log::{debug, trace};
@@ -51,7 +51,7 @@ impl Unmarshaler for TioFeatures {
             0
         };
 
-        r.check_header(&hdr);
+        r.check_header(&hdr)?;
 
         Ok(())
 

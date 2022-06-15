@@ -1,5 +1,5 @@
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::{Unmarshaler, UnmarshalerInto};
+use crate::rbytes::Unmarshaler;
 
 #[derive(Debug, Default)]
 pub struct FreeSegments {

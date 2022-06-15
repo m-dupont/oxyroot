@@ -1,5 +1,4 @@
 use crate::factotry_all_for_register_impl;
-use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;

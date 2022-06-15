@@ -1,12 +1,11 @@
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
+use crate::root::traits;
 use crate::root::traits::Object;
-use crate::root::{objects, traits};
 use crate::rvers;
 use anyhow::ensure;
 use log::{debug, trace};
-use std::any::Any;
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -117,9 +116,4 @@ impl FactoryBuilder for List {
 
         factory.add("TList", f);
     }
-}
-
-pub fn plop() {
-    let f = List::new;
-    // let f = List::unmarshal_into;
 }

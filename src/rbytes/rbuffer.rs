@@ -1,9 +1,9 @@
 use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag, kNullTag};
-use crate::rbytes::rbuffer::RBufferRefsItem::{Func, Obj};
+use crate::rbytes::rbuffer::RBufferRefsItem::Func;
 use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
+use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
-use crate::{root, rtypes};
 use anyhow::{anyhow, bail, ensure, Result};
 use log::{trace, warn};
 use std::collections::HashMap;
@@ -114,7 +114,7 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_u8(&mut self, arr: &mut [u8]) -> Result<()> {
-        for i in (0..arr.len()) {
+        for i in 0..arr.len() {
             arr[i] = self.read_u8()?;
         }
 
@@ -150,7 +150,7 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_i32(&mut self, arr: &mut [i32]) -> Result<()> {
-        for i in (0..arr.len()) {
+        for i in 0..arr.len() {
             arr[i] = self.read_i32()?;
         }
 
@@ -170,7 +170,7 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_i64(&mut self, arr: &mut [i64]) -> Result<()> {
-        for i in (0..arr.len()) {
+        for i in 0..arr.len() {
             arr[i] = self.read_i64()?;
         }
 
@@ -245,10 +245,10 @@ impl<'a> RBuffer<'a> {
 
             return Ok(None);
 
-            let o = &self.refs.get(&tag64);
-
-            trace!("self.refs = {:?}", self.refs);
-            trace!("o = {:?}", o);
+            // let o = &self.refs.get(&tag64);
+            //
+            // trace!("self.refs = {:?}", self.refs);
+            // trace!("o = {:?}", o);
 
             todo!()
         } else if tag64 == kNewClassTag {
@@ -299,8 +299,6 @@ impl<'a> RBuffer<'a> {
             self.read_boxed_object(&mut obj)?;
             return Ok(Some(obj));
         }
-
-        todo!()
     }
 
     pub fn read_string(&mut self) -> Result<&str> {

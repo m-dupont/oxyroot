@@ -1,3 +1,5 @@
+#![deny(unused_must_use)]
+#![deny(unused_imports)]
 extern crate core;
 
 // mod as_any;

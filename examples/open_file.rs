@@ -118,7 +118,7 @@ fn main() {
         let mut arr = [0 as u8; 100];
         // dbg!(r.read_array_u8(arr.as_mut_slice()).unwrap());
 
-        r.read_array_u8(arr.as_mut_slice());
+        r.read_array_u8(arr.as_mut_slice()).unwrap();
 
         println!("arr = {:?}", arr);
         dbg!(r.read_i32().unwrap());
