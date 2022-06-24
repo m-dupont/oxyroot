@@ -1,4 +1,4 @@
-use crate::rbase::consts::{kIsOnHeap, kIsReferenced};
+use crate::rbase::consts::{K_IS_ON_HEAP, K_IS_REFERENCED};
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use log::trace;
@@ -32,9 +32,9 @@ impl Unmarshaler for Object {
 
         trace!("obj = {:?}", self);
 
-        self.bits = self.bits | kIsOnHeap;
+        self.bits = self.bits | K_IS_ON_HEAP;
 
-        if self.test_bits(kIsReferenced) {
+        if self.test_bits(K_IS_REFERENCED) {
             r.read_u16()?;
         }
 

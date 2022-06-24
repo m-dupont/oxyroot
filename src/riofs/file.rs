@@ -1,5 +1,7 @@
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::path::{Path, PathBuf};
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::StreamerInfoContext;
@@ -74,24 +76,27 @@ impl RootFileHeader {
 
 #[derive(Default)]
 pub struct RootFileReader {
-    path: String,
+    path: PathBuf,
     reader: Option<BufReader<File>>,
 }
 
 impl Drop for RootFileReader {
     fn drop(&mut self) {
-        println!("Drop RootFileReader")
+        debug!("Drop RootFileReader")
     }
 }
 
 impl RootFileReader {
-    pub fn new(path: &str) -> Result<Self> {
-        let f = File::open(path)?;
+    pub fn new<P>(path: P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let f = File::open(path.as_ref())?;
 
         let buf_reader = BufReader::new(f);
 
         let reader = Self {
-            path: path.to_string(),
+            path: path.as_ref().to_path_buf(),
             reader: Some(buf_reader),
         };
 
@@ -116,7 +121,7 @@ impl RootFileReader {
 impl Clone for RootFileReader {
     fn clone(&self) -> Self {
         debug!("create new RootFileReader");
-        RootFileReader::new(self.path.as_str()).unwrap()
+        RootFileReader::new(self.path.clone()).unwrap()
     }
 }
 
@@ -151,8 +156,11 @@ impl RootFile {
         self.inner.header.end
     }
 
-    pub fn open(path: &str) -> Result<Self> {
-        trace!("Open file, '{}'", path);
+    pub fn open<P>(path: P) -> Result<Self>
+    where
+        P: AsRef<Path> + Debug,
+    {
+        trace!("Open file, '{:?}'", path);
         // let f = File::open(path)?;
 
         // let buf_reader = BufReader::new(f);
@@ -269,7 +277,7 @@ impl RootFile {
 
         let mut r = RBuffer::new(&buf, 0);
         let key = r.read_object_into::<Key>()?;
-        println!("key = {:?}", key);
+        debug!("key = {:?}", key);
 
         let buf = key.bytes(&mut self.inner.reader, None)?;
         trace!("buf = {:?}", buf);
@@ -294,7 +302,7 @@ impl RootFile {
 
         if self.inner.header.seek_info <= 0 || self.inner.header.seek_info >= self.end() {
             return Err(anyhow!(
-                "riofs: invalid pointer to StreamerInfo (pos={} end={})",
+                "riofs: invalid pointer to STREAMER_INFO (pos={} end={})",
                 self.inner.header.seek_info,
                 self.end()
             ));
@@ -358,7 +366,7 @@ impl RootFile {
         Ok(Some(objet))
 
         // match self.get_object(name) {
-        //     Ok(obj) => match obj.downcast::<Tree>() {
+        //     Ok(obj) => match obj.downcast::<TREE>() {
         //         Ok(mut o) => {
         //             (*o).set_reader(Some(self.inner.reader.clone()));
         //             Ok(Some(*o))

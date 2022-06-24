@@ -5,14 +5,14 @@ use std::io::Read;
 use xz2::read::XzDecoder;
 
 // Note: this contains ZL[src][dst] where src and dst are 3 bytes each.
-const HeaderSize: usize = 9;
+const HEADER_SIZE: usize = 9;
 
 // because each zipped block contains:
 // - the size of the input data
 // - the size of the compressed data
 // where each size is saved on 3 bytes, the maximal size
 // of each block can not be bigger than 16Mb.
-const kMaxCompressedBlockSize: usize = 0xffffff;
+const K_MAX_COMPRESSED_BLOCK_SIZE: usize = 0xffffff;
 
 enum Kind {
     Inherit = -1,
@@ -39,10 +39,10 @@ fn kind_of(buf: &[u8]) -> Kind {
 }
 
 pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
-    let beg = 0;
+    let _beg = 0;
     let mut end = 0;
     let buflen = dst.len() as i64;
-    let mut hdr = [0 as u8; HeaderSize];
+    let mut hdr = [0 as u8; HEADER_SIZE];
 
     // let mut v =
 

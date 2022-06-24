@@ -13,11 +13,11 @@ use log::trace;
 use std::fmt;
 use std::fmt::Debug;
 
-// pub struct KeyObject(Option<Box<dyn Object>>);
+// pub struct KeyObject(Option<Box<dyn OBJECT>>);
 
 impl fmt::Debug for objects::Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Object")
+        f.debug_struct("OBJECT")
             .field("class", &self.class())
             .finish()
         // Ok(())
@@ -29,11 +29,11 @@ impl fmt::Debug for objects::Object {
 //         match op {
 //             None => f
 //                 .debug_struct("KeyObject")
-//                 .field("Object", &String::from("None"))
+//                 .field("OBJECT", &STRING::from("None"))
 //                 .finish(),
 //             Some(obj) => f
 //                 .debug_struct("KeyObject")
-//                 .field("Object", &obj.class())
+//                 .field("OBJECT", &obj.class())
 //                 .finish(),
 //         }
 //     }
@@ -156,7 +156,7 @@ impl Unmarshaler for Key {
 //         if n_bytes < 0 {
 //             return Ok(Key {
 //                 n_bytes,
-//                 class: String::from("[GAP]"),
+//                 class: STRING::from("[GAP]"),
 //                 ..Default::default()
 //             });
 //         }
@@ -227,7 +227,7 @@ impl Key {
         self.obj_len != self.n_bytes - self.key_len
     }
 
-    pub fn bytes(&self, file: &mut RootFileReader, buf: Option<&[u8]>) -> Result<Vec<u8>> {
+    pub fn bytes(&self, file: &mut RootFileReader, _: Option<&[u8]>) -> Result<Vec<u8>> {
         self.load(file)
     }
 
@@ -236,10 +236,10 @@ impl Key {
             let mut buf = vec![0 as u8; self.obj_len as usize];
             trace!("load, is_compressed");
             let start = self.seek_key as u64 + self.key_len as u64;
-            let mut sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
+            let sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
             // trace!("sr[0..16] = {:?}", &sr[0..16]);
 
-            if let Ok(a) = rcompress::decompress(&mut buf, &sr) {
+            if let Ok(_) = rcompress::decompress(&mut buf, &sr) {
                 // trace!("buf = {:?}..", &buf[0..16]);
                 return Ok(buf);
             } else {
@@ -282,7 +282,7 @@ impl Key {
         ))?;
 
         let v = fct();
-        //obj, ok := v.Interface().(root.Object)
+        //obj, ok := v.Interface().(root.OBJECT)
         let obj: Box<dyn rtypes::FactoryItem> = v;
 
         // vv, ok := obj.(rbytes.Unmarshaler)
@@ -291,13 +291,13 @@ impl Key {
         // vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
         vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32).with_info_context(ctx))?;
 
-        // self.objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
+        // self.objarr = *objs.downcast::<rcont::objarray::OBJ_ARRAY>().unwrap();
 
         trace!("class = {}", self.class);
 
         self.obj = Some(vv);
 
-        if let Ok(obj) = self.obj.as_ref().unwrap().downcast_ref::<TDirectoryFile>() {
+        if let Ok(_) = self.obj.as_ref().unwrap().downcast_ref::<TDirectoryFile>() {
             trace!("TDirectoryFile = true");
             todo!();
         }

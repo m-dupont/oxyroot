@@ -12,8 +12,8 @@ use crate::rcolors::Color;
 pub struct AttFill {
     color: Color,
     style: i16,
-    width: i16, // rvers: i16,
-                // named: rbase::Named,
+    _width: i16, // rvers: i16,
+                 // named: rbase::NAMED,
 }
 
 impl Unmarshaler for AttFill {
@@ -22,11 +22,11 @@ impl Unmarshaler for AttFill {
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            hdr.vers <= rvers::AttFill,
+            hdr.vers <= rvers::ATT_FILL,
             "rbase: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::AttFill
+            rvers::ATT_FILL
         );
 
         self.color = Color::from_i16(r.read_i16()?);

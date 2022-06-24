@@ -68,7 +68,7 @@ impl<'a> Read for Rbuff<'a> {
 #[derive(Debug)]
 enum RBufferRefsItem<'a> {
     Func(&'a FactoryBuilderValue),
-    Obj(&'a Box<dyn FactoryItem>),
+    // Obj(&'a Box<dyn FactoryItem>),
 }
 
 #[derive(Default)]
@@ -177,6 +177,12 @@ impl<'a> RBuffer<'a> {
         Ok(())
     }
 
+    pub fn read_u64(&mut self) -> Result<u64> {
+        const SIZE: usize = size_of::<u64>();
+        let buf = self.r.extract_as_array::<SIZE>()?;
+        Ok(u64::from_be_bytes(buf))
+    }
+
     pub fn read_f64(&mut self) -> Result<f64> {
         const SIZE: usize = size_of::<f64>();
         let buf = self.r.extract_as_array::<SIZE>()?;
@@ -205,7 +211,7 @@ impl<'a> RBuffer<'a> {
         let beg = self.pos();
         let mut bcnt = self.read_u32()?;
         let mut vers = 0;
-        let mut tag = 0;
+        let tag: u32;
         let mut start = 0;
 
         if (bcnt as i64) & kByteCountMask == 0 || (bcnt as i64) == kNewClassTag {
@@ -249,8 +255,6 @@ impl<'a> RBuffer<'a> {
             //
             // trace!("self.refs = {:?}", self.refs);
             // trace!("o = {:?}", o);
-
-            todo!()
         } else if tag64 == kNewClassTag {
             let cname = self.read_cstring(80)?;
 
@@ -360,7 +364,7 @@ impl<'a> RBuffer<'a> {
 
             self.sictx.unwrap().streamer_info(&hdr.name, -1);
             if hdr.name != "" && self.sictx.is_some() {
-                if let Some(si) = self.sictx.unwrap().streamer_info(&hdr.name, -1) {
+                if let Some(_) = self.sictx.unwrap().streamer_info(&hdr.name, -1) {
                     todo!()
                 }
             }
@@ -373,7 +377,7 @@ impl<'a> RBuffer<'a> {
         Ok(hdr)
     }
 
-    pub fn check_header(&self, hdr: &Header) -> Result<()> {
+    pub fn check_header(&self, _: &Header) -> Result<()> {
         Ok(())
     }
 
@@ -401,7 +405,6 @@ impl<'a> Read for RBuffer<'a> {
 mod tests {
     use crate::rbytes::rbuffer::RBuffer;
     use anyhow::Result;
-    use num::pow;
 
     #[test]
     fn rbuffer_i32() -> Result<()> {

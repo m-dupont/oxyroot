@@ -16,17 +16,17 @@ factotry_all_for_register_impl!(ObjString, "TObjString");
 
 impl RVersioner for ObjString {
     fn rversion() -> i16 {
-        rvers::ObjString
+        rvers::OBJ_STRING
     }
 }
 
 impl Unmarshaler for ObjString {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("StreamerSTL:unmarshal");
+        info!("STREAMER_STL:unmarshal");
 
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::ObjString,
+            hdr.vers <= rvers::OBJ_STRING,
             "rcont: invalid {} version={} > {}",
             self.class(),
             hdr.vers,

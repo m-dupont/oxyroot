@@ -6,6 +6,8 @@ use rbuffer::RBuffer;
 pub mod consts;
 pub mod rbuffer;
 
+use paste::paste;
+
 /// Header represents a type header in a ROOT buffer.
 ///
 #[derive(Default, Debug)]
@@ -26,18 +28,18 @@ pub trait RVersioner {
     fn rversion() -> i16;
 }
 
-/// StreamerElement describes a ROOT StreamerElement
+/// STREAMER_ELEMENT describes a ROOT STREAMER_ELEMENT
 pub trait StreamerElement: root::traits::Named {}
 
-/// Implement StreamerElement for ROOT objects
+/// Implement STREAMER_ELEMENT for ROOT objects
 
-// impl<T> StreamerElement for T where T: FactoryItem {}
-// impl<T> StreamerElement for T where T: root::traits::Named {}
+// impl<T> STREAMER_ELEMENT for T where T: FactoryItem {}
+// impl<T> STREAMER_ELEMENT for T where T: root::traits::NAMED {}
 
-/// StreamerInfoContext defines the protocol to retrieve a ROOT StreamerInfo
+/// StreamerInfoContext defines the protocol to retrieve a ROOT STREAMER_INFO
 /// metadata type by name.
 pub trait StreamerInfoContext {
-    /// StreamerInfo returns the named StreamerInfo.
+    /// STREAMER_INFO returns the named STREAMER_INFO.
     /// If version is negative, the latest version should be returned.
     fn streamer_info(&self, name: &str, version: i32) -> Option<&StreamerInfo>;
 }
@@ -46,12 +48,38 @@ pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
 }
 
-impl Unmarshaler for i32 {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
-        *self = r.read_i32()?;
-        Ok(())
-    }
+macro_rules! impl_unmarshaler_primitive {
+    ($ftype:ty, $buffer_fn:ident) => {
+        impl Unmarshaler for $ftype {
+            fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+                *self = r.$buffer_fn()?;
+                Ok(())
+            }
+        }
+    };
+
+    ($ftype:ty) => {
+        paste! {
+            impl_unmarshaler_primitive!($ftype, [<read_$ftype>]);
+
+
+
+        }
+    };
 }
+
+impl_unmarshaler_primitive!(i8);
+impl_unmarshaler_primitive!(u8);
+impl_unmarshaler_primitive!(i16);
+impl_unmarshaler_primitive!(u16);
+impl_unmarshaler_primitive!(i32);
+impl_unmarshaler_primitive!(u32);
+impl_unmarshaler_primitive!(i64);
+impl_unmarshaler_primitive!(u64);
+
+impl_unmarshaler_primitive!(f32);
+impl_unmarshaler_primitive!(f64);
+impl_unmarshaler_primitive!(bool);
 
 /// Automatically implemented if [Unmarshaler] is implemented
 pub trait UnmarshalerInto {

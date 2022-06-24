@@ -159,7 +159,7 @@ lazy_static! {
         use crate::rdict::StreamerBasicPointer;
 
         let mut f = Factory::new();
-        // f.add(List::make_factory_name(), List::make_factory_builder());
+        // f.add(LIST::make_factory_name(), LIST::make_factory_builder());
         List::register(&mut f);
         ObjArray::register(&mut f);
         StreamerInfo::register(&mut f);
@@ -180,6 +180,12 @@ lazy_static! {
         crate::rtree::branch::TBranchElement::register(&mut f);
         crate::rtree::leaf::TLeaf::register(&mut f);
         crate::rtree::leaf::LeafI::register(&mut f);
+        crate::rtree::leaf::LeafF::register(&mut f);
+        crate::rtree::leaf::LeafD::register(&mut f);
+        crate::rtree::leaf::LeafB::register(&mut f);
+        crate::rtree::leaf::LeafL::register(&mut f);
+        crate::rtree::leaf::LeafO::register(&mut f);
+        crate::rtree::leaf::LeafS::register(&mut f);
         crate::rtree::leaf::LeafElement::register(&mut f);
 
 
@@ -197,12 +203,9 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     // use crate::as_any::Downcast;
-    use crate::rbytes::Unmarshaler;
     use crate::rcont::list::List;
-    use crate::root::traits;
     use crate::root::traits::{Named, Object};
     use crate::rtypes::factory::{Factory, FactoryItem, FACTORY};
-    use std::any::Any;
 
     #[test]
     fn gen_factory_all_steps() {
@@ -235,8 +238,8 @@ mod tests {
         let vec = vec.unwrap();
 
         // let component: dyn FactoryItem = *vec;
-        // let vec = component.downcast_ref::<List>();
-        // let mut vec: Box<List> = vec.
+        // let vec = component.downcast_ref::<LIST>();
+        // let mut vec: Box<LIST> = vec.
 
         // assert_eq!(vec.class().unwrap().as_ref(), "TList");
 
@@ -268,7 +271,7 @@ mod tests {
         assert!(FACTORY.get("TList").is_some());
         assert!(FACTORY.get_as_box("TList").is_some());
 
-        // let b: Box<dyn traits::Named> = FACTORY.get_as_box("TList").unwrap();
+        // let b: Box<dyn traits::NAMED> = FACTORY.get_as_box("TList").unwrap();
 
         assert!((*FACTORY.get_as_box("TList").unwrap())
             .downcast_ref::<List>()

@@ -22,6 +22,11 @@ mod utils;
 
 pub use riofs::file;
 
+pub use rbytes::rbuffer::RBuffer;
+pub use riofs::file::RootFile;
+pub use rtree::branch::TBranch;
+pub use rtree::tree::Tree;
+
 #[cfg(test)]
 mod tests {
     #[test]

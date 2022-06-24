@@ -1,5 +1,5 @@
 pub mod traits {
-    // Object represents a ROOT object
+    // OBJECT represents a ROOT object
     pub trait Object {
         fn class(&self) -> &'_ str;
     }

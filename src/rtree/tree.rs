@@ -31,11 +31,11 @@ impl Unmarshaler for TioFeatures {
 
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::ROOT_IOFeatures,
+            hdr.vers <= rvers::ROOT_IOFEATURES,
             "rtree: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::ROOT_IOFeatures
+            rvers::ROOT_IOFEATURES
         );
 
         let mut buf = [0 as u8; 4];
@@ -74,34 +74,34 @@ pub struct Tree {
     /// Number of entries
     entries: i64,
     /// Total number of bytes in all branches before compression
-    totBytes: i64,
+    tot_bytes: i64,
     /// Total number of bytes in all branches after  compression
-    zipBytes: i64,
+    zip_bytes: i64,
     /// number of autosaved bytes
-    savedBytes: i64,
+    saved_bytes: i64,
     /// number of auto-flushed bytes
-    flushedBytes: i64,
+    flushed_bytes: i64,
 
     /// tree weight
     weight: f64,
     /// timer interval in milliseconds
-    timerInterval: i32,
+    timer_interval: i32,
     /// number of runs before prompting in Scan
-    scanField: i32,
+    scan_field: i32,
     /// update frequency for entry-loop
     update: i32,
     /// initial length of the entry offset table in the basket buffers
-    defaultEntryOffsetLen: i32,
+    default_entry_offset_len: i32,
     /// maximum number of entries in case of circular buffers
-    maxEntries: i64,
+    max_entries: i64,
     /// maximum number of entries to process
-    maxEntryLoop: i64,
+    max_entry_loop: i64,
     /// maximum total size of buffers kept in memory
-    maxVirtualSize: i64,
-    /// autosave tree when autoSave entries written
-    autoSave: i64,
-    /// autoflush tree when autoFlush entries written
-    autoFlush: i64,
+    max_virtual_size: i64,
+    /// auto_save tree when auto_save entries written
+    auto_save: i64,
+    /// auto_flush tree when auto_flush entries written
+    auto_flush: i64,
     /// number of entries to estimate histogram limits
     estimate: i64,
 
@@ -141,14 +141,14 @@ impl Tree {
 
 impl Unmarshaler for Tree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("Tree:unmarshal");
+        trace!("TREE:unmarshal");
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::Tree,
+            hdr.vers <= rvers::TREE,
             "rtree: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::Tree
+            rvers::TREE
         );
 
         self.rvers = hdr.vers;
@@ -167,32 +167,32 @@ impl Unmarshaler for Tree {
 
         if hdr.vers > 5 {
             self.entries = r.read_i64()?;
-            self.totBytes = r.read_i64()?;
-            self.zipBytes = r.read_i64()?;
-            self.savedBytes = r.read_i64()?;
+            self.tot_bytes = r.read_i64()?;
+            self.zip_bytes = r.read_i64()?;
+            self.saved_bytes = r.read_i64()?;
         } else {
             self.entries = r.read_f64()? as i64;
-            self.totBytes = r.read_f64()? as i64;
-            self.zipBytes = r.read_f64()? as i64;
-            self.savedBytes = r.read_f64()? as i64;
+            self.tot_bytes = r.read_f64()? as i64;
+            self.zip_bytes = r.read_f64()? as i64;
+            self.saved_bytes = r.read_f64()? as i64;
         }
 
         trace!("nentries = {}", self.entries);
 
         if hdr.vers >= 18 {
-            self.flushedBytes = r.read_i64()?;
+            self.flushed_bytes = r.read_i64()?;
         }
 
         if hdr.vers >= 16 {
             self.weight = r.read_f64()?;
         }
 
-        self.timerInterval = r.read_i32()?;
-        self.scanField = r.read_i32()?;
+        self.timer_interval = r.read_i32()?;
+        self.scan_field = r.read_i32()?;
         self.update = r.read_i32()?;
 
         if hdr.vers >= 17 {
-            self.defaultEntryOffsetLen = r.read_i32()?;
+            self.default_entry_offset_len = r.read_i32()?;
         }
 
         let mut nclus = 0;
@@ -202,21 +202,21 @@ impl Unmarshaler for Tree {
         }
 
         if hdr.vers > 5 {
-            self.maxEntries = r.read_i64()?;
+            self.max_entries = r.read_i64()?;
         }
 
         if hdr.vers > 5 {
-            self.maxEntryLoop = r.read_i64()?;
-            self.maxVirtualSize = r.read_i64()?;
-            self.autoSave = r.read_i64()?;
+            self.max_entry_loop = r.read_i64()?;
+            self.max_virtual_size = r.read_i64()?;
+            self.auto_save = r.read_i64()?;
         } else {
-            self.maxEntryLoop = r.read_i32()? as i64;
-            self.maxVirtualSize = r.read_i32()? as i64;
-            self.autoSave = r.read_i32()? as i64;
+            self.max_entry_loop = r.read_i32()? as i64;
+            self.max_virtual_size = r.read_i32()? as i64;
+            self.auto_save = r.read_i32()? as i64;
         }
 
         if hdr.vers >= 18 {
-            self.autoFlush = r.read_i64()?;
+            self.auto_flush = r.read_i64()?;
         }
 
         if hdr.vers > 5 {
@@ -259,7 +259,7 @@ impl Unmarshaler for Tree {
         }
 
         {
-            let mut leaves = r.read_object_into::<ObjArray>()?;
+            let mut _leaves = r.read_object_into::<ObjArray>()?;
         }
 
         debug!("read new element");

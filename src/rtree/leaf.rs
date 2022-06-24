@@ -12,6 +12,11 @@ pub enum Leaf {
     Base(TLeaf),
     Element(LeafElement),
     I(LeafI),
+    S(LeafS),
+    D(LeafD),
+    F(LeafF),
+    B(LeafB),
+    L(LeafL),
 }
 
 impl Leaf {
@@ -27,6 +32,11 @@ impl<'a> From<&'a Leaf> for &'a TLeaf {
             Leaf::Base(ll) => ll,
             Leaf::Element(le) => &le.tleaf,
             Leaf::I(li) => &li.tleaf,
+            Leaf::S(li) => &li.tleaf,
+            Leaf::D(li) => &li.tleaf,
+            Leaf::F(li) => &li.tleaf,
+            Leaf::B(li) => &li.tleaf,
+            Leaf::L(li) => &li.tleaf,
         }
     }
 }
@@ -37,6 +47,11 @@ impl From<Leaf> for TLeaf {
             Leaf::Base(ll) => ll,
             Leaf::Element(le) => le.tleaf,
             Leaf::I(li) => li.tleaf,
+            Leaf::S(li) => li.tleaf,
+            Leaf::D(li) => li.tleaf,
+            Leaf::F(li) => li.tleaf,
+            Leaf::B(li) => li.tleaf,
+            Leaf::L(li) => li.tleaf,
         }
     }
 }
@@ -46,8 +61,13 @@ impl From<Box<dyn FactoryItem>> for Leaf {
         match obj.class() {
             "TLeaf" => Leaf::Base(*obj.downcast::<TLeaf>().unwrap()),
             "TLeafI" => Leaf::I(*obj.downcast::<LeafI>().unwrap()),
+            "TLeafS" => Leaf::S(*obj.downcast::<LeafS>().unwrap()),
+            "TLeafF" => Leaf::F(*obj.downcast::<LeafF>().unwrap()),
+            "TLeafD" => Leaf::D(*obj.downcast::<LeafD>().unwrap()),
+            "TLeafB" => Leaf::B(*obj.downcast::<LeafB>().unwrap()),
+            "TLeafL" => Leaf::L(*obj.downcast::<LeafL>().unwrap()),
             "TLeafElement" => Leaf::Element(*obj.downcast::<LeafElement>().unwrap()),
-            &_ => todo!(),
+            &_ => todo!("Implement {}", obj.class()),
         }
     }
 }
@@ -62,12 +82,12 @@ pub struct TLeaf {
     etype: i32,
     // number of bytes for this data type
     offset: i32,
-    // offset in ClonesArray object
+    // offset in CLONES_ARRAY object
     hasrange: bool,
     // whether the leaf has a range
     unsigned: bool, // whether the leaf holds unsigned data (uint8, uint16, uint32 or uint64)
                     // count    leafCount // leaf count if variable length
-                    // branch   Branch    // supporting branch of this leaf
+                    // branch   BRANCH    // supporting branch of this leaf
 }
 
 impl Named for TLeaf {
@@ -150,11 +170,11 @@ impl Unmarshaler for LeafI {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::LeafI,
+            hdr.vers <= rvers::LEAF_I,
             "rtree: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::LeafI
+            rvers::LEAF_I
         );
 
         self.rvers = hdr.vers;
@@ -174,7 +194,55 @@ impl Unmarshaler for LeafI {
 
 factotry_all_for_register_impl!(LeafI, "TLeafI");
 
-/// LeafElement is a Leaf for a general object derived from Object.
+macro_rules! make_tleaf_variant {
+    ($struct_name:ident, $root_name:literal, $field_type:ty) => {
+        #[derive(Default)]
+        pub struct $struct_name {
+            rvers: i16,
+            tleaf: TLeaf,
+            min: $field_type,
+            max: $field_type,
+            // ptr: &i32;
+        }
+
+        factotry_all_for_register_impl!($struct_name, $root_name);
+
+        impl Unmarshaler for $struct_name {
+            fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+                let hdr = r.read_header(self.class())?;
+                ensure!(
+                    hdr.vers <= rvers::$struct_name,
+                    "rtree: invalid {} version={} > {}",
+                    self.class(),
+                    hdr.vers,
+                    rvers::$struct_name
+                );
+
+                self.rvers = hdr.vers;
+
+                r.read_object(&mut self.tleaf)?;
+
+                r.read_object(&mut self.min)?;
+                r.read_object(&mut self.max)?;
+
+                r.check_header(&hdr)?;
+
+                Ok(())
+
+                // todo!()
+            }
+        }
+    };
+}
+
+make_tleaf_variant!(LeafB, "TLeafB", i8);
+make_tleaf_variant!(LeafS, "TLeafS", i16);
+make_tleaf_variant!(LeafL, "TLeafL", i64);
+make_tleaf_variant!(LeafF, "TLeafF", f32);
+make_tleaf_variant!(LeafD, "TLeafD", f64);
+make_tleaf_variant!(LeafO, "TLeafO", bool);
+
+/// LeafElement is a Leaf for a general object derived from OBJECT.
 #[derive(Default)]
 pub struct LeafElement {
     rvers: i16,

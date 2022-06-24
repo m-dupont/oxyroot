@@ -13,20 +13,20 @@ pub struct AttLine {
     color: Color,
     style: i16,
     width: i16, // rvers: i16,
-                // named: rbase::Named,
+                // named: rbase::NAMED,
 }
 
 impl Unmarshaler for AttLine {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("AttLine:unmarshal");
+        trace!("ATT_LINE:unmarshal");
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            hdr.vers <= rvers::AttLine,
+            hdr.vers <= rvers::ATT_LINE,
             "rbase: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::AttLine
+            rvers::ATT_LINE
         );
 
         self.color = Color::from_i16(r.read_i16()?);

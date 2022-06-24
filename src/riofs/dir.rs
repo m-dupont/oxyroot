@@ -166,7 +166,6 @@ impl TDirectoryFile {
             if k.name() == name {
                 if cycle != 9999 {
                     todo!();
-                    continue;
                 }
                 keys.push(k);
 

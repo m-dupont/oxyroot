@@ -1,7 +1,7 @@
 use crate::file::RootFileReader;
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::Basket;
@@ -66,10 +66,20 @@ impl Branch {
         T: Debug + 'a,
         F: Fn(&mut RBuffer) -> T + 'a,
     {
-        trace!("get_basket in Branch = {}", self.name());
+        trace!("get_basket in BRANCH = {}", self.name());
         match self {
             Branch::Base(bb) => bb.get_basket(func),
             Branch::Element(be) => be.branch.get_basket(func),
+        }
+    }
+
+    pub fn get_basket_into<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
+    where
+        T: UnmarshalerInto<Item = T> + Debug + 'a,
+    {
+        match self {
+            Branch::Base(bb) => bb.get_basket_into::<T>(),
+            Branch::Element(be) => be.branch.get_basket_into::<T>(),
         }
     }
 }
@@ -81,41 +91,42 @@ pub struct TBranch {
 
     /// compression level and algorithm
     compress: i32,
-    /// initial size of Basket buffer
-    basketSize: i32,
-    entryOffsetLen: i32,
-    // initial length of entryOffset table in the basket buffers
-    writeBasket: i32,
-    // last basket number written
-    entryNumber: i64,
-    // current entry number (last one filled in this branch)
+    /// initial size of BASKET buffer
+    basket_size: i32,
+    /// initial length of entryOffset table in the basket buffers
+    entry_offset_len: i32,
+    /// last basket number written
+    write_basket: i32,
+    /// current entry number (last one filled in this branch)
+    entry_number: i64,
+    /// IO features for newly-created baskets
     iobits: TioFeatures,
-    // IO features for newly-created baskets
+    /// offset of this branch
     offset: i32,
-    // offset of this branch
-    maxBaskets: i32,
-    // maximum number of baskets so far
-    splitLevel: i32,
-    // branch split level
+    /// maximum number of baskets so far
+    max_baskets: i32,
+    /// branch split level
+    split_level: i32,
+    /// number of entries
     entries: i64,
-    // number of entries
-    firstEntry: i64,
-    // number of the first entry in this branch
-    totBytes: i64,
-    // total number of bytes in all leaves before compression
-    zipBytes: i64, // total number of bytes in all leaves after compression
+    /// number of the first entry in this branch
+    first_entry: i64,
+    /// total number of bytes in all leaves before compression
+    tot_bytes: i64,
+    /// total number of bytes in all leaves after compression
+    zip_bytes: i64,
 
     branches: Vec<Branch>,
     leaves: Vec<Leaf>,
     baskets: Vec<Box<dyn FactoryItem>>,
 
     /// length of baskets on file
-    basketBytes: Vec<i32>,
+    basket_bytes: Vec<i32>,
     /// table of first entry in each basket
-    basketEntry: Vec<i64>,
+    basket_entry: Vec<i64>,
     /// addresses of baskets on file
-    basketSeek: Vec<i64>,
-    /// named of file where buffers are stored (empty if in same file as Tree header)
+    basket_seek: Vec<i64>,
+    /// named of file where buffers are stored (empty if in same file as TREE header)
     fname: String,
 
     reader: Option<RootFileReader>,
@@ -153,17 +164,6 @@ impl<'a, T> Iterator for ZiperBranchInnerO<'a, T> {
         trace!("o = {:?}", o);
 
         return Some((self.num_entries, self.chunk_size, o));
-
-        // if self.o.is_empty() {
-        //     None
-        // } else {
-        //     let chunksz = cmp::min(self.o.len(), self.chunk_size as usize);
-        //     let (fst, snd) = self.o.split_at(chunksz);
-        //
-        //     Some((self.num_entries, self.chunk_size, fst))
-        // }
-
-        todo!()
     }
 }
 
@@ -172,7 +172,7 @@ where
     T: Debug,
 {
     reader: RootFileReader,
-    branches: &'a Vec<Branch>,
+    _branches: &'a Vec<Branch>,
     phantom: PhantomData<T>,
     iterators: Vec<Box<dyn Iterator<Item = (u32, i32, Vec<u8>)> + 'a>>,
     // output_buffers: Option<ZiperBranchInnerO<'a, T>>,
@@ -188,7 +188,7 @@ where
     pub fn new(
         reader: Option<&RootFileReader>,
         branches: &'a Vec<Branch>,
-        nb_entries: u32,
+        _nb_entries: u32,
     ) -> Self {
         let mut v = Vec::new();
         // let mut v: Vec<dyn Iterator<Item = (u32, i32, Vec<u8>)>> = Vec::new();
@@ -212,7 +212,7 @@ where
 
         ZiperBranches {
             reader: reader.unwrap().clone(),
-            branches,
+            _branches: branches,
             phantom: Default::default(),
             iterators: v,
             output_buffers: Vec::new(),
@@ -290,7 +290,7 @@ where
         }
 
         let size = self.output_buffers.iter().fold(0 as usize, |acc, par| {
-            let (n, s, v) = par.as_ref().unwrap();
+            let (_, s, _) = par.as_ref().unwrap();
             acc + *s as usize
         });
         // let mut outbuf = vec![0 as u8; size];
@@ -303,7 +303,7 @@ where
                 None => {
                     panic!("faut remplit");
                 }
-                Some((n, chunk_size, buf)) => {
+                Some((_, chunk_size, buf)) => {
                     let csize = *chunk_size as usize;
                     let begin = self.current_size[ib] * csize;
                     let end = (self.current_size[ib] + 1) * csize;
@@ -343,29 +343,6 @@ where
         );
 
         return Some((0, size as i32, outbuf));
-
-        // let next = self.output_buffers.as_mut().unwrap().next();
-
-        // self.output_buffers.unwrap().next();
-
-        // let v = self.output_buffers.as_ref().unwrap();
-        //
-        // return Some((v.num_entries, v.chunk_size, v.o.ne()));
-
-        // let v = self.output_buffers.unwrap();
-
-        // let v = self.output_buffers[0];
-
-        // println!("inner = {:?}", self.output_buffers);
-
-        // for branch in self.branches {
-        //     let tbranch: &TBranch = branch.into();
-        //     let mut data = tbranch.get_baskets_buffer();
-        //     let d = data.next();
-        //     println!("d = {:?}", d);
-        // }
-
-        todo!()
     }
 }
 
@@ -384,33 +361,42 @@ impl TBranch {
 
         trace!(
             "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size) = {:?}",
-            &self.basketSeek,
-            &self.basketBytes,
+            &self.basket_seek,
+            &self.basket_bytes,
             size_leaves
         );
 
-        if size_leaves.len() != self.basketSeek.len() {
-            for i in 1..self.basketSeek.len() {
+        if size_leaves.len() != self.basket_seek.len() {
+            for _i in 1..self.basket_seek.len() {
                 size_leaves.push(size_leaves[0]);
             }
         }
 
-        Box::new(izip!(&self.basketSeek, &self.basketBytes, size_leaves).map(
-            |(start, len, chunk_size)| {
-                trace!(
-                    "get_baskets_buffer: (start = {}, len = {}, chunk_size) = {}",
-                    start,
-                    len,
-                    chunk_size
-                );
-                let mut reader = self.reader.as_ref().unwrap().clone();
-                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                let mut r = RBuffer::new(&buf, 0);
-                let b = r.read_object_into::<Basket>().unwrap();
-                let (n, buf) = b.raw_data(&mut reader);
-                (n, chunk_size, buf)
-            },
-        ))
+        Box::new(
+            izip!(&self.basket_seek, &self.basket_bytes, size_leaves).map(
+                |(start, len, chunk_size)| {
+                    trace!(
+                        "get_baskets_buffer: (start = {}, len = {}, chunk_size) = {}",
+                        start,
+                        len,
+                        chunk_size
+                    );
+                    let mut reader = self.reader.as_ref().unwrap().clone();
+                    let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                    let mut r = RBuffer::new(&buf, 0);
+                    let b = r.read_object_into::<Basket>().unwrap();
+                    let (n, buf) = b.raw_data(&mut reader);
+                    (n, chunk_size, buf)
+                },
+            ),
+        )
+    }
+
+    pub fn get_basket_into<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
+    where
+        T: UnmarshalerInto<Item = T> + Debug + 'a,
+    {
+        self.get_basket(|r| r.read_object_into::<T>().unwrap())
     }
 
     pub fn get_basket<'a, F, T>(&'a self, func: F) -> impl Iterator<Item = T> + 'a
@@ -427,7 +413,7 @@ impl TBranch {
 
         assert!(self.reader.is_some());
 
-        let mut reader = self.reader.as_ref().unwrap().clone();
+        // let _reader = self.reader.as_ref().unwrap().clone();
         // let mut reader = self.reader.unwrap();
 
         let it = if self.branches.len() > 0 {
@@ -437,7 +423,7 @@ impl TBranch {
                     &self.branches,
                     self.entries as u32,
                 )
-                .map(move |(n, chunk_size, buf)| {
+                .map(move |(_n, _chunk_size, buf)| {
                     let mut r = RBuffer::new(&buf, 0);
                     func(&mut r)
                     // trace!("buf = {:?}", buf);
@@ -454,13 +440,13 @@ impl TBranch {
         } else {
             let b: Box<dyn Iterator<Item = T>> = Box::new(
                 self.get_baskets_buffer()
-                    .map(move |(n, chunk_size, buf)| {
+                    .map(move |(n, _chunk_size, buf)| {
                         let mut r = RBuffer::new(&buf, 0);
                         // trace!("buf = {:?}", buf);
                         // trace!("buf.len = {} n = {}", buf.len(), n);
                         let size = buf.len() / n as usize;
                         let mut v = Vec::new();
-                        for i in 0..n {
+                        for _i in 0..n {
                             v.push(func(&mut r));
                         }
                         v
@@ -502,13 +488,13 @@ impl TBranch {
         //     })
         //     .flatten()
 
-        // self.basketSeek
+        // self.basket_seek
         //     .iter()
-        //     .zip(&self.basketBytes)
+        //     .zip(&self.basket_bytes)
         //     .map(move |(start, len)| {
         //         let buf = reader.read_at(*start as u64, *len as u64).unwrap();
         //         let mut r = RBuffer::new(&buf, 0);
-        //         let b = r.read_object_into::<Basket>().unwrap();
+        //         let b = r.read_object_into::<BASKET>().unwrap();
         //         let (n, buf) = b.raw_data(&mut reader);
         //         let mut r = RBuffer::new(&buf, 0);
         //
@@ -534,13 +520,13 @@ impl TBranch {
         //     })
         //     .flatten()
 
-        // self.basketSeek
+        // self.basket_seek
         //     .iter()
-        //     .zip(&self.basketBytes)
+        //     .zip(&self.basket_bytes)
         //     .map(move |(start, len)| {
         //         let buf = reader.read_at(*start as u64, *len as u64).unwrap();
         //         let mut r = RBuffer::new(&buf, 0);
-        //         let b = r.read_object_into::<Basket>().unwrap();
+        //         let b = r.read_object_into::<BASKET>().unwrap();
         //         let (n, buf) = b.raw_data(&mut reader);
         //         let mut r = RBuffer::new(&buf, 0);
         //
@@ -579,37 +565,37 @@ impl Unmarshaler for TBranch {
         trace!("TBranch:unmarshal, name = {}", self.name());
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::Branch,
+            hdr.vers <= rvers::BRANCH,
             "rtree: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::Branch
+            rvers::BRANCH
         );
 
         if hdr.vers >= 10 {
             r.read_object(&mut self.named)?;
             r.read_object(&mut self.attfill)?;
             self.compress = r.read_i32()?;
-            self.basketSize = r.read_i32()?;
-            self.entryOffsetLen = r.read_i32()?;
-            self.writeBasket = r.read_i32()?;
-            self.entryNumber = r.read_i64()?;
+            self.basket_size = r.read_i32()?;
+            self.entry_offset_len = r.read_i32()?;
+            self.write_basket = r.read_i32()?;
+            self.entry_number = r.read_i64()?;
 
             if hdr.vers >= 13 {
                 r.read_object(&mut self.iobits)?;
             }
 
             self.offset = r.read_i32()?;
-            self.maxBaskets = r.read_i32()?;
-            self.splitLevel = r.read_i32()?;
+            self.max_baskets = r.read_i32()?;
+            self.split_level = r.read_i32()?;
             self.entries = r.read_i64()?;
 
             if hdr.vers >= 11 {
-                self.firstEntry = r.read_i64()?;
+                self.first_entry = r.read_i64()?;
             }
 
-            self.totBytes = r.read_i64()?;
-            self.zipBytes = r.read_i64()?;
+            self.tot_bytes = r.read_i64()?;
+            self.zip_bytes = r.read_i64()?;
 
             {
                 let mut branches = r.read_object_into::<ObjArray>()?;
@@ -645,37 +631,37 @@ impl Unmarshaler for TBranch {
 
             {
                 let _ = r.read_i8()?;
-                let mut b = vec![0; self.maxBaskets as usize];
+                let mut b = vec![0; self.max_baskets as usize];
                 r.read_array_i32(b.as_mut_slice())?;
                 trace!("b = {:?}", b);
 
-                self.basketBytes
-                    .extend_from_slice(&b.as_slice()[..self.writeBasket as usize]);
+                self.basket_bytes
+                    .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
             }
 
             {
                 let _ = r.read_i8()?;
-                let mut b = vec![0 as i64; self.maxBaskets as usize];
+                let mut b = vec![0 as i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
                 trace!("b = {:?}", b);
 
-                self.basketEntry
-                    .extend_from_slice(&b.as_slice()[..(self.writeBasket + 1) as usize]);
+                self.basket_entry
+                    .extend_from_slice(&b.as_slice()[..(self.write_basket + 1) as usize]);
             }
 
             {
                 let _ = r.read_i8()?;
-                let mut b = vec![0 as i64; self.maxBaskets as usize];
+                let mut b = vec![0 as i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
                 trace!("b = {:?}", b);
 
-                self.basketSeek
-                    .extend_from_slice(&b.as_slice()[..self.writeBasket as usize]);
+                self.basket_seek
+                    .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
             }
 
-            trace!("self.basketBytes = {:?}", self.basketBytes);
-            trace!("self.basketEntry = {:?}", self.basketEntry);
-            trace!("self.basketSeek = {:?}", self.basketSeek);
+            trace!("self.basket_bytes = {:?}", self.basket_bytes);
+            trace!("self.basket_entry = {:?}", self.basket_entry);
+            trace!("self.basket_seek = {:?}", self.basket_seek);
 
             self.fname = r.read_string()?.to_string();
         } else if hdr.vers >= 6 {
@@ -688,8 +674,8 @@ impl Unmarshaler for TBranch {
             unimplemented!()
         }
 
-        if self.splitLevel == 0 && self.branches.len() > 0 {
-            self.splitLevel = 1;
+        if self.split_level == 0 && self.branches.len() > 0 {
+            self.split_level = 1;
         }
 
         r.check_header(&hdr)?;
@@ -746,11 +732,11 @@ impl Unmarshaler for TBranchElement {
         trace!("TBranchElement:unmarshal, name = {}", self.name());
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::BranchElement,
+            hdr.vers <= rvers::BRANCH_ELEMENT,
             "rtree: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::BranchElement
+            rvers::BRANCH_ELEMENT
         );
 
         r.read_object(&mut self.branch)?;

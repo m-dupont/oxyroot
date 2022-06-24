@@ -44,15 +44,15 @@ impl traits::Object for List {
 
 impl Unmarshaler for List {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("List:unmarshal");
+        trace!("LIST:unmarshal");
 
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            hdr.vers <= rvers::List,
+            hdr.vers <= rvers::LIST,
             "rcont: invalid TList version={} > {}",
             hdr.vers,
-            rvers::List
+            rvers::LIST
         );
 
         ensure!(
@@ -70,7 +70,7 @@ impl Unmarshaler for List {
         trace!("name = {}, size = {}", self.name.as_ref().unwrap(), size);
 
         for i in 0..size {
-            debug!("List:unmarshal: {}", i);
+            debug!("LIST:unmarshal: {}", i);
             let obj = r.read_object_any_into()?.expect("something is wrong");
             self.objs.push(obj);
 
@@ -104,7 +104,7 @@ impl traits::Named for List {
     }
 }
 
-// impl FactoryItem for List {}
+// impl FactoryItem for LIST {}
 
 impl FactoryBuilder for List {
     fn register(factory: &mut Factory) {

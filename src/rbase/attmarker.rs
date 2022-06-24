@@ -17,15 +17,15 @@ pub struct AttMarker {
 
 impl Unmarshaler for AttMarker {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("AttMarker:unmarshal");
+        trace!("ATT_MARKER:unmarshal");
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            hdr.vers <= rvers::AttMarker,
+            hdr.vers <= rvers::ATT_MARKER,
             "rbase: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::AttMarker
+            rvers::ATT_MARKER
         );
 
         self.color = Color::from_i16(r.read_i16()?);

@@ -1,86 +1,88 @@
 /// ROOT version
-pub const ROOT: i32 = 62600;
+pub const _ROOT: i32 = 62600;
 
-pub const AttAxis: i16 = 4;
+pub const _ATT_AXIS: i16 = 4;
 // ROOT version for TAttAxis
-pub const AttFill: i16 = 2;
+pub const ATT_FILL: i16 = 2;
 // ROOT version for TAttFill
 /// ROOT version for TAttLine
-pub const AttLine: i16 = 2;
-pub const AttMarker: i16 = 2;
+pub const ATT_LINE: i16 = 2;
+pub const ATT_MARKER: i16 = 2;
 // ROOT version for TAttMarker
-pub const Datime: i16 = 1;
+pub const _DATIME: i16 = 1;
 // ROOT version for TDatime
-pub const Named: i16 = 1;
-// ROOT version for TNamed
-pub const Object: i16 = 1;
+/// ROOT version for TNamed
+pub const _NAMED: i16 = 1;
+
+pub const _OBJECT: i16 = 1;
 // ROOT version for TObject
 /// ROOT version for TObjString
-pub const ObjString: i16 = 1;
-pub const ProcessID: i16 = 1;
-// ROOT version for TProcessID
-pub const ProcessUUID: i16 = 1;
-// ROOT version for TProcessUUID
-pub const Ref: i16 = 1;
-// ROOT version for TRef
+pub const OBJ_STRING: i16 = 1;
+/// ROOT version for TProcessID
+pub const _PROCESS_ID: i16 = 1;
+/// ROOT version for TProcessUUID
+pub const PROCESS_UUID: i16 = 1;
+/// ROOT version for TRef
+pub const REF: i16 = 1;
+
 pub const UUID: i16 = 1;
 // ROOT version for TUUID
-pub const String: i16 = 2;
+pub const STRING: i16 = 2;
 // ROOT version for TString
-pub const Array: i16 = 1;
+pub const ARRAY: i16 = 1;
 // ROOT version for TArray
-pub const ArrayC: i16 = 1;
+pub const ARRAY_C: i16 = 1;
 // ROOT version for TArrayC
-pub const ArrayS: i16 = 1;
+pub const ARRAY_S: i16 = 1;
 // ROOT version for TArrayS
-pub const ArrayI: i16 = 1;
+pub const ARRAY_I: i16 = 1;
 // ROOT version for TArrayI
-pub const ArrayL: i16 = 1;
+pub const ARRAY_L: i16 = 1;
 // ROOT version for TArrayL
-pub const ArrayL64: i16 = 1;
+pub const ARRAY_L64: i16 = 1;
 // ROOT version for TArrayL64
-pub const ArrayF: i16 = 1;
+pub const ARRAY_F: i16 = 1;
 // ROOT version for TArrayF
-pub const ArrayD: i16 = 1;
+pub const ARRAY_D: i16 = 1;
 // ROOT version for TArrayD
-pub const Bits: i16 = 1;
+pub const BITS: i16 = 1;
 // ROOT version for TBits
-pub const Collection: i16 = 3;
+pub const COLLECTION: i16 = 3;
 // ROOT version for TCollection
-pub const ClonesArray: i16 = 4;
+pub const CLONES_ARRAY: i16 = 4;
 // ROOT version for TClonesArray
 /// ROOT version for TList
-pub const List: i16 = 5;
+pub const LIST: i16 = 5;
 // HashList                 = 0  // ROOT version for THashList
 // HashTable                = 0  // ROOT version for THashTable
 // Map                      = 3  // ROOT version for TMap
 /// ROOT version for TObjArray
-pub const ObjArray: i16 = 3;
+pub const OBJ_ARRAY: i16 = 3;
 // RefArray                 = 1  // ROOT version for TRefArray
 // RefTable                 = 3  // ROOT version for TRefTable
 // SeqCollection            = 0  // ROOT version for TSeqCollection
 /// ROOT version for TStreamerInfo
-pub const StreamerInfo: i16 = 9;
+pub const STREAMER_INFO: i16 = 9;
 /// ROOT version for TStreamerElement
-pub const StreamerElement: i16 = 4;
+pub const STREAMER_ELEMENT: i16 = 4;
 /// ROOT version for TStreamerBase
-pub const StreamerBase: i16 = 3;
+pub const STREAMER_BASE: i16 = 3;
 /// ROOT version for TStreamerBasicType
-pub const StreamerBasicType: i16 = 2;
+pub const STREAMER_BASIC_TYPE: i16 = 2;
 /// ROOT version for TStreamerBasicPointer
-pub const StreamerBasicPointer: i16 = 2;
+pub const STREAMER_BASIC_POINTER: i16 = 2;
 // StreamerLoop             = 2  // ROOT version for TStreamerLoop
 /// ROOT version for TStreamerObject
-pub const StreamerObject: i16 = 2;
+pub const STREAMER_OBJECT: i16 = 2;
 /// ROOT version for TStreamerObjectPointer
-pub const StreamerObjectPointer: i16 = 2;
+pub const STREAMER_OBJECT_POINTER: i16 = 2;
 /// ROOT version for TStreamerObjectAny
-pub const StreamerObjectAny: i16 = 2;
+pub const STREAMER_OBJECT_ANY: i16 = 2;
 // StreamerObjectAnyPointer = 1  // ROOT version for TStreamerObjectAnyPointer
 /// ROOT version for TStreamerString
-pub const StreamerString: i16 = 2;
+pub const STREAMER_STRING: i16 = 2;
 /// ROOT version for TStreamerSTL
-pub const StreamerSTL: i16 = 3;
+pub const STREAMER_STL: i16 = 3;
 // StreamerSTLstring        = 2  // ROOT version for TStreamerSTLstring
 // StreamerArtificial       = 0  // ROOT version for TStreamerArtificial
 // Axis                     = 10 // ROOT version for TAxis
@@ -125,39 +127,54 @@ pub const StreamerSTL: i16 = 3;
 // Vector2                  = 3  // ROOT version for TVector2
 // Vector3                  = 3  // ROOT version for TVector3
 /// ROOT version for ROOT::TIOFeatures
-pub const ROOT_IOFeatures: i16 = 1;
+pub const ROOT_IOFEATURES: i16 = 1;
 /// ROOT version for TBasket
-pub const Basket: i16 = 3;
+pub const BASKET: i16 = 3;
 /// ROOT version for TBranch
-pub const Branch: i16 = 13;
+pub const BRANCH: i16 = 13;
 /// ROOT version for TBranchElement
-pub const BranchElement: i16 = 10;
+pub const BRANCH_ELEMENT: i16 = 10;
 /// ROOT version for TBranchObject
-pub const BranchObject: i16 = 1;
+pub const BRANCH_OBJECT: i16 = 1;
 /// ROOT version for TBranchRef
-pub const BranchRef: i16 = 1;
+pub const BRANCH_REF: i16 = 1;
 // Chain                    = 5  // ROOT version for TChain
 /// ROOT version for TLeaf
+#[allow(non_upper_case_globals)]
 pub const Leaf: i16 = 2;
+#[allow(non_upper_case_globals)]
 pub const LeafElement: i16 = 1;
 // ROOT version for TLeafElement
+#[allow(non_upper_case_globals)]
 pub const LeafObject: i16 = 4;
 // ROOT version for TLeafObject
+#[allow(non_upper_case_globals)]
 pub const LeafO: i16 = 1;
 // ROOT version for TLeafO
+#[allow(non_upper_case_globals)]
 pub const LeafB: i16 = 1;
 // ROOT version for TLeafB
+#[allow(non_upper_case_globals)]
 pub const LeafS: i16 = 1;
 // ROOT version for TLeafS
 /// ROOT version for TLeafI
-pub const LeafI: i16 = 1;
-// LeafL                    = 1  // ROOT version for TLeafL
-// LeafF                    = 1  // ROOT version for TLeafF
-// LeafD                    = 1  // ROOT version for TLeafD
-// LeafF16                  = 1  // ROOT version for TLeafF16
-// LeafD32                  = 1  // ROOT version for TLeafD32
-// LeafC                    = 1  // ROOT version for TLeafC
+pub const LEAF_I: i16 = 1;
+#[allow(non_upper_case_globals)]
+pub const LeafL: i16 = 1;
+// ROOT version for TLeafL
+#[allow(non_upper_case_globals)]
+pub const LeafF: i16 = 1;
+// ROOT version for TLeafF
+#[allow(non_upper_case_globals)]
+pub const LeafD: i16 = 1;
+// ROOT version for TLeafD
+// #[allow(non_upper_case_globals)]
+// pub const LeafF16: i16 = 1; // ROOT version for TLeafF16
+// #[allow(non_upper_case_globals)]
+// pub const LeafD32: i16 = 1; // ROOT version for TLeafD32
+// #[allow(non_upper_case_globals)]
+// pub const LEAF_C: i16 = 1; // ROOT version for TLeafC
 // Ntuple                   = 2  // ROOT version for TNtuple
 // NtupleD                  = 1  // ROOT version for TNtupleD
 /// ROOT version for TTree
-pub const Tree: i16 = 20;
+pub const TREE: i16 = 20;

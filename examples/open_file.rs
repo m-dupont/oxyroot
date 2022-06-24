@@ -35,13 +35,14 @@ fn main() {
     println!("example of opening file");
 
     // let s = "/home/mdupont/Documents/DocumentsSync/soft/xpad_montecarlo_rust/old.root";
-    let s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/0/cernstaff.root";
-    let s =
+    let _s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/0/cernstaff.root";
+    let _s =
         "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/root-6.14.06/cernstaff.root";
-    let s =
+    let _s =
         "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/root-6.10.08/cernstaff.root";
 
-    let s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/1/cernstaff.root";
+    let _s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/1/cernstaff.root";
+    let s = "/tmp/rust/i16/o.root";
 
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s).unwrap();

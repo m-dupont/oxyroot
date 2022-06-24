@@ -62,15 +62,15 @@ impl traits::Named for ObjArray {
 
 impl Unmarshaler for ObjArray {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("ObjArray:unmarshal");
+        info!("OBJ_ARRAY:unmarshal");
 
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            hdr.vers <= rvers::ObjArray,
+            hdr.vers <= rvers::OBJ_ARRAY,
             "rcont: invalid TObjArray version={} > {}",
             hdr.vers,
-            rvers::ObjArray
+            rvers::OBJ_ARRAY
         );
 
         if hdr.vers > 2 {
@@ -85,7 +85,7 @@ impl Unmarshaler for ObjArray {
         self.low = r.read_i32()?;
 
         for i in 0..nobjs {
-            debug!("ObjArray:unmarshal: {}", i);
+            debug!("OBJ_ARRAY:unmarshal: {}", i);
             let obj = r.read_object_any_into()?;
             if obj.is_some() {
                 self.objs.push(obj.unwrap());

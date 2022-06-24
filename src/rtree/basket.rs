@@ -30,12 +30,12 @@ impl Basket {
 
 impl Unmarshaler for Basket {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("Basket:unmarshal, name = {}", self.name());
+        trace!("BASKET:unmarshal, name = {}", self.name());
 
         r.read_object(&mut self.key)?;
         let _vers = r.read_i16()?;
         let _buf_size = r.read_u32()?;
-        let _entry_size = r.read_u32()?;
+        let _entry_size = r.read_i32()?;
 
         if _entry_size < 0 {
             unimplemented!();
