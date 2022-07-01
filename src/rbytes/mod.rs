@@ -81,6 +81,13 @@ impl_unmarshaler_primitive!(f32);
 impl_unmarshaler_primitive!(f64);
 impl_unmarshaler_primitive!(bool);
 
+impl Unmarshaler for String {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        *self = r.read_string()?.to_string();
+        Ok(())
+    }
+}
+
 /// Automatically implemented if [Unmarshaler] is implemented
 pub trait UnmarshalerInto {
     type Item: Default + Unmarshaler;

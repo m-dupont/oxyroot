@@ -3,8 +3,6 @@ use chrono::Local;
 use env_logger::{Builder, Target, WriteStyle};
 use log::{error, trace, LevelFilter};
 use oxyroot::file::RootFile;
-use oxyroot::rbytes::rbuffer::RBuffer;
-use oxyroot::root::traits::Named;
 use std::io::Write;
 
 fn open_HZZ_root() -> Result<()> {
@@ -46,6 +44,50 @@ fn open_HZZ_root() -> Result<()> {
     Ok(())
 }
 
+fn open_simple_root() -> Result<()> {
+    let s = "examples/from_uproot/data/simple.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+
+    let one = tree
+        .get_branch("one")
+        .unwrap()
+        .get_basket_into::<i32>()
+        .collect::<Vec<_>>();
+
+    assert_eq!(one, [1, 2, 3, 4]);
+
+    let two = tree
+        .get_branch("two")
+        .unwrap()
+        .get_basket_into::<f32>()
+        .collect::<Vec<_>>();
+
+    assert_eq!(two, [1.1, 2.2, 3.3, 4.4]);
+
+    // let f = |r: &mut RBuffer| {
+    //     let val = r.read_string().unwrap().to_string();
+    //     println!("val = {:?}", val);
+    //     val
+    // };
+
+    let three = tree
+        .get_branch("three")
+        .unwrap()
+        .get_basket_into::<String>()
+        .collect::<Vec<_>>();
+
+    assert_eq!(three, ["uno", "dos", "tres", "quatro"]);
+
+    Ok(())
+}
+
 fn main() {
     let _stylish_logger = Builder::new()
         .filter(None, LevelFilter::Trace)
@@ -74,5 +116,6 @@ fn main() {
     error!("info");
     println!("example of opening file");
 
-    open_HZZ_root();
+    // open_HZZ_root().expect("NOOOO");
+    open_simple_root().expect("NOOOO");
 }

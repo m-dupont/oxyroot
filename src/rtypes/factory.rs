@@ -186,6 +186,7 @@ lazy_static! {
         crate::rtree::leaf::LeafL::register(&mut f);
         crate::rtree::leaf::LeafO::register(&mut f);
         crate::rtree::leaf::LeafS::register(&mut f);
+        crate::rtree::leaf::LeafC::register(&mut f);
         crate::rtree::leaf::LeafElement::register(&mut f);
 
 

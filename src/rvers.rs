@@ -172,8 +172,9 @@ pub const LeafD: i16 = 1;
 // pub const LeafF16: i16 = 1; // ROOT version for TLeafF16
 // #[allow(non_upper_case_globals)]
 // pub const LeafD32: i16 = 1; // ROOT version for TLeafD32
-// #[allow(non_upper_case_globals)]
-// pub const LEAF_C: i16 = 1; // ROOT version for TLeafC
+#[allow(non_upper_case_globals)]
+pub const LEAF_C: i16 = 1;
+// ROOT version for TLeafC
 // Ntuple                   = 2  // ROOT version for TNtuple
 // NtupleD                  = 1  // ROOT version for TNtupleD
 /// ROOT version for TTree

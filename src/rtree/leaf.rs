@@ -18,6 +18,7 @@ pub enum Leaf {
     B(LeafB),
     L(LeafL),
     O(LeafO),
+    C(LeafC),
 }
 
 impl Leaf {
@@ -39,6 +40,7 @@ impl<'a> From<&'a Leaf> for &'a TLeaf {
             Leaf::B(li) => &li.tleaf,
             Leaf::L(li) => &li.tleaf,
             Leaf::O(li) => &li.tleaf,
+            Leaf::C(li) => &li.tleaf,
         }
     }
 }
@@ -55,6 +57,7 @@ impl From<Leaf> for TLeaf {
             Leaf::B(li) => li.tleaf,
             Leaf::L(li) => li.tleaf,
             Leaf::O(li) => li.tleaf,
+            Leaf::C(li) => li.tleaf,
         }
     }
 }
@@ -70,6 +73,7 @@ impl From<Box<dyn FactoryItem>> for Leaf {
             "TLeafB" => Leaf::B(*obj.downcast::<LeafB>().unwrap()),
             "TLeafL" => Leaf::L(*obj.downcast::<LeafL>().unwrap()),
             "TLeafO" => Leaf::O(*obj.downcast::<LeafO>().unwrap()),
+            "TLeafC" => Leaf::C(*obj.downcast::<LeafC>().unwrap()),
             "TLeafElement" => Leaf::Element(*obj.downcast::<LeafElement>().unwrap()),
             &_ => todo!("Implement {}", obj.class()),
         }
@@ -197,6 +201,43 @@ impl Unmarshaler for LeafI {
 }
 
 factotry_all_for_register_impl!(LeafI, "TLeafI");
+
+#[derive(Default)]
+pub struct LeafC {
+    rvers: i16,
+    tleaf: TLeaf,
+    min: i32,
+    max: i32,
+    // ptr: &i32;
+}
+
+impl Unmarshaler for LeafC {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+        let hdr = r.read_header(self.class())?;
+        ensure!(
+            hdr.vers <= rvers::LEAF_C,
+            "rtree: invalid {} version={} > {}",
+            self.class(),
+            hdr.vers,
+            rvers::LEAF_C
+        );
+
+        self.rvers = hdr.vers;
+
+        r.read_object(&mut self.tleaf)?;
+
+        r.read_object(&mut self.min)?;
+        r.read_object(&mut self.max)?;
+
+        r.check_header(&hdr)?;
+
+        Ok(())
+
+        // todo!()
+    }
+}
+
+factotry_all_for_register_impl!(LeafC, "TLeafC");
 
 macro_rules! make_tleaf_variant {
     ($struct_name:ident, $root_name:literal, $field_type:ty) => {

@@ -385,30 +385,41 @@ impl TBranch {
         }
 
         Box::new(
-            izip!(&self.basket_seek, &self.basket_bytes, size_leaves).map(
-                |(start, len, chunk_size)| {
-                    trace!(
-                        "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size) = {}",
-                        *start as i64 + *len as i64,
-                        chunk_size
-                    );
-                    let mut reader = self.reader.as_ref().unwrap().clone();
-                    let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                    let mut r = RBuffer::new(&buf, 0);
-                    let b = r.read_object_into::<Basket>().unwrap();
-                    match b.raw_data(&mut reader) {
-                        BasketData::TrustNEntries((n, buf)) => {
-                            trace!("send ({n},{chunk_size},{{buf}})");
+            izip!(
+                &self.basket_seek,
+                &self.basket_bytes,
+                size_leaves,
+                &self.leaves
+            )
+            .map(|(start, len, chunk_size, leave)| {
+                trace!(
+                    "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {})",
+                    *start as i64 + *len as i64,
+                    chunk_size
+                );
+                let mut reader = self.reader.as_ref().unwrap().clone();
+                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                let mut r = RBuffer::new(&buf, 0);
+                let b = r.read_object_into::<Basket>().unwrap();
+                match b.raw_data(&mut reader) {
+                    BasketData::TrustNEntries((n, buf)) => {
+                        trace!("send ({n},{chunk_size},{:?})", buf);
+                        return (n, chunk_size, buf);
+                    }
+                    BasketData::UnTrustNEntries((n, buf)) => match leave {
+                        // In case of string, we have to use n
+                        Leaf::C(l) => {
+                            trace!("send ({n},{chunk_size},{:?})", buf);
                             return (n, chunk_size, buf);
                         }
-                        BasketData::UnTrustNEntries((n, buf)) => {
+                        _ => {
                             let n = buf.len() / chunk_size as usize;
-                            trace!("send ({n},{chunk_size},{{buf}})");
+                            trace!("send ({n},{chunk_size},{:?})", buf);
                             return (n as u32, chunk_size, buf);
                         }
-                    };
-                },
-            ),
+                    },
+                };
+            }),
         )
     }
 
