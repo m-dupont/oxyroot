@@ -22,11 +22,11 @@ fn open_HZZ_root() -> Result<()> {
 
     println!("entries = {}", tree.entries());
 
-    let mut Jet_Px = tree.get_branch("Jet_Px").unwrap().get_basket_into::<f32>();
-    let mut Jet_Py = tree.get_branch("Jet_Py").unwrap().get_basket_into::<f32>();
-    let mut Jet_Pz = tree.get_branch("Jet_Pz").unwrap().get_basket_into::<f32>();
+    let mut Jet_Px = tree.branch("Jet_Px").unwrap().get_basket_into::<f32>();
+    let mut Jet_Py = tree.branch("Jet_Py").unwrap().get_basket_into::<f32>();
+    let mut Jet_Pz = tree.branch("Jet_Pz").unwrap().get_basket_into::<f32>();
 
-    let NJet = tree.get_branch("NJet").unwrap().get_basket_into::<i32>();
+    let NJet = tree.branch("NJet").unwrap().get_basket_into::<i32>();
 
     NJet.take(3000).enumerate().for_each(|(n_entry, n)| {
         println!("n_entry = {n_entry}");
@@ -56,7 +56,7 @@ fn open_simple_root() -> Result<()> {
     let tree = tree.unwrap();
 
     let one = tree
-        .get_branch("one")
+        .branch("one")
         .unwrap()
         .get_basket_into::<i32>()
         .collect::<Vec<_>>();
@@ -64,7 +64,7 @@ fn open_simple_root() -> Result<()> {
     assert_eq!(one, [1, 2, 3, 4]);
 
     let two = tree
-        .get_branch("two")
+        .branch("two")
         .unwrap()
         .get_basket_into::<f32>()
         .collect::<Vec<_>>();
@@ -78,12 +78,69 @@ fn open_simple_root() -> Result<()> {
     // };
 
     let three = tree
-        .get_branch("three")
+        .branch("three")
         .unwrap()
         .get_basket_into::<String>()
         .collect::<Vec<_>>();
 
     assert_eq!(three, ["uno", "dos", "tres", "quatro"]);
+
+    Ok(())
+}
+
+fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+
+    for b in tree.branches() {
+        println!("branch = {}, entries = {}", b.name(), b.entries());
+
+        for bb in b.branches() {
+            println!("\tbranch = {}, entries = {}", bb.name(), bb.entries());
+
+            for bbb in bb.branches() {
+                println!("\t\tbranch = {}, entries = {}", bbb.name(), bbb.entries());
+            }
+        }
+    }
+
+    tree.branch("Beg")
+        .unwrap()
+        .get_basket_into::<String>()
+        .enumerate()
+        .for_each(|(i, s)| {
+            assert_eq!(s, format!("beg-{:03}", i));
+        });
+
+    tree.branch("P3")
+        .unwrap()
+        .get_basket(|r| {
+            let x = r.read_i32().unwrap();
+            let y = r.read_f64().unwrap();
+            let z = r.read_i32().unwrap();
+            (x, y, z)
+        })
+        .enumerate()
+        .for_each(|(i, (x, y, z))| {
+            // println!("x = {x} y = {y}");
+            let i = i as i32;
+            assert_eq!(x, i - 1);
+            assert_eq!(x, z);
+            assert_eq!(y, i as f64);
+        });
+
+    tree.branch("ArrayI16[10]").unwrap();
+
+    // println!("beg = {:?}", beg);
+
+    // let pytree.branch("P3.Px").unwrap().get_basket_into::<f32>();
 
     Ok(())
 }
@@ -117,5 +174,6 @@ fn main() {
     println!("example of opening file");
 
     // open_HZZ_root().expect("NOOOO");
-    open_simple_root().expect("NOOOO");
+    // open_simple_root().expect("NOOOO");
+    open_small_evnt_tree_fullsplit_root().expect("NOOOO");
 }

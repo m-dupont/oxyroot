@@ -375,7 +375,7 @@ impl Unmarshaler for StreamerBasicType {
         }
 
         if basic && self.element.arr_len > 0 {
-            todo!();
+            self.element.esize *= self.element.arr_len;
         }
 
         trace!("esize = {}", self.element.esize);
@@ -562,6 +562,32 @@ impl Unmarshaler for StreamerSTL {
         trace!("self.vtype = {:?}", self.vtype);
         trace!("self.ctype = {:?}", self.ctype);
 
+        r.check_header(&hdr)?;
+        Ok(())
+    }
+}
+
+#[derive(Default)]
+pub struct StreamerSTLstring {
+    streamer_stl: StreamerSTL,
+}
+
+factotry_all_for_register_impl!(StreamerSTLstring, "TStreamerSTLstring");
+
+impl Unmarshaler for StreamerSTLstring {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+        info!("StreamerSTLstring:unmarshal");
+
+        let hdr = r.read_header(self.class())?;
+        ensure!(
+            hdr.vers <= rvers::StreamerSTLstring,
+            "rcont: invalid {} version={} > {}",
+            self.class(),
+            hdr.vers,
+            rvers::StreamerSTLstring
+        );
+
+        r.read_object(&mut self.streamer_stl)?;
         r.check_header(&hdr)?;
         Ok(())
     }

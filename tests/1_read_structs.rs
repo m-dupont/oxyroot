@@ -52,7 +52,7 @@ fn read_int_struct() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         let sd = b.next().unwrap();

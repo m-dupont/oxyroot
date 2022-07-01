@@ -127,7 +127,7 @@ fn main() {
     };
 
     println!("###########");
-    let v_v: Vec<_> = tree.get_branch("v").unwrap().get_basket(fsd).collect();
+    let v_v: Vec<_> = tree.branch("v").unwrap().get_basket(fsd).collect();
 
     println!("v_v = {:?}", v_v);
 }

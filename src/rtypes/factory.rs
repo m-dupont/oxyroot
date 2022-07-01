@@ -171,6 +171,7 @@ lazy_static! {
         StreamerObjectAny::register(&mut f);
         StreamerBasicPointer::register(&mut f);
         crate::rdict::StreamerSTL::register(&mut f);
+        crate::rdict::StreamerSTLstring::register(&mut f);
         crate::rbase::ObjString::register(&mut f);
         crate::rbase::AttLine::register(&mut f);
         crate::rbase::AttFill::register(&mut f);

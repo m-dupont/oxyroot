@@ -8,6 +8,7 @@ use crate::{factotry_fn_register_impl, rvers};
 use anyhow::ensure;
 use log::trace;
 
+#[derive(Debug)]
 pub enum Leaf {
     Base(TLeaf),
     Element(LeafElement),
@@ -80,7 +81,7 @@ impl From<Box<dyn FactoryItem>> for Leaf {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct TLeaf {
     named: rbase::Named,
     shape: Vec<i32>,
@@ -165,7 +166,7 @@ impl Unmarshaler for TLeaf {
 
 factotry_fn_register_impl!(TLeaf, "TLeaf");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LeafI {
     rvers: i16,
     tleaf: TLeaf,
@@ -202,7 +203,7 @@ impl Unmarshaler for LeafI {
 
 factotry_all_for_register_impl!(LeafI, "TLeafI");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LeafC {
     rvers: i16,
     tleaf: TLeaf,
@@ -241,7 +242,7 @@ factotry_all_for_register_impl!(LeafC, "TLeafC");
 
 macro_rules! make_tleaf_variant {
     ($struct_name:ident, $root_name:literal, $field_type:ty) => {
-        #[derive(Default)]
+        #[derive(Default, Debug)]
         pub struct $struct_name {
             rvers: i16,
             tleaf: TLeaf,
@@ -288,7 +289,7 @@ make_tleaf_variant!(LeafD, "TLeafD", f64);
 make_tleaf_variant!(LeafO, "TLeafO", bool);
 
 /// LeafElement is a Leaf for a general object derived from OBJECT.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LeafElement {
     rvers: i16,
     tleaf: TLeaf,

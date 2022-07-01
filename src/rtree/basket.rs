@@ -10,6 +10,7 @@ pub struct Basket {
     key: crate::riofs::Key,
     n_entry_buf: u32,
     last: i32,
+    entry_size: i32,
 }
 
 impl Named for Basket {
@@ -34,6 +35,12 @@ impl Basket {
             self.border()
         );
 
+        trace!(
+            "basket: compressed_bytes = {} uncompressed_bytes = {}",
+            self.compressed_bytes(),
+            self.uncompressed_bytes()
+        );
+
         let mut ret = self.key.bytes(file, None).unwrap();
 
         if self.border() != self.uncompressed_bytes() {
@@ -48,9 +55,15 @@ impl Basket {
     pub fn uncompressed_bytes(&self) -> i32 {
         self.key.obj_len()
     }
+    pub fn compressed_bytes(&self) -> i32 {
+        self.key.n_bytes() - self.key.key_len()
+    }
 
     pub fn border(&self) -> i32 {
         self.last - self.key.key_len()
+    }
+    pub fn entry_size(&self) -> i32 {
+        self.entry_size
     }
 }
 
@@ -61,13 +74,17 @@ impl Unmarshaler for Basket {
         r.read_object(&mut self.key)?;
         let _vers = r.read_i16()?;
         let _buf_size = r.read_u32()?;
-        let _entry_size = r.read_i32()?;
+        self.entry_size = r.read_i32()?;
 
-        if _entry_size < 0 {
+        if self.entry_size < 0 {
             unimplemented!();
         }
 
-        trace!("_buf_size = {} _entry_size = {}", _buf_size, _entry_size);
+        trace!(
+            "_buf_size = {} _entry_size = {}",
+            _buf_size,
+            self.entry_size
+        );
 
         self.n_entry_buf = r.read_u32()?;
         self.last = r.read_i32()?;

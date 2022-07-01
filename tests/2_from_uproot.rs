@@ -12,12 +12,12 @@ fn open_nested() -> Result<()> {
     assert!(tree.is_some());
     let tree = tree.unwrap();
 
-    let NJet = tree.get_branch("NJet").unwrap().get_basket_into::<i32>();
+    let NJet = tree.branch("NJet").unwrap().get_basket_into::<i32>();
 
     let n = NJet.count();
     assert_eq!(n, 2421);
 
-    let mut Jet_Py = tree.get_branch("Jet_Py").unwrap().get_basket_into::<f32>();
+    let mut Jet_Py = tree.branch("Jet_Py").unwrap().get_basket_into::<f32>();
     assert_eq!(Jet_Py.count(), 2773);
 
     Ok(())
@@ -36,7 +36,7 @@ fn open_simple_root() -> Result<()> {
     let tree = tree.unwrap();
 
     let one = tree
-        .get_branch("one")
+        .branch("one")
         .unwrap()
         .get_basket_into::<i32>()
         .collect::<Vec<_>>();
@@ -44,7 +44,7 @@ fn open_simple_root() -> Result<()> {
     assert_eq!(one, [1, 2, 3, 4]);
 
     let two = tree
-        .get_branch("two")
+        .branch("two")
         .unwrap()
         .get_basket_into::<f32>()
         .collect::<Vec<_>>();
@@ -52,7 +52,7 @@ fn open_simple_root() -> Result<()> {
     assert_eq!(two, [1.1, 2.2, 3.3, 4.4]);
 
     let three = tree
-        .get_branch("three")
+        .branch("three")
         .unwrap()
         .get_basket_into::<String>()
         .collect::<Vec<_>>();

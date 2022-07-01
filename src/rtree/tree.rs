@@ -123,10 +123,14 @@ impl Tree {
         }
     }
 
-    pub fn get_branch(&self, name: &str) -> Option<&Branch> {
+    pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
             if b.name() == name {
                 return Some(b.into());
+            }
+
+            if let Some(bb) = b.branch(name) {
+                return Some(bb);
             }
         }
         None

@@ -83,7 +83,8 @@ pub const STREAMER_OBJECT_ANY: i16 = 2;
 pub const STREAMER_STRING: i16 = 2;
 /// ROOT version for TStreamerSTL
 pub const STREAMER_STL: i16 = 3;
-// StreamerSTLstring        = 2  // ROOT version for TStreamerSTLstring
+/// ROOT version for TStreamerSTLstring
+pub const StreamerSTLstring: i16 = 2;
 // StreamerArtificial       = 0  // ROOT version for TStreamerArtificial
 // Axis                     = 10 // ROOT version for TAxis
 // ConfidenceLevel          = 1  // ROOT version for TConfidenceLevel

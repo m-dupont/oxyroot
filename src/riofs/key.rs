@@ -318,4 +318,7 @@ impl Key {
     pub fn set_class(&mut self, class: &str) {
         self.class = class.to_string();
     }
+    pub fn n_bytes(&self) -> i32 {
+        self.n_bytes
+    }
 }

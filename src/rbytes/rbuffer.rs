@@ -153,7 +153,6 @@ impl<'a> RBuffer<'a> {
         for i in 0..arr.len() {
             arr[i] = self.read_i32()?;
         }
-
         Ok(())
     }
 

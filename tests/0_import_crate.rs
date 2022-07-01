@@ -22,7 +22,7 @@ fn read_i32_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i, b.next().unwrap());
@@ -46,7 +46,7 @@ fn read_u32_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i as u32, b.next().unwrap());
@@ -70,7 +70,7 @@ fn read_i16_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i, b.next().unwrap());
@@ -94,7 +94,7 @@ fn read_u16_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i as u16, b.next().unwrap());
@@ -118,7 +118,7 @@ fn read_i8_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i, b.next().unwrap());
@@ -142,7 +142,7 @@ fn read_i64_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i, b.next().unwrap());
@@ -166,7 +166,7 @@ fn read_f32_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i as f32, b.next().unwrap());
@@ -190,7 +190,7 @@ fn read_f64_branch() -> Result<()> {
     };
 
     let tree = temp.tree()?;
-    let mut b = tree.get_branch("v_i").unwrap().get_basket(parse);
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
         assert_eq!(i as f64, b.next().unwrap());
@@ -266,7 +266,7 @@ macro_rules! read_primitive_branch {
             temp.execute_macro()?;
 
             let tree = temp.tree()?;
-            let mut b = tree.get_branch("v_i").unwrap().get_basket_into::<$ftype>();
+            let mut b = tree.branch("v_i").unwrap().get_basket_into::<$ftype>();
 
             for i in -10..10 {
                 assert_eq!(i as $ftype, b.next().unwrap());

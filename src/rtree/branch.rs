@@ -64,6 +64,21 @@ impl Branch {
         b.entries()
     }
 
+    pub fn branches(&self) -> impl Iterator<Item = &Branch> {
+        match self {
+            Branch::Base(bb) => bb.branches(),
+            Branch::Element(be) => be.branch.branches(),
+        }
+    }
+
+    /// search in children branches
+    pub fn branch(&self, name: &str) -> Option<&Branch> {
+        match self {
+            Branch::Base(bb) => bb.branch(name),
+            Branch::Element(be) => be.branch.branch(name),
+        }
+    }
+
     pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
         match self {
             Branch::Base(bb) => bb.set_reader(Some(reader.unwrap().clone())),
@@ -346,17 +361,35 @@ where
         //     }
         // }
 
-        trace!(
-            "self.current_size = {:?}, self.nb_entries = {:?}",
-            self.current_size,
-            self.nb_entries
-        );
+        // trace!(
+        //     "self.current_size = {:?}, self.nb_entries = {:?}",
+        //     self.current_size,
+        //     self.nb_entries
+        // );
 
         return Some((0, size as i32, outbuf));
     }
 }
 
 impl TBranch {
+    pub fn branches(&self) -> impl Iterator<Item = &Branch> {
+        self.branches.iter().map(|b| b.into())
+    }
+
+    pub fn branch(&self, name: &str) -> Option<&Branch> {
+        for b in self.branches.iter() {
+            if b.name() == name {
+                return Some(b.into());
+            }
+
+            if let Some(bb) = b.branch(name) {
+                return Some(bb);
+            }
+        }
+
+        None
+    }
+
     pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
         for branch in self.branches.iter_mut() {
             branch.set_reader(Some(reader.as_ref().unwrap().clone()));
@@ -391,33 +424,46 @@ impl TBranch {
                 size_leaves,
                 &self.leaves
             )
-            .map(|(start, len, chunk_size, leave)| {
-                trace!(
-                    "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {})",
+                .map(|(start, len, mut chunk_size, leave)| {
+                    trace!(
+                    "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
                     *start as i64 + *len as i64,
-                    chunk_size
+                    chunk_size, leave
                 );
-                let mut reader = self.reader.as_ref().unwrap().clone();
-                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                let mut r = RBuffer::new(&buf, 0);
-                let b = r.read_object_into::<Basket>().unwrap();
-                match b.raw_data(&mut reader) {
-                    BasketData::TrustNEntries((n, buf)) => {
-                        trace!("send ({n},{chunk_size},{:?})", buf);
-                        return (n, chunk_size, buf);
-                    }
-                    BasketData::UnTrustNEntries((n, buf)) => match leave {
+                    let mut reader = self.reader.as_ref().unwrap().clone();
+                    let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                    let mut r = RBuffer::new(&buf, 0);
+                    let b = r.read_object_into::<Basket>().unwrap();
+
+
+                    trace!("chunk_size = {}, b.entry_size() = {}", chunk_size, b.entry_size());
+
+                    match leave {
                         // In case of string, we have to use n
-                        Leaf::C(l) => {
+                        Leaf::C(_) | Leaf::Element(_) => {
+                            chunk_size = b.entry_size();
+                        },
+                        _ => {}
+                    }
+
+
+                    match b.raw_data(&mut reader) {
+                        BasketData::TrustNEntries((n, buf)) => {
                             trace!("send ({n},{chunk_size},{:?})", buf);
                             return (n, chunk_size, buf);
                         }
-                        _ => {
-                            let n = buf.len() / chunk_size as usize;
-                            trace!("send ({n},{chunk_size},{:?})", buf);
-                            return (n as u32, chunk_size, buf);
-                        }
-                    },
+                        BasketData::UnTrustNEntries((n, buf)) => match leave {
+                            // In case of string, we have to use n
+                            Leaf::C(_) | Leaf::Element(_) => {
+                                trace!("send ({n},{chunk_size},{:?})", buf);
+                                return (n, chunk_size, buf);
+                            }
+                            _ => {
+                                let n = buf.len() / chunk_size as usize;
+                                trace!("send ({n},{chunk_size},{:?})", buf);
+                                return (n as u32, chunk_size, buf);
+                            }
+                        },
                 };
             }),
         )
