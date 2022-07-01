@@ -150,10 +150,6 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
             buf.map(|v| assert_eq!(v, i as i16));
         });
 
-    // println!("beg = {:?}", beg);
-
-    // let pytree.branch("P3.Px").unwrap().get_basket_into::<f32>();
-
     Ok(())
 }
 
