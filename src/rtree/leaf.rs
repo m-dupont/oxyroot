@@ -17,6 +17,7 @@ pub enum Leaf {
     F(LeafF),
     B(LeafB),
     L(LeafL),
+    O(LeafO),
 }
 
 impl Leaf {
@@ -37,6 +38,7 @@ impl<'a> From<&'a Leaf> for &'a TLeaf {
             Leaf::F(li) => &li.tleaf,
             Leaf::B(li) => &li.tleaf,
             Leaf::L(li) => &li.tleaf,
+            Leaf::O(li) => &li.tleaf,
         }
     }
 }
@@ -52,6 +54,7 @@ impl From<Leaf> for TLeaf {
             Leaf::F(li) => li.tleaf,
             Leaf::B(li) => li.tleaf,
             Leaf::L(li) => li.tleaf,
+            Leaf::O(li) => li.tleaf,
         }
     }
 }
@@ -66,6 +69,7 @@ impl From<Box<dyn FactoryItem>> for Leaf {
             "TLeafD" => Leaf::D(*obj.downcast::<LeafD>().unwrap()),
             "TLeafB" => Leaf::B(*obj.downcast::<LeafB>().unwrap()),
             "TLeafL" => Leaf::L(*obj.downcast::<LeafL>().unwrap()),
+            "TLeafO" => Leaf::O(*obj.downcast::<LeafO>().unwrap()),
             "TLeafElement" => Leaf::Element(*obj.downcast::<LeafElement>().unwrap()),
             &_ => todo!("Implement {}", obj.class()),
         }

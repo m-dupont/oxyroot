@@ -135,9 +135,9 @@ pub const BRANCH: i16 = 13;
 /// ROOT version for TBranchElement
 pub const BRANCH_ELEMENT: i16 = 10;
 /// ROOT version for TBranchObject
-pub const BRANCH_OBJECT: i16 = 1;
+// pub const BRANCH_OBJECT: i16 = 1;
 /// ROOT version for TBranchRef
-pub const BRANCH_REF: i16 = 1;
+// pub const BRANCH_REF: i16 = 1;
 // Chain                    = 5  // ROOT version for TChain
 /// ROOT version for TLeaf
 #[allow(non_upper_case_globals)]

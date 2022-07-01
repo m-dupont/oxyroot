@@ -18,9 +18,35 @@ impl Named for Basket {
     }
 }
 
+/// Sometimes n_entry_buf in basket does not correspond to number of entries in Basket
+/// The idea is to divide len of vec by the size chunck_size (in Tbranch)
+pub(crate) enum BasketData {
+    TrustNEntries((u32, Vec<u8>)),
+    UnTrustNEntries((u32, Vec<u8>)),
+}
+
 impl Basket {
-    pub fn raw_data(&self, file: &mut RootFileReader) -> (u32, Vec<u8>) {
-        (self.n_entry_buf, self.key.bytes(file, None).unwrap())
+    pub(crate) fn raw_data(&self, file: &mut RootFileReader) -> BasketData {
+        trace!("basket:  = {}", self.name());
+        trace!(
+            "basket: objlen = {} border = {}",
+            self.key.obj_len(),
+            self.border()
+        );
+
+        let mut ret = self.key.bytes(file, None).unwrap();
+
+        if self.border() != self.uncompressed_bytes() {
+            ret = ret[0..self.border() as usize].to_vec();
+            trace!("new len buf = {}", ret.len());
+            return BasketData::UnTrustNEntries((self.n_entry_buf, ret));
+        }
+
+        BasketData::TrustNEntries((self.n_entry_buf, ret))
+    }
+
+    pub fn uncompressed_bytes(&self) -> i32 {
+        self.key.obj_len()
     }
 
     pub fn border(&self) -> i32 {

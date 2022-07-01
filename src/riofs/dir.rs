@@ -175,7 +175,7 @@ impl TDirectoryFile {
 
         let key = match keys.len() {
             0 => {
-                unimplemented!()
+                bail!("No key {} in file '{}'", name, file);
             }
             1 => keys.remove(0),
             _ => {
@@ -218,6 +218,9 @@ impl TDirectoryFile {
         trace!("record size = {}", nbytes);
 
         nbytes
+    }
+    pub fn keys(&self) -> &Vec<Key> {
+        &self.keys
     }
 }
 

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -80,9 +80,16 @@ pub struct RootFileReader {
     reader: Option<BufReader<File>>,
 }
 
-impl Drop for RootFileReader {
-    fn drop(&mut self) {
-        debug!("Drop RootFileReader")
+// impl Drop for RootFileReader {
+//     fn drop(&mut self) {
+//         debug!("Drop RootFileReader")
+//     }
+// }
+
+impl Display for RootFileReader {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.path.to_str().unwrap())?;
+        Ok(())
     }
 }
 
@@ -376,6 +383,10 @@ impl RootFile {
         //
         //     Err(e) => e,
         // }
+    }
+
+    pub fn keys(&self) -> impl Iterator<Item = &str> {
+        self.dir.as_ref().unwrap().keys().iter().map(|e| e.name())
     }
 }
 

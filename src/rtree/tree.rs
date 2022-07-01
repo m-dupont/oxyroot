@@ -6,7 +6,7 @@ use crate::rbytes::Unmarshaler;
 use crate::rcont::objarray::ObjArray;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::rtree::branch::{Branch, TBranch};
+use crate::rtree::branch::Branch;
 use crate::rvers;
 use anyhow::{bail, ensure};
 use log::{debug, trace};
@@ -132,10 +132,13 @@ impl Tree {
         None
     }
 
-    pub fn branches(&self) -> impl Iterator<Item = &TBranch> {
+    pub fn branches(&self) -> impl Iterator<Item = &Branch> {
         // self.branches.iter().map()
 
         self.branches.iter().map(|b| b.into())
+    }
+    pub fn entries(&self) -> i64 {
+        self.entries
     }
 }
 

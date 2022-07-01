@@ -4,7 +4,7 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
 use crate::root::traits::{Named, Object};
-use crate::rtree::basket::Basket;
+use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
@@ -52,6 +52,16 @@ impl Branch {
     pub fn name(&self) -> &str {
         let b: &TBranch = self.into();
         b.name()
+    }
+
+    pub fn class(&self) -> &str {
+        let b: &TBranch = self.into();
+        b.class()
+    }
+
+    pub fn entries(&self) -> i64 {
+        let b: &TBranch = self.into();
+        b.entries()
     }
 
     pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
@@ -356,11 +366,13 @@ impl TBranch {
     }
 
     pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = (u32, i32, Vec<u8>)> + '_> {
+        trace!("We are in branch = {}", self.name());
         let mut size_leaves = self.leaves.iter().map(|e| e.etype()).collect::<Vec<_>>();
+
         trace!("leaves = {:?}", self.leaves.len());
 
         trace!(
-            "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size) = {:?}",
+            "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size = {:?})",
             &self.basket_seek,
             &self.basket_bytes,
             size_leaves
@@ -376,17 +388,25 @@ impl TBranch {
             izip!(&self.basket_seek, &self.basket_bytes, size_leaves).map(
                 |(start, len, chunk_size)| {
                     trace!(
-                        "get_baskets_buffer: (start = {}, len = {}, chunk_size) = {}",
-                        start,
-                        len,
+                        "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size) = {}",
+                        *start as i64 + *len as i64,
                         chunk_size
                     );
                     let mut reader = self.reader.as_ref().unwrap().clone();
                     let buf = reader.read_at(*start as u64, *len as u64).unwrap();
                     let mut r = RBuffer::new(&buf, 0);
                     let b = r.read_object_into::<Basket>().unwrap();
-                    let (n, buf) = b.raw_data(&mut reader);
-                    (n, chunk_size, buf)
+                    match b.raw_data(&mut reader) {
+                        BasketData::TrustNEntries((n, buf)) => {
+                            trace!("send ({n},{chunk_size},{{buf}})");
+                            return (n, chunk_size, buf);
+                        }
+                        BasketData::UnTrustNEntries((n, buf)) => {
+                            let n = buf.len() / chunk_size as usize;
+                            trace!("send ({n},{chunk_size},{{buf}})");
+                            return (n as u32, chunk_size, buf);
+                        }
+                    };
                 },
             ),
         )
@@ -456,101 +476,10 @@ impl TBranch {
             b
         };
 
-        // return it;
-
         return it;
-        // .map(|a| a as dyn Iterator<Item = (u32, i32, Vec<u8>)>)
-        // .map(move |(n, chunk_size, buf)| {
-        //     let mut r = RBuffer::new(&buf, 0);
-        //     trace!("buf = {:?}", buf);
-        //     trace!("buf.len = {} n = {}", buf.len(), n);
-        //     let size = buf.len() / n as usize;
-        //     let mut v = Vec::new();
-        //     for i in 0..n {
-        //         v.push(func(&mut r));
-        //     }
-        //     v
-        // })
-        // .flatten();
-        // .for_each(drop);
-
-        // self.get_baskets_buffer()
-        //     .map(move |(n, chunk_size, buf)| {
-        //         let mut r = RBuffer::new(&buf, 0);
-        //         trace!("buf = {:?}", buf);
-        //         trace!("buf.len = {} n = {}", buf.len(), n);
-        //         let size = buf.len() / n as usize;
-        //         let mut v = Vec::new();
-        //         for i in 0..n {
-        //             v.push(func(&mut r));
-        //         }
-        //         v
-        //     })
-        //     .flatten()
-
-        // self.basket_seek
-        //     .iter()
-        //     .zip(&self.basket_bytes)
-        //     .map(move |(start, len)| {
-        //         let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-        //         let mut r = RBuffer::new(&buf, 0);
-        //         let b = r.read_object_into::<BASKET>().unwrap();
-        //         let (n, buf) = b.raw_data(&mut reader);
-        //         let mut r = RBuffer::new(&buf, 0);
-        //
-        //         trace!("buf = {:?}", buf);
-        //
-        //         trace!("buf.len = {} n = {}", buf.len(), n);
-        //
-        //         // let buf = buf.take(..n)
-        //
-        //         let size = buf.len() / n as usize;
-        //         // buf.chunks(size)
-        //         //     .map(|b| {
-        //         //         let mut r = RBuffer::new(b, 0);
-        //         //         func(&mut r)
-        //         //     })
-        //         //     .collect::<Vec<_>>()
-        //         let mut v = Vec::new();
-        //         for i in 0..n {
-        //             v.push(func(&mut r));
-        //         }
-        //
-        //         v
-        //     })
-        //     .flatten()
-
-        // self.basket_seek
-        //     .iter()
-        //     .zip(&self.basket_bytes)
-        //     .map(move |(start, len)| {
-        //         let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-        //         let mut r = RBuffer::new(&buf, 0);
-        //         let b = r.read_object_into::<BASKET>().unwrap();
-        //         let (n, buf) = b.raw_data(&mut reader);
-        //         let mut r = RBuffer::new(&buf, 0);
-        //
-        //         trace!("buf = {:?}", buf);
-        //
-        //         trace!("buf.len = {} n = {}", buf.len(), n);
-        //
-        //         // let buf = buf.take(..n)
-        //
-        //         let size = buf.len() / n as usize;
-        //         // buf.chunks(size)
-        //         //     .map(|b| {
-        //         //         let mut r = RBuffer::new(b, 0);
-        //         //         func(&mut r)
-        //         //     })
-        //         //     .collect::<Vec<_>>()
-        //         let mut v = Vec::new();
-        //         for i in 0..n {
-        //             v.push(func(&mut r));
-        //         }
-        //
-        //         v
-        //     })
-        //     .flatten()
+    }
+    pub fn entries(&self) -> i64 {
+        self.entries
     }
 }
 

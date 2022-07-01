@@ -53,7 +53,7 @@ fn main() {
     let tree = tree.unwrap();
 
     for b in tree.branches() {
-        println!("branch = {}", b.name());
+        println!("branch = {}, class = {}", b.name(), b.class());
     }
 
     // let branch = tree.get_branch("Category").unwrap();
