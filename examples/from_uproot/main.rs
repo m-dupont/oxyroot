@@ -136,7 +136,19 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
             assert_eq!(y, i as f64);
         });
 
-    tree.branch("ArrayI16[10]").unwrap();
+    tree.branch("ArrayI16[10]")
+        .unwrap()
+        .get_basket(move |r| {
+            let mut buf = [0 as i16; 10];
+            r.read_array_i16(&mut buf).unwrap();
+            buf
+            // buf.to_vec()
+        })
+        .enumerate()
+        .for_each(|(i, buf)| {
+            // println!("buf = {:?}", buf);
+            buf.map(|v| assert_eq!(v, i as i16));
+        });
 
     // println!("beg = {:?}", beg);
 

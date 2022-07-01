@@ -143,6 +143,13 @@ impl<'a> RBuffer<'a> {
         Ok(i16::from_be_bytes(buf))
     }
 
+    pub fn read_array_i16(&mut self, arr: &mut [i16]) -> Result<()> {
+        for i in 0..arr.len() {
+            arr[i] = self.read_i16()?;
+        }
+        Ok(())
+    }
+
     pub fn read_i32(&mut self) -> Result<i32> {
         const SIZE: usize = size_of::<i32>();
         let buf = self.r.extract_as_array::<SIZE>()?;
