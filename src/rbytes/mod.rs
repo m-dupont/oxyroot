@@ -2,6 +2,7 @@ use crate::rdict::StreamerInfo;
 use crate::root;
 use anyhow::Result;
 use rbuffer::RBuffer;
+use std::mem;
 
 pub mod consts;
 pub mod rbuffer;
@@ -84,6 +85,20 @@ impl_unmarshaler_primitive!(bool);
 impl Unmarshaler for String {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         *self = r.read_string()?.to_string();
+        Ok(())
+    }
+}
+
+impl<T> Unmarshaler for Vec<T>
+where
+    T: UnmarshalerInto<Item = T>,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        let mut len = r.len() as usize;
+        while len > 0 {
+            self.push(r.read_object_into::<T>().unwrap());
+            len -= mem::size_of::<T>();
+        }
         Ok(())
     }
 }

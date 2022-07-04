@@ -3,7 +3,9 @@ use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
+use itertools::{IntoChunks, Itertools};
 use log::trace;
+use std::slice::Iter;
 
 #[derive(Default)]
 pub struct Basket {
@@ -23,7 +25,7 @@ impl Named for Basket {
 /// The idea is to divide len of vec by the size chunck_size (in Tbranch)
 pub(crate) enum BasketData {
     TrustNEntries((u32, Vec<u8>)),
-    UnTrustNEntries((u32, Vec<u8>)),
+    UnTrustNEntries((u32, Vec<u8>, Vec<i32>)),
 }
 
 impl Basket {
@@ -42,11 +44,36 @@ impl Basket {
         );
 
         let mut ret = self.key.bytes(file, None).unwrap();
+        trace!("len buf = {}", ret.len());
 
         if self.border() != self.uncompressed_bytes() {
-            ret = ret[0..self.border() as usize].to_vec();
-            trace!("new len buf = {}", ret.len());
-            return BasketData::UnTrustNEntries((self.n_entry_buf, ret));
+            // data = ret[0..self.border() as usize].to_vec();
+            // byte_offsets = ret[self.border() as usize..];
+
+            let (data, byte_offsets) = ret.split_at(self.border() as usize);
+
+            let mut byte_offsets: Vec<_> = byte_offsets
+                .chunks(4)
+                .map(|x| i32::from_be_bytes(x.try_into().unwrap()) - self.key.key_len())
+                .skip(1)
+                .collect();
+
+            let last = byte_offsets.len() - 1;
+            byte_offsets[last] = self.border();
+
+            // let x: IntoChunks<Iter<u8>>;
+            // x.into()
+
+            // let byte_offsets = byte_offsets;
+
+            trace!("byte_offsets = {:?}", byte_offsets);
+
+            trace!(
+                "new len buf = {}, len byte_offsets = {}",
+                data.len(),
+                byte_offsets.len()
+            );
+            return BasketData::UnTrustNEntries((self.n_entry_buf, data.to_vec(), byte_offsets));
         }
 
         BasketData::TrustNEntries((self.n_entry_buf, ret))

@@ -237,14 +237,18 @@ impl Key {
             trace!("load, is_compressed");
             let start = self.seek_key as u64 + self.key_len as u64;
             let sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
-            // trace!("sr[0..16] = {:?}", &sr[0..16]);
+            trace!("sr[0..16] = {:?}", &sr[0..16]);
 
-            if let Ok(_) = rcompress::decompress(&mut buf, &sr) {
-                // trace!("buf = {:?}..", &buf[0..16]);
-                return Ok(buf);
-            } else {
-                return Err(anyhow!("riofs: could not decompress key payload"));
-            }
+            rcompress::decompress(&mut buf, &sr)?;
+
+            return Ok(buf);
+
+            // if let Ok(_) = rcompress::decompress(&mut buf, &sr) {
+            //     // trace!("buf = {:?}..", &buf[0..16]);
+            //     return Ok(buf);
+            // } else {
+            //     return Err(anyhow!("riofs: could not decompress key payload"));
+            // }
 
             // trace!("buf = ..{:?}", buf.iter().rev().collect::<u8>()[0..100]);
         }

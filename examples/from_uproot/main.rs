@@ -4,6 +4,7 @@ use env_logger::{Builder, Target, WriteStyle};
 use log::{error, trace, LevelFilter};
 use oxyroot::file::RootFile;
 use std::io::Write;
+use std::mem;
 
 fn open_HZZ_root() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
@@ -138,7 +139,7 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
 
     tree.branch("ArrayI16[10]")
         .unwrap()
-        .get_basket(move |r| {
+        .get_basket(|r| {
             let mut buf = [0 as i16; 10];
             r.read_array_i16(&mut buf).unwrap();
             buf
@@ -148,6 +149,57 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
         .for_each(|(i, buf)| {
             // println!("buf = {:?}", buf);
             buf.map(|v| assert_eq!(v, i as i16));
+        });
+
+    tree.branch("StlVecI16")
+        .unwrap()
+        .get_basket_into::<Vec<i16>>()
+        .enumerate()
+        .for_each(|(i, val)| println!("StlVecI16: i = {i} val = {:?}", val));
+
+    tree.branch("StlVecStr")
+        .unwrap()
+        .get_basket_into::<Vec<String>>()
+        .enumerate()
+        .for_each(|(i, val)| println!("StlVecStr: i = {i} val = {:?}", val));
+
+    Ok(())
+}
+
+fn tree_with_jagged_array() -> Result<()> {
+    let s = "examples/from_uproot/data/tree_with_jagged_array.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("t1")?.unwrap();
+    // let tree = tree.unwrap();
+
+    tree.branch("int32_array")
+        .unwrap()
+        .get_basket(|r| {
+            let mut len = r.len() as usize;
+            let mut ret: Vec<i32> = Vec::new();
+            while len > 0 {
+                ret.push(r.read_i32().unwrap());
+                len -= mem::size_of::<i32>();
+            }
+
+            ret
+        })
+        .enumerate()
+        .for_each(|(i, val)| {
+            assert_eq!(val.len(), i % 10);
+            // prinytln!("StlVecI16: i = {i} val = {:?}, {}", val, i - i % 10);
+
+            val.iter()
+                .enumerate()
+                .map(|(j, v)| {
+                    assert_eq!(*v, (i - i % 10 + j) as i32);
+                })
+                .for_each(drop);
         });
 
     Ok(())
@@ -184,4 +236,5 @@ fn main() {
     // open_HZZ_root().expect("NOOOO");
     // open_simple_root().expect("NOOOO");
     open_small_evnt_tree_fullsplit_root().expect("NOOOO");
+    // tree_with_jagged_array().expect("NOOOO");
 }
