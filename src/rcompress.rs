@@ -1,6 +1,8 @@
 use anyhow::Result;
 use flate2::read::ZlibDecoder;
 use log::trace;
+use lz4::block::decompress_to_buffer as LZ4_decompress_to_buffer;
+use lz4::Decoder as LZ4Decoder;
 use std::io::Read;
 use xz2::read::XzDecoder;
 
@@ -81,7 +83,10 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
                 unimplemented!()
             }
             Kind::LZ4 => {
-                unimplemented!()
+                LZ4_decompress_to_buffer(&src[8..], Some(dst.len() as i32), dst.as_mut())?;
+                return Ok(0);
+                // let mut d = LZ4Decoder::new(src)?;
+                // d.read_exact(dst.as_mut())?;
             }
             Kind::ZSTD => {
                 unimplemented!()
