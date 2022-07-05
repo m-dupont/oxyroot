@@ -64,6 +64,67 @@ fn open_simple_root() -> Result<()> {
 }
 
 #[test]
+fn open_tree_with_string() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+    tree.branch("Beg")
+        .unwrap()
+        .get_basket_into::<String>()
+        .enumerate()
+        .for_each(|(i, s)| {
+            assert_eq!(s, format!("beg-{:03}", i));
+        });
+
+    tree.branch("End")
+        .unwrap()
+        .get_basket_into::<String>()
+        .enumerate()
+        .for_each(|(i, s)| {
+            assert_eq!(s, format!("end-{:03}", i));
+        });
+
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_struct_P3() -> Result<()> {
+    // P3 <=> P3 { x: i32, y: f64, z: i32}
+    // Stored in three branches P3.x, P3.y, and P3.z
+    // tree.branch("P3") will zip the three branches
+
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+    tree.branch("P3")
+        .unwrap()
+        .get_basket(|r| {
+            let x = r.read_i32().unwrap();
+            let y = r.read_f64().unwrap();
+            let z = r.read_i32().unwrap();
+            (x, y, z)
+        })
+        .enumerate()
+        .for_each(|(i, (x, y, z))| {
+            // println!("x = {x} y = {y}");
+            let i = i as i32;
+            assert_eq!(x, i - 1);
+            assert_eq!(x, z);
+            assert_eq!(y, i as f64);
+        });
+
+    Ok(())
+}
+
+#[test]
 fn open_tree_with_vector_parse() -> Result<()> {
     let s = "examples/from_uproot/data/tree_with_jagged_array.root";
 
@@ -119,6 +180,35 @@ fn open_tree_with_vector_into() -> Result<()> {
                 })
                 .for_each(drop);
         });
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_vector_of_string() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+
+    tree.branch("StlVecStr")
+        .unwrap()
+        .get_basket_into::<Vec<String>>()
+        .enumerate()
+        .for_each(|(i, val)| {
+            println!("StlVecStr: i = {i} val = {:?}", val);
+            assert_eq!(val.len(), i % 10);
+
+            val.into_iter()
+                .map(|v| {
+                    assert_eq!(v, format!("vec-{:03}", i));
+                })
+                .for_each(drop)
+        });
+
     Ok(())
 }
 

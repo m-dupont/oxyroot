@@ -163,6 +163,18 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
         .enumerate()
         .for_each(|(i, val)| println!("StlVecStr: i = {i} val = {:?}", val));
 
+    tree.branch("End")
+        .unwrap()
+        .get_basket_into::<String>()
+        .enumerate()
+        .for_each(|(i, val)| println!("End: i = {i} val = {:?}", val));
+
+    tree.branch("SliceI16")
+        .unwrap()
+        .get_basket_into::<Vec<i16>>()
+        .enumerate()
+        .for_each(|(i, val)| println!("SliceI16: i = {i} val = {:?}", val));
+
     Ok(())
 }
 
@@ -235,6 +247,6 @@ fn main() {
 
     // open_HZZ_root().expect("NOOOO");
     // open_simple_root().expect("NOOOO");
-    open_small_evnt_tree_fullsplit_root().expect("NOOOO");
-    // tree_with_jagged_array().expect("NOOOO");
+    // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
+    tree_with_jagged_array().expect("NOOOO");
 }

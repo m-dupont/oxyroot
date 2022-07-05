@@ -129,14 +129,6 @@ impl Branch {
                 .map(move |(_n, _chunk_size, buf)| {
                     let mut r = RBuffer::new(&buf, 0);
                     func(&mut r)
-                    // trace!("buf = {:?}", buf);
-                    // trace!("buf.len = {} n = {}", buf.len(), n);
-                    // let size = buf.len() / n as usize;
-                    // let mut v = Vec::new();
-                    // for i in 0..n {
-                    //     v.push(func(&mut r));
-                    // }
-                    // v
                 }),
             );
             b
@@ -743,6 +735,10 @@ impl TBranchElement {
         self.stype
     }
 
+    pub fn stl_type(&self) -> i32 {
+        self.stltyp
+    }
+
     pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         trace!("We are in branch = {}", self.name());
         let mut size_leaves = self
@@ -809,15 +805,11 @@ impl TBranchElement {
                                 return BranchChunks::RegularSized((n, chunk_size, buf));
                             },
                             Leaf::Element(_) => {
-                                trace!("classname = {} streamer_type = {}", self.class(), self.streamer_type());
+                                trace!("classname = {} streamer_type = {}, stl_type = {}", self.class(), self.streamer_type(), self.stl_type());
 
-                                let header_bytes = match self.streamer_type() {
-                                    streamer_type::kTString => 0,
-                                    streamer_type::kSTL => 10,
-                                    -1 => 10,
-                                    _ => 0
-                                };
+                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type());
 
+                                trace!("header_bytes = {}", header_bytes);
                                 trace!("buf = {:?}", buf);
 
                                 let byte_offsets: Vec<_> = byte_offsets.iter().map(|o| o + header_bytes).zip(byte_offsets.iter().skip(1)).collect();

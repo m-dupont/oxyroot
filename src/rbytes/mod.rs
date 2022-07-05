@@ -2,7 +2,6 @@ use crate::rdict::StreamerInfo;
 use crate::root;
 use anyhow::Result;
 use rbuffer::RBuffer;
-use std::mem;
 
 pub mod consts;
 pub mod rbuffer;
@@ -96,8 +95,10 @@ where
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         let mut len = r.len() as usize;
         while len > 0 {
+            let before = r.pos();
             self.push(r.read_object_into::<T>().unwrap());
-            len -= mem::size_of::<T>();
+            let after = r.pos();
+            len -= (after - before) as usize;
         }
         Ok(())
     }

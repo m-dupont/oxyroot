@@ -2,7 +2,6 @@ use anyhow::Result;
 use flate2::read::ZlibDecoder;
 use log::trace;
 use lz4::block::decompress_to_buffer as LZ4_decompress_to_buffer;
-use lz4::Decoder as LZ4Decoder;
 use std::io::Read;
 use xz2::read::XzDecoder;
 

@@ -3,9 +3,8 @@ use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
-use itertools::{IntoChunks, Itertools};
+use itertools::Itertools;
 use log::trace;
-use std::slice::Iter;
 
 #[derive(Default)]
 pub struct Basket {
