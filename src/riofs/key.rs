@@ -297,7 +297,7 @@ impl Key {
 
         // self.objarr = *objs.downcast::<rcont::objarray::OBJ_ARRAY>().unwrap();
 
-        trace!("class = {}", self.class);
+        trace!("class = {} vv class = {}", self.class, vv.class());
 
         self.obj = Some(vv);
 

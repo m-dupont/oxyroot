@@ -1,6 +1,8 @@
 use anyhow::Result;
+use oxyroot::rbytes::UnmarshalerInto;
 use oxyroot::RootFile;
 use regex::internal::Input;
+use std::fmt::Debug;
 use std::mem;
 
 #[test]
@@ -92,7 +94,27 @@ fn open_tree_with_string() -> Result<()> {
 }
 
 #[test]
-fn open_tree_with_struct_P3() -> Result<()> {
+fn open_tree_with_stl_string() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+    tree.branch("StdStr")
+        .unwrap()
+        .get_basket_into::<String>()
+        .enumerate()
+        .for_each(|(i, s)| {
+            assert_eq!(s, format!("std-{:03}", i));
+        });
+
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_struct_p3() -> Result<()> {
     // P3 <=> P3 { x: i32, y: f64, z: i32}
     // Stored in three branches P3.x, P3.y, and P3.z
     // tree.branch("P3") will zip the three branches
@@ -148,8 +170,6 @@ fn open_tree_with_vector_parse() -> Result<()> {
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
-            // prinytln!("StlVecI16: i = {i} val = {:?}, {}", val, i - i % 10);
-
             val.iter()
                 .enumerate()
                 .map(|(j, v)| {
@@ -180,6 +200,34 @@ fn open_tree_with_vector_into() -> Result<()> {
                 })
                 .for_each(drop);
         });
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_slice_i16() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+
+    tree.branch("SliceI16")
+        .unwrap()
+        .get_basket_into::<Vec<i16>>()
+        .enumerate()
+        .for_each(|(i, val)| {
+            assert_eq!(val.len(), i % 10);
+
+            val.into_iter()
+                .map(|v| {
+                    assert_eq!(v, i as i16);
+                })
+                .for_each(drop)
+        });
+
     Ok(())
 }
 
@@ -238,3 +286,73 @@ fn tree_with_array() -> Result<()> {
 
     Ok(())
 }
+
+fn open_tree_with_vector_primitive<T>(name_branch: &str) -> Result<()>
+where
+    T: UnmarshalerInto<Item = T> + Debug + PartialEq + TryFrom<u8>,
+    <T as TryFrom<u8>>::Error: Debug,
+{
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    let mut f = RootFile::open(s)?;
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("tree")?.unwrap();
+    tree.branch(name_branch)
+        .unwrap()
+        .get_basket_into::<Vec<T>>()
+        .enumerate()
+        .for_each(|(i, val)| {
+            assert_eq!(val.len(), i % 10);
+            val.iter()
+                .enumerate()
+                .map(|(j, v)| {
+                    let calcul = i as u8;
+                    let calcul = T::try_from(calcul).unwrap();
+                    assert_eq!(*v, calcul);
+                })
+                .for_each(drop);
+        });
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_vector_i16() -> Result<()> {
+    open_tree_with_vector_primitive::<i16>("StlVecI16")
+}
+
+#[test]
+fn open_tree_with_vector_u16() -> Result<()> {
+    open_tree_with_vector_primitive::<u16>("StlVecU16")
+}
+
+#[test]
+fn open_tree_with_vector_i32() -> Result<()> {
+    open_tree_with_vector_primitive::<i32>("StlVecI32")
+}
+
+#[test]
+fn open_tree_with_vector_u32() -> Result<()> {
+    open_tree_with_vector_primitive::<u32>("StlVecU32")
+}
+
+#[test]
+fn open_tree_with_vector_i64() -> Result<()> {
+    open_tree_with_vector_primitive::<i64>("StlVecI64")
+}
+
+#[test]
+fn open_tree_with_vector_u64() -> Result<()> {
+    open_tree_with_vector_primitive::<u64>("StlVecU64")
+}
+
+#[test]
+fn open_tree_with_vector_f32() -> Result<()> {
+    open_tree_with_vector_primitive::<f32>("StlVecF32")
+}
+
+#[test]
+fn open_tree_with_vector_f64() -> Result<()> {
+    open_tree_with_vector_primitive::<f64>("StlVecF64")
+}
+
+//

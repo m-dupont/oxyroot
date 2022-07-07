@@ -2,6 +2,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::StreamerInfoContext;
@@ -333,17 +334,26 @@ impl RootFile {
 
         let ogj = si_key.object(&mut self.inner.reader, None)?.unwrap();
 
-        let mut objs = ogj.downcast::<List>().unwrap();
+        let mut objs: Box<List> = ogj.downcast::<List>().unwrap();
+        trace!("len of objs = {}", objs.len());
 
-        for i in objs.len()..0 {
-            debug!(" i = {i}");
+        for i in (0..objs.len()).rev() {
             let obj = objs.at(i);
+            debug!(" i = {i}, class = {}", obj.class());
 
-            let obj = obj.downcast::<StreamerInfo>().unwrap();
-
-            self.sinfos.push(*obj);
-
-            // todo!()
+            if obj.class() == "TStreamerInfo" {
+                let obj: Box<StreamerInfo> = obj.downcast::<StreamerInfo>().unwrap();
+                trace!("obj.name = {}", obj.name());
+                self.sinfos.push(*obj);
+            } else {
+                let mut list: Box<List> = obj.downcast::<List>().unwrap();
+                for j in (0..list.len()).rev() {
+                    let jobj = list.at(j);
+                    debug!("\tj = {j}, class = {}", jobj.class());
+                    // let obj: Box<StreamerInfo> = jobj.downcast::<StreamerInfo>().unwrap();
+                    // trace!("\tobj.name = {}", obj.name());
+                }
+            }
         }
 
         Ok(())
@@ -370,19 +380,8 @@ impl RootFile {
         let objet = self.get_object(name)?;
         let mut objet: Tree = *objet.downcast::<Tree>().unwrap();
         objet.set_reader(Some(self.inner.reader.clone()));
+        objet.set_streamer_info(self.sinfos.clone());
         Ok(Some(objet))
-
-        // match self.get_object(name) {
-        //     Ok(obj) => match obj.downcast::<TREE>() {
-        //         Ok(mut o) => {
-        //             (*o).set_reader(Some(self.inner.reader.clone()));
-        //             Ok(Some(*o))
-        //         }
-        //         Err(e) => bail!(" Can not retreive TTree because : {e} "),
-        //     },
-        //
-        //     Err(e) => e,
-        // }
     }
 
     pub fn keys(&self) -> impl Iterator<Item = &str> {
@@ -390,22 +389,39 @@ impl RootFile {
     }
 }
 
-#[derive(Default)]
-pub struct RootFileStreamerInfoContext(Vec<StreamerInfo>);
+#[derive(Default, Clone)]
+pub struct RootFileStreamerInfoContext {
+    list: Rc<Vec<StreamerInfo>>,
+}
 
 impl RootFileStreamerInfoContext {
     pub fn push(&mut self, info: StreamerInfo) {
-        self.0.push(info);
+        let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
+        v.push(info);
+
+        trace!("len = {}", self.list.len());
+    }
+    pub fn list(&self) -> &Rc<Vec<StreamerInfo>> {
+        &self.list
+    }
+
+    pub fn get(&self, name: &str) -> Option<&StreamerInfo> {
+        for streamer in self.list().iter().rev() {
+            if streamer.name() == name {
+                return Some(streamer);
+            }
+        }
+        None
     }
 }
 
 impl StreamerInfoContext for RootFileStreamerInfoContext {
     fn streamer_info(&self, name: &str, _version: i32) -> Option<&StreamerInfo> {
-        if self.0.len() == 0 {
+        if self.list.len() == 0 {
             return None;
         }
 
-        for si in self.0.iter() {
+        for si in self.list.iter() {
             if si.name() == name {
                 return Some(si);
             }

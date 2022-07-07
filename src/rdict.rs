@@ -2,7 +2,8 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
-use crate::{factotry_all_for_register_impl, rbase};
+use crate::{factotry_all_for_register_impl, factotry_fn_register_impl, rbase};
+use anyhow::bail;
 use anyhow::ensure;
 use log::{info, trace};
 
@@ -17,15 +18,104 @@ use crate::root::traits::Object;
 use crate::rtypes::factory::FactoryItem;
 use crate::rvers;
 
+pub enum Streamer {
+    String(StreamerString),
+    STLstring(StreamerSTLstring),
+    BasicType(StreamerBasicType),
+    BasicPointer(StreamerBasicPointer),
+    ObjectAny(StreamerObjectAny),
+    STL(StreamerSTL),
+    Base(StreamerBase),
+    Object(StreamerObject),
+    ObjectPointer(StreamerObjectPointer),
+}
+
+impl TryFrom<Box<dyn FactoryItem>> for Streamer {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Box<dyn FactoryItem>) -> anyhow::Result<Self> {
+        let ret = match value.class() {
+            "TStreamerBasicType" => {
+                Streamer::BasicType(*value.downcast::<StreamerBasicType>().unwrap())
+            }
+            "TStreamerString" => Streamer::String(*value.downcast::<StreamerString>().unwrap()),
+            "TStreamerSTL" => Streamer::STL(*value.downcast::<StreamerSTL>().unwrap()),
+            "TStreamerBase" => Streamer::Base(*value.downcast::<StreamerBase>().unwrap()),
+            "TStreamerObject" => Streamer::Object(*value.downcast::<StreamerObject>().unwrap()),
+            "TStreamerObjectPointer" => {
+                Streamer::ObjectPointer(*value.downcast::<StreamerObjectPointer>().unwrap())
+            }
+            "TStreamerSTLstring" => {
+                Streamer::STLstring(*value.downcast::<StreamerSTLstring>().unwrap())
+            }
+            "TStreamerBasicPointer" => {
+                Streamer::BasicPointer(*value.downcast::<StreamerBasicPointer>().unwrap())
+            }
+            "TStreamerObjectAny" => {
+                Streamer::ObjectAny(*value.downcast::<StreamerObjectAny>().unwrap())
+            }
+            _ => anyhow::bail!("Unknow type or write code for {}", value.class()),
+        };
+        Ok(ret)
+    }
+}
+
+impl Streamer {
+    fn name(&self) -> &'_ str {
+        match self {
+            Streamer::String(a) => a.element.name(),
+            Streamer::STLstring(a) => a.streamer_stl.element.name(),
+            Streamer::BasicType(a) => a.element.name(),
+            Streamer::BasicPointer(a) => a.element.name(),
+            Streamer::ObjectAny(a) => a.element.name(),
+            Streamer::STL(a) => a.element.name(),
+            Streamer::Base(a) => a.element.name(),
+            Streamer::Object(a) => a.element.name(),
+            Streamer::ObjectPointer(a) => a.element.name(),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Streamers {
+    list: Vec<Streamer>,
+}
+
+impl Streamers {
+    pub fn push(&mut self, value: Streamer) {
+        self.list.push(value);
+    }
+
+    pub fn get(&self, name: &str) -> Option<&Streamer> {
+        for s in self.list.iter() {
+            trace!("looking for name = {}, s.name = {}", name, s.name());
+            if s.name() == name {
+                return Some(s);
+            }
+        }
+        None
+    }
+}
+
 #[derive(Default)]
 pub struct StreamerInfo {
     named: rbase::Named,
     chksum: u32,
     clsver: i32,
-    // objarr: Box<rcont::objarray::OBJ_ARRAY>,
-    objarr: rcont::objarray::ObjArray,
-    // elems: Vec<Box<dyn rbytes::STREAMER_ELEMENT>>,
-    elems: Vec<Box<dyn FactoryItem>>,
+    // objarr: rcont::objarray::ObjArray,
+    elems: Streamers,
+}
+
+impl StreamerInfo {
+    pub fn get(&self, name: &str) -> Option<&Streamer> {
+        self.elems.get(name)
+    }
+}
+
+impl Named for StreamerInfo {
+    fn name(&self) -> &'_ str {
+        self.named.name()
+    }
 }
 
 impl rbytes::RVersioner for StreamerInfo {
@@ -57,13 +147,21 @@ impl Unmarshaler for StreamerInfo {
 
         let objs: Box<dyn FactoryItem> = r.read_object_any_into()?.expect("something is wrong");
 
-        // let objs: Box<rcont::objarray::OBJ_ARRAY> =
-
-        self.objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
+        let objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
 
         // self.objarr = r.read_object_into::<rcont::objarray::OBJ_ARRAY>()?;
 
-        self.elems.append(&mut self.objarr.objs);
+        objarr
+            .objs
+            .iter()
+            .enumerate()
+            .for_each(|(i, elem)| trace!("i = {i}, elem class = {}", elem.class()));
+
+        for elem in objarr.objs {
+            self.elems.push(elem.try_into()?);
+        }
+
+        // self.elems.append(&mut self.objarr.objs);
 
         Ok(())
 
@@ -71,30 +169,7 @@ impl Unmarshaler for StreamerInfo {
     }
 }
 
-factotry_all_for_register_impl!(StreamerInfo, "TStreamerInfo");
-
-// pub struct Element {
-//     name: rbase::NAMED,
-//     // Type:   rmeta.Enum, // element type
-//     /// size of element
-//     size: i32,
-//     /// cumulative size of all array dims
-//     arr_len: i32,
-//     /// number of array dimensions
-//     arr_dim: i32,
-//     /// maximum array index for array dimension "dim"
-//     max_idx: [i32; 5],
-//     /// element offset in class
-//     offset: i32,
-//     /// data type name of data member
-//     ename: STRING,
-//     /// minimum of data member if a range is specified [xmin.xmax.nbits]
-//     xmin: f64,
-//     /// maximum of data member if a range is specified [xmin.xmax.nbits]
-//     xmax: f64,
-//     /// conversion factor if a range is specified. factor = (1<<nbits/(xmax-xmin))
-//     factor: f64,
-// }
+factotry_fn_register_impl!(StreamerInfo, "TStreamerInfo");
 
 #[derive(Default, Debug)]
 pub struct StreamerElement {
@@ -119,6 +194,12 @@ pub struct StreamerElement {
     xmax: f64,
     /// conversion factor if a range is specified. factor = (1<<nbits/(xmax-xmin))
     factor: f64,
+}
+
+impl StreamerElement {
+    pub fn etype(&self) -> &rmeta::Enum {
+        &self.etype
+    }
 }
 
 impl traits::Object for StreamerElement {
@@ -287,6 +368,12 @@ factotry_all_for_register_impl!(StreamerBase, "TStreamerBase");
 #[derive(Default)]
 pub struct StreamerString {
     element: StreamerElement,
+}
+
+impl StreamerString {
+    pub fn element(&self) -> &StreamerElement {
+        &self.element
+    }
 }
 
 impl Unmarshaler for StreamerString {

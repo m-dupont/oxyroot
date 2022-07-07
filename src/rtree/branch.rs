@@ -1,8 +1,9 @@
-use crate::file::RootFileReader;
+use crate::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
+use crate::rdict::StreamerInfo;
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
@@ -12,7 +13,9 @@ use crate::rtypes::FactoryItem;
 use crate::{factotry_fn_register_impl, rvers};
 use anyhow::ensure;
 use itertools::izip;
+use lazy_static::lazy_static;
 use log::trace;
+use regex::Regex;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -89,6 +92,13 @@ impl Branch {
         match self {
             Branch::Base(bb) => bb.set_reader(Some(reader.unwrap().clone())),
             Branch::Element(be) => be.branch.set_reader(Some(reader.unwrap().clone())),
+        }
+    }
+
+    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+        match self {
+            Branch::Base(bb) => bb.set_streamer_info(sinfos.clone()),
+            Branch::Element(be) => be.branch.set_streamer_info(sinfos.clone()),
         }
     }
 
@@ -227,6 +237,7 @@ pub struct TBranch {
     fname: String,
 
     reader: Option<RootFileReader>,
+    sinfos: Option<RootFileStreamerInfoContext>,
 }
 
 #[derive(Debug)]
@@ -466,6 +477,14 @@ impl TBranch {
         self.reader = reader;
     }
 
+    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+        for branch in self.branches.iter_mut() {
+            branch.set_streamer_info(sinfos.clone());
+        }
+
+        self.sinfos = Some(sinfos);
+    }
+
     pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         trace!("We are in branch = {}", self.name());
         let mut size_leaves = self.leaves.iter().map(|e| e.etype()).collect::<Vec<_>>();
@@ -528,6 +547,8 @@ impl TBranch {
                             },
                             Leaf::Element(_) => {
                                 trace!("classname = {}", self.class());
+
+                                panic!("I dont want to be here (Element should be in TBranchElement)");
 
                                 let header_bytes = 0;
 
@@ -734,6 +755,18 @@ impl TBranchElement {
     pub fn streamer_type(&self) -> i32 {
         self.stype
     }
+    pub fn class_name(&self) -> &str {
+        &self.class
+    }
+    pub fn clean_name(&self) -> &str {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"(.*\.)*([^\.\[\]]*)(\[.*\])*").unwrap();
+        }
+        //
+        // let RE: Regex = Regex::new(r"(.*\.)*([^\.\[\]]*)(\[.*\])*").unwrap();
+
+        RE.captures(self.name()).unwrap().get(2).unwrap().as_str()
+    }
 
     pub fn stl_type(&self) -> i32 {
         self.stltyp
@@ -792,6 +825,7 @@ impl TBranchElement {
                         _ => {}
                     }
 
+                    trace!("classname = {} streamer_type = {}, stl_type = {}", self.class, self.streamer_type(), self.stl_type());
 
                     match b.raw_data(&mut reader) {
                         BasketData::TrustNEntries((n, buf)) => {
@@ -805,9 +839,21 @@ impl TBranchElement {
                                 return BranchChunks::RegularSized((n, chunk_size, buf));
                             },
                             Leaf::Element(_) => {
-                                trace!("classname = {} streamer_type = {}, stl_type = {}", self.class(), self.streamer_type(), self.stl_type());
+                                let streamer = self.branch.sinfos.as_ref().unwrap().get(&self.class);
 
-                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type());
+                                let streamer = streamer.expect("streaminfo must exist");
+
+
+                                // for streamer in self.branch.sinfos.as_ref().unwrap().list().iter().rev() {
+                                //     trace!("streamer name = = {}", streamer.name())
+                                // }
+
+                                let element = streamer.get(self.clean_name());
+
+                                // let elem = streamer.s
+
+
+                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type(), element);
 
                                 trace!("header_bytes = {}", header_bytes);
                                 trace!("buf = {:?}", buf);

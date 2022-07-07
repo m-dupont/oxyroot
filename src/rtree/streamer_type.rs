@@ -1,3 +1,5 @@
+use crate::rdict::Streamer;
+use crate::rmeta::{Enum, EnumNamed};
 use log::trace;
 
 #[allow(non_upper_case_globals)]
@@ -98,7 +100,79 @@ pub const kNeedObjectForVirtualBaseClass: i32 = 99997;
 #[allow(non_upper_case_globals)]
 pub const kMissing: i32 = 99999;
 
-pub fn header_bytes_from_type(ty: i32) -> i32 {
+pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>) -> i32 {
+    match streamer {
+        None => {}
+        Some(streamer) => match streamer {
+            Streamer::String(s) => match s.element().etype() {
+                Enum::Named(a) => match a {
+                    EnumNamed::Base => {}
+                    EnumNamed::Char => {}
+                    EnumNamed::Short => {}
+                    EnumNamed::Int => {}
+                    EnumNamed::Long => {}
+                    EnumNamed::Float => {}
+                    EnumNamed::Counter => {}
+                    EnumNamed::CharStar => {}
+                    EnumNamed::Double => {}
+                    EnumNamed::Double32 => {}
+                    EnumNamed::LegacyChar => {}
+                    EnumNamed::UChar => {}
+                    EnumNamed::UShort => {}
+                    EnumNamed::UInt => {}
+                    EnumNamed::ULong => {}
+                    EnumNamed::Bits => {}
+                    EnumNamed::Long64 => {}
+                    EnumNamed::ULong64 => {}
+                    EnumNamed::Bool => {}
+                    EnumNamed::Float16 => {}
+                    EnumNamed::OffsetL => {}
+                    EnumNamed::OffsetP => {}
+                    EnumNamed::Object => {}
+                    EnumNamed::Any => {}
+                    EnumNamed::Objectp => {}
+                    EnumNamed::ObjectP => {}
+                    EnumNamed::TString => {
+                        return 0;
+                    }
+                    EnumNamed::TObject => {}
+                    EnumNamed::TNamed => {}
+                    EnumNamed::Anyp => {}
+                    EnumNamed::AnyP => {}
+                    EnumNamed::AnyPnoVT => {}
+                    EnumNamed::STLp => {}
+                    EnumNamed::Skip => {}
+                    EnumNamed::SkipL => {}
+                    EnumNamed::SkipP => {}
+                    EnumNamed::Conv => {}
+                    EnumNamed::ConvL => {}
+                    EnumNamed::ConvP => {}
+                    EnumNamed::STL => {}
+                    EnumNamed::STLstring => {}
+                    EnumNamed::Streamer => {}
+                    EnumNamed::StreamLoop => {}
+                    EnumNamed::Cache => {}
+                    EnumNamed::Artificial => {}
+                    EnumNamed::CacheNew => {}
+                    EnumNamed::CacheDelete => {}
+                    EnumNamed::NeedObjectForVirtualBaseClass => {}
+                    EnumNamed::Missing => {}
+                },
+                Enum::Int(a) => {}
+            },
+            Streamer::STLstring(_) => {
+                return 6;
+            }
+            Streamer::BasicType(_) => {}
+            Streamer::BasicPointer(_) => {}
+            Streamer::ObjectAny(_) => {}
+            Streamer::STL(_) => {}
+            Streamer::Base(_) => {}
+            Streamer::Object(_) => {}
+            Streamer::ObjectPointer(_) => {}
+        },
+    }
+
     let header_bytes = match ty {
         -1 => 10, // array
         i if i < kObject => {

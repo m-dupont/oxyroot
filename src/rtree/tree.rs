@@ -1,5 +1,5 @@
 use crate::factotry_all_for_register_impl;
-use crate::file::RootFileReader;
+use crate::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
@@ -111,6 +111,7 @@ pub struct Tree {
     branches: Vec<Branch>,
 
     reader: Option<RootFileReader>,
+    sinfos: Option<RootFileStreamerInfoContext>,
 }
 
 impl Tree {
@@ -122,6 +123,15 @@ impl Tree {
             self.reader = reader;
         }
     }
+
+    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+        for b in self.branches.iter_mut() {
+            b.set_streamer_info(sinfos.clone());
+        }
+        self.sinfos = Some(sinfos);
+    }
+
+    pub fn borrow_streamer(&mut self, infos: &RootFileStreamerInfoContext) {}
 
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
