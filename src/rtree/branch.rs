@@ -3,20 +3,18 @@ use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
-use crate::rdict::StreamerInfo;
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
-use crate::{factotry_fn_register_impl, rvers};
+use crate::{factory_fn_register_impl, rvers};
 use anyhow::ensure;
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::fmt::Debug;
 use std::marker::PhantomData;
 
 pub enum BranchChunks {
@@ -111,7 +109,7 @@ impl Branch {
 
     pub fn get_basket<'a, F, T>(&'a self, func: F) -> impl Iterator<Item = T> + 'a
     where
-        T: Debug + 'a,
+        T: 'a,
         F: Fn(&mut RBuffer) -> T + 'a,
     {
         trace!("get_basket in BRANCH = {}", self.name());
@@ -145,28 +143,23 @@ impl Branch {
         } else {
             let b: Box<dyn Iterator<Item = T>> = Box::new(
                 self.get_baskets_buffer()
-                    .map(move |chunk| {
-                        match chunk {
-                            BranchChunks::RegularSized((n, _chunk_size, buf)) => {
-                                let mut r = RBuffer::new(&buf, 0);
-                                // trace!("buf = {:?}", buf);
-                                // trace!("buf.len = {} n = {}", buf.len(), n);
-                                let size = buf.len() / n as usize;
-                                let mut v = Vec::new();
+                    .map(move |chunk| match chunk {
+                        BranchChunks::RegularSized((n, _chunk_size, buf)) => {
+                            let mut r = RBuffer::new(&buf, 0);
+                            let mut v = Vec::new();
 
-                                for _i in 0..n {
-                                    v.push(func(&mut r));
-                                }
-                                v
+                            for _i in 0..n {
+                                v.push(func(&mut r));
                             }
-                            BranchChunks::IrregularSized((n, data_chuncked)) => data_chuncked
-                                .iter()
-                                .map(|buf| {
-                                    let mut r = RBuffer::new(&buf, 0);
-                                    func(&mut r)
-                                })
-                                .collect::<Vec<_>>(),
+                            v
                         }
+                        BranchChunks::IrregularSized((_n, data_chuncked)) => data_chuncked
+                            .iter()
+                            .map(|buf| {
+                                let mut r = RBuffer::new(&buf, 0);
+                                func(&mut r)
+                            })
+                            .collect::<Vec<_>>(),
                     })
                     .flatten(),
             );
@@ -178,14 +171,14 @@ impl Branch {
 
     pub fn get_basket_into<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
     where
-        T: UnmarshalerInto<Item = T> + Debug + 'a,
+        T: UnmarshalerInto<Item = T> + 'a,
     {
         self.get_basket(|r| r.read_object_into::<T>().unwrap())
     }
 
     pub fn streamer_type(&self) -> Option<i32> {
         match self {
-            Branch::Base(bb) => None,
+            Branch::Base(_bb) => None,
             Branch::Element(be) => Some(be.streamer_type()),
         }
     }
@@ -240,25 +233,12 @@ pub struct TBranch {
     sinfos: Option<RootFileStreamerInfoContext>,
 }
 
-#[derive(Debug)]
 pub struct ZiperBranchInnerO<'a, T> {
     pub num_entries: u32,
     pub chunk_size: i32,
     pub i: Vec<u8>,
     // pub o: &'a [u8],
     phantom: PhantomData<&'a T>,
-}
-
-impl<'a, T> ZiperBranchInnerO<'a, T> {
-    pub fn new(num_entries: u32, chunk_size: i32, buf: Vec<u8>) -> Self {
-        ZiperBranchInnerO {
-            num_entries,
-            chunk_size,
-            i: buf,
-            // o: &[],
-            phantom: Default::default(),
-        }
-    }
 }
 
 impl<'a, T> Iterator for ZiperBranchInnerO<'a, T> {
@@ -275,10 +255,7 @@ impl<'a, T> Iterator for ZiperBranchInnerO<'a, T> {
     }
 }
 
-pub struct ZiperBranches<'a, T>
-where
-    T: Debug,
-{
+pub struct ZiperBranches<'a, T> {
     reader: RootFileReader,
     _branches: &'a Vec<Branch>,
     phantom: PhantomData<T>,
@@ -289,10 +266,7 @@ where
     nb_entries: Vec<u32>,
 }
 
-impl<'a, T> ZiperBranches<'a, T>
-where
-    T: Debug,
-{
+impl<'a, T> ZiperBranches<'a, T> {
     pub fn new(
         reader: Option<&RootFileReader>,
         branches: &'a Vec<Branch>,
@@ -330,10 +304,7 @@ where
     }
 }
 
-impl<'a, T> ZiperBranches<'a, T>
-where
-    T: Debug,
-{
+impl<'a, T> ZiperBranches<'a, T> {
     fn fill_output(&mut self) {
         for it_branch in &mut self.iterators {
             if let Some(chunk) = it_branch.next() {
@@ -371,10 +342,7 @@ where
     }
 }
 
-impl<'a, T> Iterator for ZiperBranches<'a, T>
-where
-    T: Debug,
-{
+impl<'a, T> Iterator for ZiperBranches<'a, T> {
     type Item = (u32, i32, Vec<u8>);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -539,30 +507,14 @@ impl TBranch {
                             trace!("send ({n},{chunk_size},{:?})", buf);
                             return BranchChunks::RegularSized((n, chunk_size, buf));
                         }
-                        BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
-                            // In case of string, we have to use n
+                        BasketData::UnTrustNEntries((n, buf, _byte_offsets)) => match leave {
                             Leaf::C(_) => {
+                                // In case of string, we have to use n
                                 trace!("send ({n},{chunk_size},{:?})", buf);
                                 return BranchChunks::RegularSized((n, chunk_size, buf));
                             },
                             Leaf::Element(_) => {
-                                trace!("classname = {}", self.class());
-
                                 panic!("I dont want to be here (Element should be in TBranchElement)");
-
-                                let header_bytes = 0;
-
-                                let byte_offsets: Vec<_> = byte_offsets.iter().map(|o| o + header_bytes).zip(byte_offsets.iter().skip(1)).map(|(start, stop)|
-                                    {
-                                        trace!("start = {} strop = {}", start, stop);
-
-                                        let ref b = buf[start as usize..*stop as usize];
-                                        b.to_vec()
-                                    }).collect();
-                                trace!("byte_offsets = {:?}", byte_offsets);
-
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::RegularSized((n, chunk_size, buf));
                             },
                             _ => {
                                 let n = buf.len() / chunk_size as usize;
@@ -712,7 +664,7 @@ impl Unmarshaler for TBranch {
     }
 }
 
-factotry_fn_register_impl!(TBranch, "TBranch");
+factory_fn_register_impl!(TBranch, "TBranch");
 
 #[derive(Default)]
 pub struct TBranchElement {
@@ -825,7 +777,7 @@ impl TBranchElement {
                         _ => {}
                     }
 
-                    trace!("classname = {} streamer_type = {}, stl_type = {}", self.class, self.streamer_type(), self.stl_type());
+                    trace!("classname = {} streamer_type = {}, stl_type = {}", self.class_name(), self.streamer_type(), self.stl_type());
 
                     match b.raw_data(&mut reader) {
                         BasketData::TrustNEntries((n, buf)) => {
@@ -853,7 +805,7 @@ impl TBranchElement {
                                 // let elem = streamer.s
 
 
-                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type(), element);
+                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type(), element, self.class_name());
 
                                 trace!("header_bytes = {}", header_bytes);
                                 trace!("buf = {:?}", buf);
@@ -920,8 +872,8 @@ impl Unmarshaler for TBranchElement {
         if hdr.vers > 1 {
             self.max = r.read_i32()?;
 
-            let bcount1 = r.read_object_any_into()?;
-            let bcount2 = r.read_object_any_into()?;
+            let _bcount1 = r.read_object_any_into()?;
+            let _bcount2 = r.read_object_any_into()?;
 
             // bcount1 := r.ReadObjectAny()
             // if bcount1 != nil {
@@ -939,4 +891,4 @@ impl Unmarshaler for TBranchElement {
     }
 }
 
-factotry_fn_register_impl!(TBranchElement, "TBranchElement");
+factory_fn_register_impl!(TBranchElement, "TBranchElement");

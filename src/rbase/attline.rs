@@ -1,4 +1,4 @@
-use crate::factotry_all_for_register_impl;
+use crate::factory_all_for_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
@@ -40,4 +40,4 @@ impl Unmarshaler for AttLine {
     }
 }
 
-factotry_all_for_register_impl!(AttLine, "TAttLine");
+factory_all_for_register_impl!(AttLine, "TAttLine");

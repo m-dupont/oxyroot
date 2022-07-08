@@ -3,8 +3,8 @@ use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtypes::FactoryItem;
-use crate::{factotry_all_for_register_impl, rbase};
-use crate::{factotry_fn_register_impl, rvers};
+use crate::{factory_all_for_register_impl, rbase};
+use crate::{factory_fn_register_impl, rvers};
 use anyhow::ensure;
 use log::trace;
 
@@ -164,7 +164,7 @@ impl Unmarshaler for TLeaf {
     }
 }
 
-factotry_fn_register_impl!(TLeaf, "TLeaf");
+factory_fn_register_impl!(TLeaf, "TLeaf");
 
 #[derive(Default, Debug)]
 pub struct LeafI {
@@ -201,7 +201,7 @@ impl Unmarshaler for LeafI {
     }
 }
 
-factotry_all_for_register_impl!(LeafI, "TLeafI");
+factory_all_for_register_impl!(LeafI, "TLeafI");
 
 #[derive(Default, Debug)]
 pub struct LeafC {
@@ -238,7 +238,7 @@ impl Unmarshaler for LeafC {
     }
 }
 
-factotry_all_for_register_impl!(LeafC, "TLeafC");
+factory_all_for_register_impl!(LeafC, "TLeafC");
 
 macro_rules! make_tleaf_variant {
     ($struct_name:ident, $root_name:literal, $field_type:ty) => {
@@ -251,7 +251,7 @@ macro_rules! make_tleaf_variant {
             // ptr: &i32;
         }
 
-        factotry_all_for_register_impl!($struct_name, $root_name);
+        factory_all_for_register_impl!($struct_name, $root_name);
 
         impl Unmarshaler for $struct_name {
             fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
@@ -327,4 +327,4 @@ impl Unmarshaler for LeafElement {
     }
 }
 
-factotry_all_for_register_impl!(LeafElement, "TLeafElement");
+factory_all_for_register_impl!(LeafElement, "TLeafElement");

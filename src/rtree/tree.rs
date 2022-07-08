@@ -1,4 +1,4 @@
-use crate::factotry_all_for_register_impl;
+use crate::factory_all_for_register_impl;
 use crate::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
@@ -61,7 +61,7 @@ impl Unmarshaler for TioFeatures {
     }
 }
 
-factotry_all_for_register_impl!(TioFeatures, "TIOFeatures");
+factory_all_for_register_impl!(TioFeatures, "TIOFeatures");
 
 #[derive(Default)]
 pub struct Tree {
@@ -130,8 +130,6 @@ impl Tree {
         }
         self.sinfos = Some(sinfos);
     }
-
-    pub fn borrow_streamer(&mut self, infos: &RootFileStreamerInfoContext) {}
 
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
@@ -334,4 +332,4 @@ impl Unmarshaler for Tree {
     }
 }
 
-factotry_all_for_register_impl!(Tree, "TTree");
+factory_all_for_register_impl!(Tree, "TTree");

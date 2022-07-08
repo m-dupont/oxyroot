@@ -207,7 +207,7 @@ impl RootFile {
 
         trace!("magic = {:?}", magic);
 
-        assert!(magic == "root".as_bytes());
+        assert_eq!(magic, ROOT_MAGIC.as_bytes());
 
         let version = r.read_i32()?;
         trace!("version = {}", version);
@@ -299,9 +299,6 @@ impl RootFile {
             self.spans.append(span);
         }
 
-        trace!("spans = {:?}", self.spans);
-
-        //
         Ok(())
     }
 

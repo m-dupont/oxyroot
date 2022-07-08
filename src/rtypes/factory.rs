@@ -2,6 +2,8 @@ use crate::rbytes::Unmarshaler;
 use lazy_static::lazy_static;
 // use std::any::Any;
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Debug;
 
 // use crate::as_any::{AsAny, Downcast};
 
@@ -23,15 +25,20 @@ trait_set! {
 
 downcast!(dyn FactoryItem);
 
-pub trait FactoryBuilder {
-    // fn make_factory_builder() -> FactoryBuilderValue;
-    // fn make_factory_name() -> &'static str;
+impl Debug for Box<dyn FactoryItem> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Box<dyn FactoryItem>")
+            .field("class", &self.class())
+            .finish()
+    }
+}
 
+pub trait FactoryBuilder {
     fn register(factory: &mut Factory);
 }
 
 #[macro_export]
-macro_rules! factotry_fn_register_impl {
+macro_rules! factory_fn_register_impl {
     (  $t:ty, $n:literal  ) => {
         impl $t {
             pub fn new() -> Self {
@@ -62,17 +69,13 @@ macro_rules! factotry_fn_register_impl {
 }
 
 #[macro_export]
-macro_rules! factotry_all_for_register_impl {
+macro_rules! factory_all_for_register_impl {
     (  $t:ty, $n:literal  ) => {
         impl crate::root::traits::Named for $t {}
 
-        crate::factotry_fn_register_impl! {$t, $n}
+        crate::factory_fn_register_impl! {$t, $n}
     };
 }
-
-// impl<T> FactoryBuilder for T {
-//
-// }
 
 pub struct Factory<'a> {
     map: HashMap<&'a str, FactoryBuilderValue>,
@@ -118,27 +121,10 @@ impl<'a> Factory<'a> {
             if let Ok(v) = boxed.downcast::<T>() {
                 return Ok(v);
             }
-
-            // let b: bool = (*boxed).is::<T>();
-            //
-            // if b {
-            //     return Some(Box::new((*boxed).downcast_ref::<T>().unwrap()));
-            // }
-
-            // let boxed = Box::into_inner(boxed);
-            // let boxed = *boxed;
-            // if let Some(down) = (*boxed).downcast_ref::<T>() {
-            //     *boxed = down;
-            //     let vec: Box<&T> =
-            //     return Some(boxed);
-            // }
-
-            // return Some(Box::new((*boxed).downcast_ref::<T>()));
         }
 
         bail!("plop")
     }
-    //
     pub fn len(&self) -> usize {
         self.map.len()
     }
@@ -194,13 +180,6 @@ lazy_static! {
         f
     };
 }
-
-// #[macro_export]
-// macro_rules! factory_get_box {
-//     ( $key:expr  ) => {
-//
-//     };
-// }
 
 #[cfg(test)]
 mod tests {

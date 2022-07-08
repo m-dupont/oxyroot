@@ -42,7 +42,7 @@ fn main() {
         "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/root-6.10.08/cernstaff.root";
 
     let _s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/1/cernstaff.root";
-    let s = "/tmp/rust/i16/o.root";
+    let s = "/tmp/rust/struct/read_int_struct_split=0/o.root";
 
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s).unwrap();
@@ -56,64 +56,7 @@ fn main() {
         println!("branch = {}, class = {}", b.name(), b.class());
     }
 
-    // let branch = tree.get_branch("Category").unwrap();
-    //
-    // let f = |r: &mut RBuffer| {
-    //     let val = r.read_i32().unwrap();
-    //     val
-    // };
-    //
-    // let f32 = |r: &mut RBuffer| {
-    //     let val = r.read_f32().unwrap();
-    //     val
-    // };
-    //
-    // let v_cat: Vec<_> = branch.get_basket(f).collect();
-    // let branch = tree.get_branch("float").unwrap();
-    // let v_float: Vec<_> = branch.get_basket(f32).collect();
-    //
-    // println!("v_float = {:?}", v_float);
-    // println!("v_cat = {:?}", v_cat);
-    //
-    // let vec_array_int: Vec<_> = tree
-    //     .get_branch("array_int")
-    //     .unwrap()
-    //     .get_basket(|r| (0..5).map(|_| r.read_i32().unwrap()).collect::<Vec<_>>())
-    //     .collect();
-    //
-    // println!("vec_array_int = {:?}", vec_array_int);
-    //
-    // #[derive(Debug)]
-    // struct Sd {
-    //     a: i32,
-    //     b: i32,
-    //     c: f64,
-    // };
-    //
-    // let fsd = |r: &mut RBuffer| Sd {
-    //     a: dbg!(r.read_i32().unwrap()),
-    //     b: dbg!(r.read_i32().unwrap()),
-    //     c: r.read_f64().unwrap(),
-    // };
-    //
-    // let v_sd: Vec<_> = tree.get_branch("sd0").unwrap().get_basket(fsd).collect();
-    // println!("v_sd_0 = {:?}", v_sd);
-    //
-    // println!("###############");
-    // let v_sd: Vec<_> = tree.get_branch("sd1").unwrap().get_basket(fsd).collect();
-    // println!("v_sd_1 = {:?}", v_sd);
-    //
-    // let v_sd: Vec<_> = tree.get_branch("sd2").unwrap().get_basket(fsd).collect();
-    // println!("v_sd_2 = {:?}", v_sd);
-
     let fsd = |r: &mut RBuffer| {
-        //comment
-
-        // dbg!(r.read_object_any_into());
-
-        // dbg!(r.read_header("vector").unwrap());
-        // dbg!(r.read_i32().unwrap());
-
         println!("r len = {}", r.len());
 
         let mut arr = [0 as u8; 100];
@@ -127,7 +70,7 @@ fn main() {
     };
 
     println!("###########");
-    let v_v: Vec<_> = tree.branch("v").unwrap().get_basket(fsd).collect();
+    let v_v: Vec<_> = tree.branch("v_i").unwrap().get_basket(fsd).collect();
 
     println!("v_v = {:?}", v_v);
 }

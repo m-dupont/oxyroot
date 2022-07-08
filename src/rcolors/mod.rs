@@ -24,8 +24,6 @@ impl Color {
     }
 
     pub fn to_i16(&self) -> i16 {
-        // match  { }
-
         match self {
             Self::Named(o) => num::ToPrimitive::to_i16(o).unwrap(),
             Self::Int(i) => *i,

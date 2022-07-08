@@ -1,4 +1,4 @@
-use crate::factotry_all_for_register_impl;
+use crate::factory_all_for_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
@@ -38,4 +38,4 @@ impl Unmarshaler for AttMarker {
     }
 }
 
-factotry_all_for_register_impl!(AttMarker, "TAttMarker");
+factory_all_for_register_impl!(AttMarker, "TAttMarker");

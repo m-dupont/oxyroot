@@ -1,6 +1,8 @@
 use crate::rdict::Streamer;
 use crate::rmeta::{Enum, EnumNamed};
+use lazy_static::lazy_static;
 use log::trace;
+use regex::Regex;
 
 #[allow(non_upper_case_globals)]
 pub const kBase: i32 = 0;
@@ -89,8 +91,8 @@ pub const kStreamLoop: i32 = 501;
 #[allow(non_upper_case_globals)]
 pub const kCache: i32 = 600;
 #[allow(non_upper_case_globals)]
-pub const // Cache the value in memory than is not part of the object but is accessible via a SchemaRule
-kArtificial: i32 = 1000;
+pub const kArtificial: i32 = 1000; // Cache the value in memory than is not part of the object but is accessible via a SchemaRule
+
 #[allow(non_upper_case_globals)]
 pub const kCacheNew: i32 = 1001;
 #[allow(non_upper_case_globals)]
@@ -100,7 +102,25 @@ pub const kNeedObjectForVirtualBaseClass: i32 = 99997;
 #[allow(non_upper_case_globals)]
 pub const kMissing: i32 = 99999;
 
-pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>) -> i32 {
+lazy_static! {
+    static ref RE: Regex =
+        Regex::new(r"(\b([A-Za-z_0-9]+)(\s*::\s*[A-Za-z_][A-Za-z_0-9]*)*\b(\s*\*)*|<|>|,)")
+            .unwrap();
+}
+
+pub fn parse_typename(typename: &str) -> i32 {
+    let tokens = RE.captures(typename).unwrap();
+
+    println!("tokens = {:?}", tokens);
+
+    if tokens.get(0).unwrap().as_str() == "vector" {
+        return 10;
+    }
+
+    0
+}
+
+pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: &str) -> i32 {
     match streamer {
         None => {}
         Some(streamer) => match streamer {
@@ -158,7 +178,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>) -> i32 {
                     EnumNamed::NeedObjectForVirtualBaseClass => {}
                     EnumNamed::Missing => {}
                 },
-                Enum::Int(a) => {}
+                Enum::Int(_a) => {}
             },
             Streamer::STLstring(_) => {
                 return 6;
@@ -174,7 +194,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>) -> i32 {
     }
 
     let header_bytes = match ty {
-        -1 => 10, // array
+        -1 => parse_typename(class_name), // array
         i if i < kObject => {
             trace!("ty = {}, i = {}", ty, i);
             if i > kOffsetP {

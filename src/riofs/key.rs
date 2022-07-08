@@ -68,15 +68,6 @@ pub struct Key {
     obj: Option<Box<dyn FactoryItem>>,
 }
 
-impl Debug for Box<dyn FactoryItem> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Box<dyn FactoryItem>")
-            .field("class", &self.class())
-            .finish()
-        // Ok(())
-    }
-}
-
 impl Default for Key {
     fn default() -> Self {
         Key {
@@ -146,61 +137,6 @@ impl Unmarshaler for Key {
         Ok(())
     }
 }
-
-// impl UnmarshalerInto for Key {
-//     type Item = Self;
-//
-//     fn unmarshal_into(r: &mut RBuffer) -> anyhow::Result<Self::Item> {
-//         let n_bytes = r.read_i32()?;
-//
-//         if n_bytes < 0 {
-//             return Ok(Key {
-//                 n_bytes,
-//                 class: STRING::from("[GAP]"),
-//                 ..Default::default()
-//             });
-//         }
-//
-//         let rvers = r.read_i16()?;
-//         let obj_len = r.read_i32()?;
-//         let datetime = NaiveDateTime::from_timestamp(r.read_u32()? as i64, 0);
-//         let key_len = r.read_i16()? as i32;
-//         let cycle = r.read_i16()?;
-//
-//         let is_big_file = rvers > 1000;
-//         let seek_key = if is_big_file {
-//             r.read_i64()?
-//         } else {
-//             r.read_i32()? as i64
-//         };
-//         let seek_pdir = if is_big_file {
-//             r.read_i64()?
-//         } else {
-//             r.read_i32()? as i64
-//         };
-//
-//         let class = r.read_string()?.to_string();
-//         let name = r.read_string()?.to_string();
-//         let title = r.read_string()?.to_string();
-//
-//         Ok(Key {
-//             rvers,
-//             n_bytes,
-//             obj_len,
-//             datetime,
-//             key_len,
-//             cycle,
-//             seek_key,
-//             seek_pdir,
-//             class,
-//             name,
-//             title,
-//             obj: None,
-//         })
-//
-//         // todo!()
-//     }
-// }
 
 impl traits::Object for Key {
     fn class(&self) -> &'_ str {

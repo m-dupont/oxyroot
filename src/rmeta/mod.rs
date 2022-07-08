@@ -1,4 +1,4 @@
-mod consts;
+pub mod consts;
 
 pub use consts::ESTLType;
 pub use consts::Enum;

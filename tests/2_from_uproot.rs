@@ -9,12 +9,7 @@ use std::mem;
 fn open_nested() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
 
-    // RootFile::open("old.root").unwrap();
-    let mut f = RootFile::open(s)?;
-    let tree = f.get_tree("events")?;
-    assert!(tree.is_some());
-    let tree = tree.unwrap();
-
+    let tree = RootFile::open(s)?.get_tree("events")?.unwrap();
     let NJet = tree.branch("NJet").unwrap().get_basket_into::<i32>();
 
     let n = NJet.count();

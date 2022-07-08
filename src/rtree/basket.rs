@@ -1,9 +1,8 @@
-use crate::factotry_fn_register_impl;
+use crate::factory_fn_register_impl;
 use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
-use itertools::Itertools;
 use log::trace;
 
 #[derive(Default)]
@@ -42,13 +41,10 @@ impl Basket {
             self.uncompressed_bytes()
         );
 
-        let mut ret = self.key.bytes(file, None).unwrap();
+        let ret = self.key.bytes(file, None).unwrap();
         trace!("len buf = {}", ret.len());
 
         if self.border() != self.uncompressed_bytes() {
-            // data = ret[0..self.border() as usize].to_vec();
-            // byte_offsets = ret[self.border() as usize..];
-
             let (data, byte_offsets) = ret.split_at(self.border() as usize);
 
             let mut byte_offsets: Vec<_> = byte_offsets
@@ -59,11 +55,6 @@ impl Basket {
 
             let last = byte_offsets.len() - 1;
             byte_offsets[last] = self.border();
-
-            // let x: IntoChunks<Iter<u8>>;
-            // x.into()
-
-            // let byte_offsets = byte_offsets;
 
             trace!("byte_offsets = {:?}", byte_offsets);
 
@@ -127,4 +118,4 @@ impl Unmarshaler for Basket {
     }
 }
 
-factotry_fn_register_impl!(Basket, "TBasket");
+factory_fn_register_impl!(Basket, "TBasket");

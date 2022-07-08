@@ -4,9 +4,9 @@ use anyhow::Result;
 use common::TemplateWriter;
 use oxyroot::RBuffer;
 
-#[test]
-fn read_int_struct() -> Result<()> {
-    let temp = TemplateWriter::default().with_outdir("/tmp/rust/struct/read_int_struct")?;
+fn read_int_struct(split_level: i32) -> Result<()> {
+    let outdir = format!("/tmp/rust/struct/read_int_struct_split={}", split_level);
+    let temp = TemplateWriter::default().with_outdir(outdir)?;
 
     let macro_content = format!(
         r#"{{
@@ -20,7 +20,7 @@ fn read_int_struct() -> Result<()> {
    TFile *hfile = hfile = TFile::Open("o.root","RECREATE", "", {COMPRESSION});
 
    TTree *tree = new TTree("T","data for rust tests");
-   tree->Branch("v_i",&sd);
+   tree->Branch("v_i",&sd, 3200000, {SPLIT_LEVEL});
    
    for (int i = -10; i < 100000; ++i)
      {{
@@ -34,7 +34,8 @@ fn read_int_struct() -> Result<()> {
    delete hfile;
 }}
 "#,
-        COMPRESSION = 207
+        COMPRESSION = 207,
+        SPLIT_LEVEL = split_level
     );
 
     temp.write_raw_macro(&macro_content)?;
@@ -65,4 +66,19 @@ fn read_int_struct() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[test]
+fn read_int_struct_split_level_1() -> Result<()> {
+    read_int_struct(1)
+}
+
+#[test]
+fn read_int_struct_split_level_0() -> Result<()> {
+    read_int_struct(0)
+}
+
+#[test]
+fn read_int_struct_split_level_2() -> Result<()> {
+    read_int_struct(2)
 }
