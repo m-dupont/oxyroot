@@ -23,15 +23,15 @@ const HEADER_EXTRA_LEN: u64 = 12;
 // 64: small file + extra space for big file
 const ROOT_MAGIC: &str = "root";
 
-#[derive(Default)]
-pub struct RootFileHeader {
-    pub(crate) version: i32,
-    pub(crate) begin: i64,
-    pub(crate) end: i64,
+#[derive(Default, Debug)]
+struct RootFileHeader {
+    version: i32,
+    begin: i64,
+    end: i64,
     seek_free: i64,
     n_bytes_free: i32,
     n_free: i32,
-    pub(crate) n_bytes_name: i32,
+    n_bytes_name: i32,
     units: u8,
     compression: i32,
     seek_info: i64,
@@ -76,16 +76,10 @@ impl RootFileHeader {
 }
 
 #[derive(Default)]
-pub struct RootFileReader {
+pub(crate) struct RootFileReader {
     path: PathBuf,
     reader: Option<BufReader<File>>,
 }
-
-// impl Drop for RootFileReader {
-//     fn drop(&mut self) {
-//         debug!("Drop RootFileReader")
-//     }
-// }
 
 impl Display for RootFileReader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -95,7 +89,7 @@ impl Display for RootFileReader {
 }
 
 impl RootFileReader {
-    pub fn new<P>(path: P) -> Result<Self>
+    pub(crate) fn new<P>(path: P) -> Result<Self>
     where
         P: AsRef<Path>,
     {
@@ -110,10 +104,6 @@ impl RootFileReader {
 
         Ok(reader)
     }
-
-    // pub fn copy(&self) -> Self {
-    //     RootFileReader::new(self.path.as_str()).unwrap()
-    // }
 
     pub(crate) fn read_at(&mut self, start: u64, len: u64) -> Result<Vec<u8>> {
         self.reader
@@ -133,7 +123,7 @@ impl Clone for RootFileReader {
 }
 
 #[derive(Default)]
-pub struct RootFileInner {
+struct RootFileInner {
     reader: RootFileReader,
     header: RootFileHeader,
 }
@@ -143,7 +133,7 @@ pub struct RootFile {
     inner: RootFileInner,
     spans: FreeList,
     sinfos: RootFileStreamerInfoContext,
-    pub(crate) dir: Option<TDirectoryFile>,
+    dir: Option<TDirectoryFile>,
 }
 
 impl RootFile {
@@ -346,16 +336,9 @@ impl RootFile {
         }
 
         Ok(())
-
-        // todo!()
     }
 
     pub fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
-        trace!("get_object, name = {}", name);
-
-        // let mut dir = self.dir.as_mut().unwrap();
-        // self.dir = None;
-
         let obj = self.dir.as_mut().unwrap().get_object(
             name,
             &mut self.inner.reader,
@@ -379,20 +362,20 @@ impl RootFile {
 }
 
 #[derive(Default, Clone)]
-pub struct RootFileStreamerInfoContext {
+pub(crate) struct RootFileStreamerInfoContext {
     list: Rc<Vec<StreamerInfo>>,
 }
 
 impl RootFileStreamerInfoContext {
-    pub fn push(&mut self, info: StreamerInfo) {
+    fn push(&mut self, info: StreamerInfo) {
         let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
         v.push(info);
     }
-    pub fn list(&self) -> &Rc<Vec<StreamerInfo>> {
+    fn list(&self) -> &Rc<Vec<StreamerInfo>> {
         &self.list
     }
 
-    pub fn get(&self, name: &str) -> Option<&StreamerInfo> {
+    pub(crate) fn get(&self, name: &str) -> Option<&StreamerInfo> {
         for streamer in self.list().iter().rev() {
             if streamer.name() == name {
                 return Some(streamer);

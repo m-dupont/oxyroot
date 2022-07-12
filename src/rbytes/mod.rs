@@ -34,11 +34,6 @@ pub trait RVersioner {
 /// STREAMER_ELEMENT describes a ROOT STREAMER_ELEMENT
 pub trait StreamerElement: root::traits::Named {}
 
-/// Implement STREAMER_ELEMENT for ROOT objects
-
-// impl<T> STREAMER_ELEMENT for T where T: FactoryItem {}
-// impl<T> STREAMER_ELEMENT for T where T: root::traits::NAMED {}
-
 /// StreamerInfoContext defines the protocol to retrieve a ROOT STREAMER_INFO
 /// metadata type by name.
 pub trait StreamerInfoContext {

@@ -1,7 +1,7 @@
 use crate::factory_fn_register_impl;
-use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
+use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
 
 #[derive(Default)]

@@ -1,8 +1,8 @@
-use crate::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
+use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
@@ -86,14 +86,14 @@ impl Branch {
         }
     }
 
-    pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
+    pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         match self {
             Branch::Base(bb) => bb.set_reader(Some(reader.unwrap().clone())),
             Branch::Element(be) => be.branch.set_reader(Some(reader.unwrap().clone())),
         }
     }
 
-    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+    pub(crate) fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
         match self {
             Branch::Base(bb) => bb.set_streamer_info(sinfos.clone()),
             Branch::Element(be) => be.branch.set_streamer_info(sinfos.clone()),
@@ -431,7 +431,7 @@ impl TBranch {
         None
     }
 
-    pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
+    pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         for branch in self.branches.iter_mut() {
             branch.set_reader(Some(reader.as_ref().unwrap().clone()));
         }
@@ -439,7 +439,7 @@ impl TBranch {
         self.reader = reader;
     }
 
-    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+    pub(crate) fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
         for branch in self.branches.iter_mut() {
             branch.set_streamer_info(sinfos.clone());
         }

@@ -90,20 +90,18 @@ extern crate core;
 mod gen_factory;
 mod rbase;
 mod rbytes;
-pub mod rcolors;
+mod rcolors;
 mod rcompress;
 mod rcont;
 mod rdict;
 mod riofs;
-pub mod rmeta;
-pub mod root;
-pub mod rtree;
-pub mod rtypes;
+mod rmeta;
+mod root;
+mod rtree;
+mod rtypes;
 mod rusty;
 mod rvers;
 mod utils;
-
-pub use riofs::file;
 
 pub use riofs::file::RootFile;
 pub use rtree::branch::Branch;

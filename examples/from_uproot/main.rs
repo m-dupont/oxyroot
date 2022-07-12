@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::Local;
 use env_logger::{Builder, Target, WriteStyle};
 use log::{error, trace, LevelFilter};
-use oxyroot::file::RootFile;
+use oxyroot::RootFile;
 use oxyroot::Unmarshaler;
 use oxyroot::{RBuffer, Slice};
 use std::collections::{HashMap, HashSet};

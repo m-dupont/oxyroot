@@ -1,8 +1,8 @@
-use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{StreamerInfoContext, Unmarshaler};
 use crate::rcompress;
 use crate::riofs::dir::TDirectoryFile;
+use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
 use crate::root::{objects, traits};
 use crate::rtypes;
@@ -146,7 +146,7 @@ impl Key {
         self.obj_len != self.n_bytes - self.key_len
     }
 
-    pub fn bytes(&self, file: &mut RootFileReader, _: Option<&[u8]>) -> Result<Vec<u8>> {
+    pub(crate) fn bytes(&self, file: &mut RootFileReader, _: Option<&[u8]>) -> Result<Vec<u8>> {
         self.load(file)
     }
 
@@ -167,7 +167,7 @@ impl Key {
         Ok(buf)
     }
 
-    pub fn object(
+    pub(crate) fn object(
         mut self,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,

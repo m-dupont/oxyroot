@@ -1,9 +1,9 @@
 use crate::factory_all_for_register_impl;
-use crate::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::rcont::objarray::ObjArray;
+use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
@@ -109,7 +109,7 @@ pub struct Tree {
 }
 
 impl Tree {
-    pub fn set_reader(&mut self, reader: Option<RootFileReader>) {
+    pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         if let Some(ref r) = reader {
             for b in self.branches.iter_mut() {
                 b.set_reader(Some(r.clone()));
@@ -118,7 +118,7 @@ impl Tree {
         }
     }
 
-    pub fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
+    pub(crate) fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
         for b in self.branches.iter_mut() {
             b.set_streamer_info(sinfos.clone());
         }

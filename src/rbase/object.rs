@@ -3,7 +3,7 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 
 #[derive(Debug)]
-pub struct Object {
+pub(crate) struct Object {
     id: u32,
     bits: u32,
 }

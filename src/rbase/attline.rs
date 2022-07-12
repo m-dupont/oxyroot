@@ -8,7 +8,7 @@ use anyhow::ensure;
 use crate::rcolors::Color;
 
 #[derive(Default)]
-pub struct AttLine {
+pub(crate) struct AttLine {
     color: Color,
     style: i16,
     width: i16, // rvers: i16,

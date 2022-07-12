@@ -1,4 +1,4 @@
-use crate::file::{RootFile, RootFileReader};
+use crate::riofs::file::{RootFile, RootFileReader};
 use std::io::Read;
 
 use crate::rbase::named::Named as ObjNamed;
@@ -147,7 +147,7 @@ impl TDirectoryFile {
         Ok(dir)
     }
 
-    pub fn get_object(
+    pub(crate) fn get_object(
         &mut self,
         namecycle: &str,
         file: &mut RootFileReader,

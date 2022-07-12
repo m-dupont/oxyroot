@@ -6,7 +6,7 @@ use crate::{rbase, rvers};
 use anyhow::ensure;
 
 #[derive(Default)]
-pub struct ObjString {
+pub(crate) struct ObjString {
     obj: rbase::Object,
     str: String,
 }

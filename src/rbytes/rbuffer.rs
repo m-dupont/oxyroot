@@ -10,26 +10,26 @@ use std::io::Read;
 use std::mem::size_of;
 use std::str::from_utf8;
 
-#[derive(Default)]
-pub struct Rbuff<'a> {
+#[derive(Default, Debug)]
+struct Rbuff<'a> {
     p: &'a [u8],
     c: usize,
 }
 
 impl<'a> Rbuff<'a> {
-    pub fn extract_as_array<const N: usize>(&mut self) -> Result<[u8; N]> {
+    fn extract_as_array<const N: usize>(&mut self) -> Result<[u8; N]> {
         let buf: [u8; N] = self.p[self.c..(self.c + N)].as_ref().try_into()?;
         self.c += N;
         Ok(buf)
     }
 
-    pub fn extract_n(&mut self, n: usize) -> Result<&[u8]> {
+    fn extract_n(&mut self, n: usize) -> Result<&[u8]> {
         let buf = &self.p[self.c..(self.c + n)];
         self.c += n;
         Ok(buf)
     }
 
-    pub fn extract_until<F>(&mut self, n: usize, pred: F) -> Result<&'a [u8]>
+    fn extract_until<F>(&mut self, n: usize, pred: F) -> Result<&'a [u8]>
     where
         F: FnMut(&u8) -> bool,
     {
@@ -74,11 +74,11 @@ enum RBufferRefsItem<'a> {
     // Obj(&'a Box<dyn FactoryItem>),
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RBuffer<'a> {
     r: Rbuff<'a>,
     offset: u32,
-    sictx: Option<&'a dyn StreamerInfoContext>,
+    // sictx: Option<&'a dyn StreamerInfoContext>,
     refs: HashMap<i64, RBufferRefsItem<'a>>,
     skip_header: Option<i32>,
 }
@@ -92,8 +92,8 @@ impl<'a> RBuffer<'a> {
         }
     }
 
-    pub fn with_info_context(mut self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
-        self.sictx = ctx;
+    pub(crate) fn with_info_context(mut self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
+        // self.sictx = ctx;
         self
     }
 
@@ -386,17 +386,15 @@ impl<'a> RBuffer<'a> {
         }
 
         if hdr.vers <= 0 {
-            // todo!();
-
-            self.sictx.unwrap().streamer_info(&hdr.name, -1);
-            if !hdr.name.is_empty()
-                && self.sictx.is_some()
-                && self.sictx.unwrap().streamer_info(&hdr.name, -1).is_some()
-            {
-                {
-                    todo!()
-                }
-            }
+            // self.sictx.unwrap().streamer_info(&hdr.name, -1);
+            // if !hdr.name.is_empty()
+            //     && self.sictx.is_some()
+            //     && self.sictx.unwrap().streamer_info(&hdr.name, -1).is_some()
+            // {
+            //     {
+            //         todo!()
+            //     }
+            // }
         }
 
         // trace!("hdr = {:?}", hdr);
