@@ -35,7 +35,7 @@ impl Unmarshaler for TioFeatures {
             rvers::ROOT_IOFEATURES
         );
 
-        let mut buf = [0 as u8; 4];
+        let mut buf = [0_u8; 4];
         r.read_exact(&mut buf[..1])?;
 
         self.0 = if buf[0] != 0 {
@@ -128,7 +128,7 @@ impl Tree {
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
             if b.name() == name {
-                return Some(b.into());
+                return Some(b);
             }
 
             if let Some(bb) = b.branch(name) {
@@ -141,7 +141,7 @@ impl Tree {
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
         // self.branches.iter().map()
 
-        self.branches.iter().map(|b| b.into())
+        self.branches.iter()
     }
     pub fn entries(&self) -> i64 {
         self.entries
@@ -232,8 +232,8 @@ impl Unmarshaler for Tree {
         }
 
         if hdr.vers >= 19 {
-            self.clusters.ranges = vec![0 as i64; nclus as usize];
-            self.clusters.sizes = vec![0 as i64; nclus as usize];
+            self.clusters.ranges = vec![0; nclus as usize];
+            self.clusters.sizes = vec![0; nclus as usize];
             let _ = r.read_i8();
             r.read_array_i64(&mut self.clusters.ranges)?;
 

@@ -3,7 +3,6 @@ use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
-use crate::rdict::StreamerInfo;
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
@@ -128,23 +127,20 @@ impl Branch {
         );
         assert!(tbranch.reader.is_some());
 
-        let it = if tbranch.branches.len() > 0 {
+        let it = if !tbranch.branches.is_empty() {
             let b: Box<dyn Iterator<Item = T>> = Box::new(
-                ZiperBranches::<usize>::new(
-                    tbranch.reader.as_ref(),
-                    &tbranch.branches,
-                    tbranch.entries as u32,
-                )
-                .map(move |(_n, _chunk_size, buf)| {
-                    let mut r = RBuffer::new(&buf, 0);
-                    func(&mut r)
-                }),
+                ZiperBranches::<usize>::new(&tbranch.branches, tbranch.entries as u32).map(
+                    move |(_n, _chunk_size, buf)| {
+                        let mut r = RBuffer::new(&buf, 0);
+                        func(&mut r)
+                    },
+                ),
             );
             b
         } else {
-            let b: Box<dyn Iterator<Item = T>> = Box::new(
-                self.get_baskets_buffer()
-                    .map(move |chunk| match chunk {
+            let b: Box<dyn Iterator<Item = T>> =
+                Box::new(self.get_baskets_buffer().flat_map(move |chunk| {
+                    match chunk {
                         BranchChunks::RegularSized((n, _chunk_size, buf)) => {
                             let mut r = RBuffer::new(&buf, 0);
                             let mut v = Vec::new();
@@ -158,20 +154,19 @@ impl Branch {
                             data_chuncked
                                 .iter()
                                 .map(|buf| {
-                                    let mut r = RBuffer::new(&buf, 0);
+                                    let mut r = RBuffer::new(buf, 0);
                                     r.set_skip_header(Some(header_bytes));
 
                                     func(&mut r)
                                 })
                                 .collect::<Vec<_>>()
                         }
-                    })
-                    .flatten(),
-            );
+                    }
+                }));
             b
         };
 
-        return it;
+        it
     }
 
     pub fn get_basket_into<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
@@ -256,12 +251,11 @@ impl<'a, T> Iterator for ZiperBranchInnerO<'a, T> {
 
         trace!("o = {:?}", o);
 
-        return Some((self.num_entries, self.chunk_size, o));
+        Some((self.num_entries, self.chunk_size, o))
     }
 }
 
 pub struct ZiperBranches<'a, T> {
-    reader: RootFileReader,
     _branches: &'a Vec<Branch>,
     phantom: PhantomData<T>,
     iterators: Vec<Box<dyn Iterator<Item = BranchChunks> + 'a>>,
@@ -272,11 +266,7 @@ pub struct ZiperBranches<'a, T> {
 }
 
 impl<'a, T> ZiperBranches<'a, T> {
-    pub fn new(
-        reader: Option<&RootFileReader>,
-        branches: &'a Vec<Branch>,
-        _nb_entries: u32,
-    ) -> Self {
+    pub fn new(branches: &'a Vec<Branch>, _nb_entries: u32) -> Self {
         let mut v = Vec::new();
         // let mut v: Vec<dyn Iterator<Item = (u32, i32, Vec<u8>)>> = Vec::new();
         for branch in branches {
@@ -298,7 +288,6 @@ impl<'a, T> ZiperBranches<'a, T> {
         // todo!();
 
         ZiperBranches {
-            reader: reader.unwrap().clone(),
             _branches: branches,
             phantom: Default::default(),
             iterators: v,
@@ -368,7 +357,7 @@ impl<'a, T> Iterator for ZiperBranches<'a, T> {
             }
         }
 
-        let size = self.output_buffers.iter().fold(0 as usize, |acc, par| {
+        let size = self.output_buffers.iter().fold(0_usize, |acc, par| {
             let s = match par.as_ref().unwrap() {
                 BranchChunks::RegularSized((_, s, _)) => s,
                 BranchChunks::IrregularSized(_) => {
@@ -419,19 +408,19 @@ impl<'a, T> Iterator for ZiperBranches<'a, T> {
             }
         }
 
-        return Some((0, size as i32, outbuf));
+        Some((0, size as i32, outbuf))
     }
 }
 
 impl TBranch {
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
-        self.branches.iter().map(|b| b.into())
+        self.branches.iter() //.map(|b| b.into())
     }
 
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
             if b.name() == name {
-                return Some(b.into());
+                return Some(b);
             }
 
             if let Some(bb) = b.branch(name) {
@@ -539,7 +528,7 @@ impl TBranch {
 
 impl Named for TBranch {
     fn name(&self) -> &'_ str {
-        &self.named.name()
+        self.named.name()
     }
 }
 
@@ -617,7 +606,7 @@ impl Unmarshaler for TBranch {
 
             {
                 let _ = r.read_i8()?;
-                let mut b = vec![0 as i64; self.max_baskets as usize];
+                let mut b = vec![0_i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
 
                 self.basket_entry
@@ -626,7 +615,7 @@ impl Unmarshaler for TBranch {
 
             {
                 let _ = r.read_i8()?;
-                let mut b = vec![0 as i64; self.max_baskets as usize];
+                let mut b = vec![0_i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
 
                 self.basket_seek
@@ -644,7 +633,7 @@ impl Unmarshaler for TBranch {
             unimplemented!()
         }
 
-        if self.split_level == 0 && self.branches.len() > 0 {
+        if self.split_level == 0 && !self.branches.is_empty() {
             self.split_level = 1;
         }
 
@@ -688,7 +677,7 @@ pub struct TBranchElement {
 
 impl Named for TBranchElement {
     fn name(&self) -> &'_ str {
-        &self.branch.name()
+        self.branch.name()
     }
 }
 
@@ -809,7 +798,6 @@ impl TBranchElement {
 
                             let byte_offsets: Vec<_> = byte_offsets
                                 .iter()
-                                .map(|o| o + 0)
                                 .zip(byte_offsets.iter().skip(1))
                                 .collect();
                             // trace!("byte_offsets = {:?}", byte_offsets);
@@ -818,22 +806,22 @@ impl TBranchElement {
                             let data: Vec<_> = byte_offsets
                                 .iter()
                                 .map(|(start, stop)| {
-                                    let ref b = buf[*start as usize..**stop as usize];
+                                    let b = &buf[**start as usize..**stop as usize];
                                     b.to_vec()
                                 })
                                 .collect();
                             // trace!("data = {:?}", data);
 
                             trace!("send ({n},{chunk_size},{:?})", data);
-                            return BranchChunks::IrregularSized((n, data, header_bytes));
+                            BranchChunks::IrregularSized((n, data, header_bytes))
                         }
                         _ => {
                             let n = buf.len() / chunk_size as usize;
                             trace!("send ({n},{chunk_size},{:?})", buf);
-                            return BranchChunks::RegularSized((n as u32, chunk_size, buf));
+                            BranchChunks::RegularSized((n as u32, chunk_size, buf))
                         }
                     },
-                };
+                }
             }),
         )
     }

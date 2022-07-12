@@ -5,7 +5,6 @@ use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
 use anyhow::{anyhow, bail, ensure, Result};
-use log::warn;
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -43,9 +42,9 @@ impl<'a> Rbuff<'a> {
         Ok(buf)
     }
 
-    pub fn visible_buffer(&self) -> &'_ [u8] {
-        &self.p[self.c..]
-    }
+    // pub fn visible_buffer(&self) -> &'_ [u8] {
+    //     &self.p[self.c..]
+    // }
 }
 
 impl<'a> Read for Rbuff<'a> {
@@ -102,8 +101,12 @@ impl<'a> RBuffer<'a> {
         self.r.p.len() as i64 - self.r.c as i64
     }
 
+    pub fn is_empty(&self) -> bool {
+        !(self.len() > 0)
+    }
+
     pub fn pos(&self) -> i64 {
-        return self.r.c as i64 + self.offset as i64;
+        self.r.c as i64 + self.offset as i64
     }
 
     pub fn set_pos(&mut self, pos: i64) {
@@ -231,15 +234,15 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
-        let beg = self.pos();
-        let mut bcnt = self.read_u32()?;
+        let _beg = self.pos();
+        let bcnt = self.read_u32()?;
         let mut vers = 0;
         let tag: u32;
         let mut start = 0;
 
         if (bcnt as i64) & kByteCountMask == 0 || (bcnt as i64) == kNewClassTag {
             tag = bcnt;
-            bcnt = 0;
+            // bcnt = 0;
         } else {
             vers = 1;
             start = self.pos();
@@ -272,7 +275,7 @@ impl<'a> RBuffer<'a> {
 
             // warn!("Sadly return None");
 
-            return Ok(None);
+            Ok(None)
 
             // let o = &self.refs.get(&tag64);
             //
@@ -284,7 +287,7 @@ impl<'a> RBuffer<'a> {
             // trace!("cname = {}", cname);
             let fct = rtypes::FACTORY
                 .get(cname)
-                .ok_or(anyhow!("rbufer: no registered factory for class {}", cname,))?;
+                .ok_or_else(|| anyhow!("rbufer: no registered factory for class {}", cname,))?;
 
             if vers > 0 {
                 self.refs.insert(start + kMapOffset, Func(fct));
@@ -306,7 +309,7 @@ impl<'a> RBuffer<'a> {
                 todo!()
             }
 
-            return Ok(Some(obj));
+            Ok(Some(obj))
         } else {
             let uref = tag64 & !kClassMask;
 
@@ -314,14 +317,17 @@ impl<'a> RBuffer<'a> {
             assert!(fct.is_some());
             let fct = fct.unwrap();
 
-            let fct = if let Func(fct) = fct {
-                fct
-            } else {
-                unimplemented!()
-            };
+            // let fct = if let Func(fct) = fct {
+            //     fct
+            // } else {
+            //     unimplemented!()
+            // };
+
+            let Func(fct) = fct;
+
             let mut obj: Box<dyn rtypes::FactoryItem> = fct();
             self.read_boxed_object(&mut obj)?;
-            return Ok(Some(obj));
+            Ok(Some(obj))
         }
     }
 
@@ -348,7 +354,7 @@ impl<'a> RBuffer<'a> {
             // trace!("read_string = {}", s);
             return Ok(s);
         }
-        return Ok("");
+        Ok("")
     }
 
     pub fn read_cstring(&mut self, n: usize) -> Result<&'a str> {
@@ -383,8 +389,11 @@ impl<'a> RBuffer<'a> {
             // todo!();
 
             self.sictx.unwrap().streamer_info(&hdr.name, -1);
-            if hdr.name != "" && self.sictx.is_some() {
-                if let Some(_) = self.sictx.unwrap().streamer_info(&hdr.name, -1) {
+            if !hdr.name.is_empty()
+                && self.sictx.is_some()
+                && self.sictx.unwrap().streamer_info(&hdr.name, -1).is_some()
+            {
+                {
                     todo!()
                 }
             }
@@ -409,7 +418,7 @@ impl<'a> RBuffer<'a> {
             self.read_u16()?;
         }
 
-        ensure!(!(class != "" && version <= 1), "not implemented");
+        ensure!(class.is_empty() || version > 1, "not implemented");
 
         Ok(())
     }
@@ -427,7 +436,7 @@ impl<'a> RBuffer<'a> {
             }
 
             if self.len() > 3 && s > 3 {
-                let mut hdr = [0 as u8; 3];
+                let mut hdr = [0; 3];
                 self.read_array_u8(&mut hdr)?;
                 self.rewind(3)?;
 
@@ -436,9 +445,9 @@ impl<'a> RBuffer<'a> {
                 }
             }
 
-            let hdr = self.r.extract_n(s as usize)?;
-
-            // self.skip(s.into())?;
+            // let _hdr = self.r.extract_n(s as usize)?;
+            //
+            self.skip(s.into())?;
         }
         Ok(())
     }

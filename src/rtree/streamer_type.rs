@@ -207,7 +207,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
             Streamer::BasicType(_) => {}
             Streamer::BasicPointer(_) => {}
             Streamer::ObjectAny(_) => {}
-            Streamer::STL(_) => {}
+            Streamer::Stl(_) => {}
             Streamer::Base(_) => {}
             Streamer::Object(_) => {}
             Streamer::ObjectPointer(_) => {}
@@ -224,6 +224,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
                 0
             }
         }
+
         kTString => 0,
         kSTL => 6,
 

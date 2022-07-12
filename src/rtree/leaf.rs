@@ -6,7 +6,6 @@ use crate::rtypes::FactoryItem;
 use crate::{factory_all_for_register_impl, rbase};
 use crate::{factory_fn_register_impl, rvers};
 use anyhow::ensure;
-use log::trace;
 
 #[derive(Debug)]
 pub enum Leaf {
@@ -101,12 +100,12 @@ pub struct TLeaf {
 
 impl Named for TLeaf {
     fn title(&self) -> &'_ str {
-        &self.named.title()
+        self.named.title()
     }
 }
 
 pub fn leaf_dim(_s: &str) -> Option<Vec<i32>> {
-    return None;
+    None
 
     // let re = Regex::new(r"\w*?\[(\d*)\]+?").unwrap();
     //

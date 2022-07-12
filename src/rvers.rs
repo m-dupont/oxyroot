@@ -21,34 +21,40 @@ pub const OBJ_STRING: i16 = 1;
 /// ROOT version for TProcessID
 pub const _PROCESS_ID: i16 = 1;
 /// ROOT version for TProcessUUID
+#[allow(dead_code)]
 pub const PROCESS_UUID: i16 = 1;
 /// ROOT version for TRef
+#[allow(dead_code)]
 pub const REF: i16 = 1;
-
+#[allow(dead_code)]
 pub const UUID: i16 = 1;
 // ROOT version for TUUID
+#[allow(dead_code)]
 pub const STRING: i16 = 2;
 // ROOT version for TString
+#[allow(dead_code)]
 pub const ARRAY: i16 = 1;
 // ROOT version for TArray
+#[allow(dead_code)]
 pub const ARRAY_C: i16 = 1;
 // ROOT version for TArrayC
-pub const ARRAY_S: i16 = 1;
-// ROOT version for TArrayS
-pub const ARRAY_I: i16 = 1;
-// ROOT version for TArrayI
-pub const ARRAY_L: i16 = 1;
-// ROOT version for TArrayL
-pub const ARRAY_L64: i16 = 1;
-// ROOT version for TArrayL64
-pub const ARRAY_F: i16 = 1;
-// ROOT version for TArrayF
-pub const ARRAY_D: i16 = 1;
-// ROOT version for TArrayD
-pub const BITS: i16 = 1;
-// ROOT version for TBits
-pub const COLLECTION: i16 = 3;
+// pub const ARRAY_S: i16 = 1;
+// // ROOT version for TArrayS
+// pub const ARRAY_I: i16 = 1;
+// // ROOT version for TArrayI
+// pub const ARRAY_L: i16 = 1;
+// // ROOT version for TArrayL
+// pub const ARRAY_L64: i16 = 1;
+// // ROOT version for TArrayL64
+// pub const ARRAY_F: i16 = 1;
+// // ROOT version for TArrayF
+// pub const ARRAY_D: i16 = 1;
+// // ROOT version for TArrayD
+// pub const BITS: i16 = 1;
+// // ROOT version for TBits
+// pub const COLLECTION: i16 = 3;
 // ROOT version for TCollection
+#[allow(dead_code)]
 pub const CLONES_ARRAY: i16 = 4;
 // ROOT version for TClonesArray
 /// ROOT version for TList
@@ -84,7 +90,7 @@ pub const STREAMER_STRING: i16 = 2;
 /// ROOT version for TStreamerSTL
 pub const STREAMER_STL: i16 = 3;
 /// ROOT version for TStreamerSTLstring
-pub const StreamerSTLstring: i16 = 2;
+pub const STREAMER_STLSTRING: i16 = 2;
 // StreamerArtificial       = 0  // ROOT version for TStreamerArtificial
 // Axis                     = 10 // ROOT version for TAxis
 // ConfidenceLevel          = 1  // ROOT version for TConfidenceLevel
@@ -130,7 +136,7 @@ pub const StreamerSTLstring: i16 = 2;
 /// ROOT version for ROOT::TIOFeatures
 pub const ROOT_IOFEATURES: i16 = 1;
 /// ROOT version for TBasket
-pub const BASKET: i16 = 3;
+// pub const BASKET: i16 = 3;
 /// ROOT version for TBranch
 pub const BRANCH: i16 = 13;
 /// ROOT version for TBranchElement
@@ -146,7 +152,7 @@ pub const Leaf: i16 = 2;
 #[allow(non_upper_case_globals)]
 pub const LeafElement: i16 = 1;
 // ROOT version for TLeafElement
-#[allow(non_upper_case_globals)]
+#[allow(non_upper_case_globals, dead_code)]
 pub const LeafObject: i16 = 4;
 // ROOT version for TLeafObject
 #[allow(non_upper_case_globals)]

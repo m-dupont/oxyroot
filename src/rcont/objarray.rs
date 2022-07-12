@@ -5,7 +5,6 @@ use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
 use anyhow::ensure;
-use log::{debug, info};
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -82,18 +81,14 @@ impl Unmarshaler for ObjArray {
         let nobjs = r.read_i32()?;
         self.low = r.read_i32()?;
 
-        for i in 0..nobjs {
+        for _ in 0..nobjs {
             let obj = r.read_object_any_into()?;
-            if obj.is_some() {
-                self.objs.push(obj.unwrap());
+            if let Some(obj) = obj {
+                self.objs.push(obj);
             }
-
-            // todo!()
         }
 
         Ok(())
-
-        // todo!()
     }
 }
 

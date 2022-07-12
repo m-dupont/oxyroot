@@ -17,8 +17,8 @@ use crate::rtypes::FactoryItem;
 
 #[derive(Default)]
 pub struct TDirectory {
-    rvers: i16,
-    uuid: Uuid,
+    _rvers: i16,
+    _uuid: Uuid,
     named: ObjNamed,
 }
 
@@ -271,8 +271,8 @@ impl Unmarshaler for TDirectoryFile {
         self.seek_parent = seek_parent;
         self.seek_keys = seek_keys;
         self.dir = TDirectory {
-            uuid,
-            rvers: version,
+            _uuid: uuid,
+            _rvers: version,
             ..Default::default()
         };
 

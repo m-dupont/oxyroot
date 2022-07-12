@@ -5,7 +5,6 @@ use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
 use anyhow::ensure;
-use log::{debug, trace};
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -65,9 +64,7 @@ impl Unmarshaler for List {
         self.name = Some(r.read_string()?.to_string());
         let size = r.read_i32()?;
 
-        trace!("name = {}, size = {}", self.name.as_ref().unwrap(), size);
-
-        for i in 0..size {
+        for _ in 0..size {
             let obj = r.read_object_any_into()?.expect("something is wrong");
             self.objs.push(obj);
 

@@ -9,7 +9,6 @@ use crate::rtypes;
 use crate::rtypes::FactoryItem;
 use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
-use log::trace;
 use std::fmt;
 use std::fmt::Debug;
 
@@ -153,7 +152,7 @@ impl Key {
 
     fn load(&self, file: &mut RootFileReader) -> Result<Vec<u8>> {
         if self.is_compressed() {
-            let mut buf = vec![0 as u8; self.obj_len as usize];
+            let mut buf = vec![0; self.obj_len as usize];
             let start = self.seek_key as u64 + self.key_len as u64;
             let sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
 
@@ -183,11 +182,13 @@ impl Key {
             .bytes(file, None)
             .map_err(|e| anyhow!("riofs: could not load key payload: {}", e))?;
 
-        let fct = rtypes::FACTORY.get(&self.class).ok_or(anyhow!(
-            "riofs: no registered factory for class {} (key={})",
-            self.class,
-            self.name
-        ))?;
+        let fct = rtypes::FACTORY.get(&self.class).ok_or_else(|| {
+            anyhow!(
+                "riofs: no registered factory for class {} (key={})",
+                self.class,
+                self.name
+            )
+        })?;
 
         let v = fct();
         //obj, ok := v.Interface().(root.OBJECT)
@@ -203,7 +204,13 @@ impl Key {
 
         self.obj = Some(vv);
 
-        if let Ok(_) = self.obj.as_ref().unwrap().downcast_ref::<TDirectoryFile>() {
+        if self
+            .obj
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<TDirectoryFile>()
+            .is_ok()
+        {
             todo!();
         }
 

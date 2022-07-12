@@ -4,8 +4,6 @@ use crate::rbytes::{RVersioner, Unmarshaler};
 /// to generate new streamers meta data from user types.
 use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase};
 use anyhow::ensure;
-use log::{info, trace};
-use std::fmt::Debug;
 
 use crate::rbytes;
 use crate::rcont;
@@ -24,7 +22,7 @@ pub enum Streamer {
     BasicType(StreamerBasicType),
     BasicPointer(StreamerBasicPointer),
     ObjectAny(StreamerObjectAny),
-    STL(StreamerSTL),
+    Stl(StreamerSTL),
     Base(StreamerBase),
     Object(StreamerObject),
     ObjectPointer(StreamerObjectPointer),
@@ -39,7 +37,7 @@ impl TryFrom<Box<dyn FactoryItem>> for Streamer {
                 Streamer::BasicType(*value.downcast::<StreamerBasicType>().unwrap())
             }
             "TStreamerString" => Streamer::String(*value.downcast::<StreamerString>().unwrap()),
-            "TStreamerSTL" => Streamer::STL(*value.downcast::<StreamerSTL>().unwrap()),
+            "TStreamerSTL" => Streamer::Stl(*value.downcast::<StreamerSTL>().unwrap()),
             "TStreamerBase" => Streamer::Base(*value.downcast::<StreamerBase>().unwrap()),
             "TStreamerObject" => Streamer::Object(*value.downcast::<StreamerObject>().unwrap()),
             "TStreamerObjectPointer" => {
@@ -68,7 +66,7 @@ impl Streamer {
             Streamer::BasicType(a) => a.element.name(),
             Streamer::BasicPointer(a) => a.element.name(),
             Streamer::ObjectAny(a) => a.element.name(),
-            Streamer::STL(a) => a.element.name(),
+            Streamer::Stl(a) => a.element.name(),
             Streamer::Base(a) => a.element.name(),
             Streamer::Object(a) => a.element.name(),
             Streamer::ObjectPointer(a) => a.element.name(),
@@ -216,11 +214,11 @@ impl root::traits::Named for StreamerElement {
 fn get_range(s: &str) -> (f64, f64, f64) {
     let (xmin, xmax, factor) = (0., 0., 0.);
 
-    if s == "" {
+    if s.is_empty() {
         return (xmin, xmax, factor);
     }
 
-    let beg = s.rfind("[");
+    let beg = s.rfind('[');
 
     if beg.is_none() {
         return (xmin, xmax, factor);
@@ -232,7 +230,7 @@ fn get_range(s: &str) -> (f64, f64, f64) {
         todo!()
     }
 
-    let end = s.rfind("]");
+    let end = s.rfind(']');
 
     if end.is_none() {
         return (xmin, xmax, factor);
@@ -242,7 +240,7 @@ fn get_range(s: &str) -> (f64, f64, f64) {
 
     let s = &s[beg + 1..end];
 
-    if s.rfind(",").is_none() {
+    if s.rfind(',').is_none() {
         return (xmin, xmax, factor);
     }
 
@@ -282,17 +280,10 @@ impl Unmarshaler for StreamerElement {
 
         self.ename = r.read_string()?.to_string();
 
-        match &self.etype {
-            Enum::Named(ty) => match ty {
-                EnumNamed::UChar => {
-                    if self.ename == "Bool_t" || self.ename == "bool" {
-                        self.etype = Enum::Named(EnumNamed::Bool);
-                    }
-                }
-
-                _ => {}
-            },
-            _ => {}
+        if let Enum::Named(EnumNamed::UChar) = &self.etype {
+            if self.ename == "Bool_t" || self.ename == "bool" {
+                self.etype = Enum::Named(EnumNamed::Bool);
+            }
         }
 
         if hdr.vers == 3 {
@@ -621,11 +612,11 @@ impl Unmarshaler for StreamerSTLstring {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
         let hdr = r.read_header(self.class())?;
         ensure!(
-            hdr.vers <= rvers::StreamerSTLstring,
+            hdr.vers <= rvers::STREAMER_STLSTRING,
             "rcont: invalid {} version={} > {}",
             self.class(),
             hdr.vers,
-            rvers::StreamerSTLstring
+            rvers::STREAMER_STLSTRING
         );
 
         r.read_object(&mut self.streamer_stl)?;

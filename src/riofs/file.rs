@@ -184,13 +184,13 @@ impl RootFile {
         };
 
         let mut f = RootFile {
-            inner: inner,
+            inner,
             ..Default::default()
         };
 
         f.read_header()?;
 
-        return Ok(f);
+        Ok(f)
     }
 
     pub(crate) fn read_at(&mut self, start: u64, len: u64) -> Result<Vec<u8>> {
@@ -292,7 +292,7 @@ impl RootFile {
         let mut rbuf = RBuffer::new(&buf, 0);
         trace!("rbuf len = {}", rbuf.len());
 
-        while rbuf.len() > 0 {
+        while !rbuf.is_empty() {
             let span = rbuf.read_object_into::<FreeSegments>()?;
 
             self.spans.append(span);
@@ -338,7 +338,7 @@ impl RootFile {
             } else {
                 let mut list: Box<List> = obj.downcast::<List>().unwrap();
                 for j in (0..list.len()).rev() {
-                    let jobj = list.at(j);
+                    let _jobj = list.at(j);
                     // let obj: Box<StreamerInfo> = jobj.downcast::<StreamerInfo>().unwrap();
                     // trace!("\tobj.name = {}", obj.name());
                 }
@@ -414,10 +414,10 @@ impl StreamerInfoContext for RootFileStreamerInfoContext {
             }
         }
 
-        if name.find("<").is_some() {
+        if name.find('<').is_some() {
             todo!()
         }
 
-        return None;
+        None
     }
 }

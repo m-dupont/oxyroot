@@ -53,10 +53,10 @@ pub enum ColorNamed {
 
 impl ColorNamed {
     pub fn from_i16(i: i16) -> Result<Self> {
-        num::FromPrimitive::from_i16(i).ok_or(anyhow!("Cant make enum from {i}"))
+        num::FromPrimitive::from_i16(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
     }
 
     pub fn to_i16(&self) -> Result<i16> {
-        num::ToPrimitive::to_i16(self).ok_or(anyhow!("Cant make a i16 from {:?}", self))
+        num::ToPrimitive::to_i16(self).ok_or_else(|| anyhow!("Cant make a i16 from {:?}", self))
     }
 }

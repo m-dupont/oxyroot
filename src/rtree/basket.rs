@@ -3,7 +3,6 @@ use crate::file::RootFileReader;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Named;
-use log::trace;
 
 #[derive(Default)]
 pub struct Basket {
@@ -15,7 +14,7 @@ pub struct Basket {
 
 impl Named for Basket {
     fn name(&self) -> &'_ str {
-        &self.key.name()
+        self.key.name()
     }
 }
 

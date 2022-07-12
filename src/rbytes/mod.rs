@@ -165,7 +165,7 @@ where
             self.insert(k, v);
         });
 
-        return Ok(());
+        Ok(())
     }
 }
 

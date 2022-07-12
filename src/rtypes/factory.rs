@@ -47,17 +47,17 @@ macro_rules! factory_fn_register_impl {
             }
         }
 
-        impl crate::root::traits::Object for $t {
+        impl $crate::root::traits::Object for $t {
             fn class(&self) -> &'_ str {
                 $n
             }
         }
 
-        impl crate::rtypes::factory::FactoryBuilder for $t {
-            fn register(factory: &mut crate::rtypes::factory::Factory) {
+        impl $crate::rtypes::factory::FactoryBuilder for $t {
+            fn register(factory: &mut $crate::rtypes::factory::Factory) {
                 let f = || {
                     let v: Self = Self::new();
-                    let b: Box<dyn crate::rtypes::factory::FactoryItem> = Box::new(v);
+                    let b: Box<dyn $crate::rtypes::factory::FactoryItem> = Box::new(v);
                     b
                 };
 
@@ -70,9 +70,9 @@ macro_rules! factory_fn_register_impl {
 #[macro_export]
 macro_rules! factory_all_for_register_impl {
     (  $t:ty, $n:literal  ) => {
-        impl crate::root::traits::Named for $t {}
+        impl $crate::root::traits::Named for $t {}
 
-        crate::factory_fn_register_impl! {$t, $n}
+        $crate::factory_fn_register_impl! {$t, $n}
     };
 }
 
