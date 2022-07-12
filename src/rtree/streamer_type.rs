@@ -111,16 +111,37 @@ lazy_static! {
 pub fn parse_typename(typename: &str) -> i32 {
     let tokens = RE.captures(typename).unwrap();
 
-    println!("tokens = {:?}", tokens);
+    trace!("tokens = {:?}", tokens);
 
     if tokens.get(0).unwrap().as_str() == "vector" {
-        return 10;
+        return 6;
+    }
+
+    if tokens.get(0).unwrap().as_str() == "set" {
+        return 6;
+    }
+
+    if tokens.get(0).unwrap().as_str() == "map" {
+        return 12;
     }
 
     0
 }
 
 pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: &str) -> i32 {
+    trace!(
+        "ty = {} streamer = {} class_name = {}",
+        ty,
+        match streamer {
+            None => {
+                "None"
+            }
+            Some(s) => {
+                s.name()
+            }
+        },
+        class_name
+    );
     match streamer {
         None => {}
         Some(streamer) => match streamer {
@@ -204,7 +225,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
             }
         }
         kTString => 0,
-        kSTL => 10,
+        kSTL => 6,
 
         _ => todo!(),
     };

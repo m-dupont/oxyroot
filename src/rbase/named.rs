@@ -3,7 +3,6 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root;
 use crate::root::traits::Object;
-use log::trace;
 
 /// The TNamed class is the base class for all named ROOT classes
 /// A TNamed contains the essential elements (name, title)
@@ -36,7 +35,6 @@ impl root::traits::Named for Named {
 impl Unmarshaler for Named {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
         let hdr = r.read_header(self.class())?;
-        trace!("hdr = {:?}", hdr);
 
         {
             // r.read_object(&mut self.obj)?;

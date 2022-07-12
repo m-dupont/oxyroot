@@ -44,8 +44,6 @@ impl traits::Object for List {
 
 impl Unmarshaler for List {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("LIST:unmarshal");
-
         let hdr = r.read_header(self.class())?;
 
         ensure!(
@@ -70,12 +68,10 @@ impl Unmarshaler for List {
         trace!("name = {}, size = {}", self.name.as_ref().unwrap(), size);
 
         for i in 0..size {
-            debug!("LIST:unmarshal: {}", i);
             let obj = r.read_object_any_into()?.expect("something is wrong");
             self.objs.push(obj);
 
             let n = r.read_u8()?;
-            trace!("n = {}", n);
 
             if n > 0 {
                 unimplemented!()

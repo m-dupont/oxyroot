@@ -1,9 +1,7 @@
 use anyhow::Result;
-use oxyroot::rbytes::UnmarshalerInto;
-use oxyroot::RootFile;
+use oxyroot::{RootFile, UnmarshalerInto};
 use regex::internal::Input;
 use std::fmt::Debug;
-use std::mem;
 
 #[test]
 fn open_nested() -> Result<()> {
@@ -154,11 +152,13 @@ fn open_tree_with_vector_parse() -> Result<()> {
     tree.branch("int32_array")
         .unwrap()
         .get_basket(|r| {
-            let mut len = r.len() as usize;
+            r.do_skip_header().unwrap();
+            let size = r.read_i32().unwrap();
             let mut ret: Vec<i32> = Vec::new();
-            while len > 0 {
-                ret.push(r.read_i32().unwrap());
-                len -= mem::size_of::<i32>();
+            for _ in 0..size {
+                let a = r.read_object_into::<i32>().unwrap();
+                println!("\t a = {:?}", a);
+                ret.push(a);
             }
             ret
         })
@@ -211,7 +211,8 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     tree.branch("SliceI16")
         .unwrap()
-        .get_basket_into::<Vec<i16>>()
+        .get_basket_into::<oxyroot::Slice<i16>>()
+        .map(|a| a.to_vec())
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
@@ -222,6 +223,132 @@ fn open_tree_with_slice_i16() -> Result<()> {
                 })
                 .for_each(drop)
         });
+
+    Ok(())
+}
+
+#[test]
+fn open_tree_with_slice_i16_into_vec() -> Result<()> {
+    let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
+
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?;
+    let tree = tree.unwrap();
+
+    let v: Vec<Vec<i16>> = tree
+        .branch("SliceI16")
+        .unwrap()
+        .get_basket_into::<oxyroot::Slice<i16>>()
+        .map(|s| s.into())
+        .collect();
+
+    let good = [
+        vec![],
+        vec![1],
+        vec![2, 2],
+        vec![3, 3, 3],
+        vec![4, 4, 4, 4],
+        vec![5, 5, 5, 5, 5],
+        vec![6, 6, 6, 6, 6, 6],
+        vec![7, 7, 7, 7, 7, 7, 7],
+        vec![8, 8, 8, 8, 8, 8, 8, 8],
+        vec![9, 9, 9, 9, 9, 9, 9, 9, 9],
+        vec![],
+        vec![11],
+        vec![12, 12],
+        vec![13, 13, 13],
+        vec![14, 14, 14, 14],
+        vec![15, 15, 15, 15, 15],
+        vec![16, 16, 16, 16, 16, 16],
+        vec![17, 17, 17, 17, 17, 17, 17],
+        vec![18, 18, 18, 18, 18, 18, 18, 18],
+        vec![19, 19, 19, 19, 19, 19, 19, 19, 19],
+        vec![],
+        vec![21],
+        vec![22, 22],
+        vec![23, 23, 23],
+        vec![24, 24, 24, 24],
+        vec![25, 25, 25, 25, 25],
+        vec![26, 26, 26, 26, 26, 26],
+        vec![27, 27, 27, 27, 27, 27, 27],
+        vec![28, 28, 28, 28, 28, 28, 28, 28],
+        vec![29, 29, 29, 29, 29, 29, 29, 29, 29],
+        vec![],
+        vec![31],
+        vec![32, 32],
+        vec![33, 33, 33],
+        vec![34, 34, 34, 34],
+        vec![35, 35, 35, 35, 35],
+        vec![36, 36, 36, 36, 36, 36],
+        vec![37, 37, 37, 37, 37, 37, 37],
+        vec![38, 38, 38, 38, 38, 38, 38, 38],
+        vec![39, 39, 39, 39, 39, 39, 39, 39, 39],
+        vec![],
+        vec![41],
+        vec![42, 42],
+        vec![43, 43, 43],
+        vec![44, 44, 44, 44],
+        vec![45, 45, 45, 45, 45],
+        vec![46, 46, 46, 46, 46, 46],
+        vec![47, 47, 47, 47, 47, 47, 47],
+        vec![48, 48, 48, 48, 48, 48, 48, 48],
+        vec![49, 49, 49, 49, 49, 49, 49, 49, 49],
+        vec![],
+        vec![51],
+        vec![52, 52],
+        vec![53, 53, 53],
+        vec![54, 54, 54, 54],
+        vec![55, 55, 55, 55, 55],
+        vec![56, 56, 56, 56, 56, 56],
+        vec![57, 57, 57, 57, 57, 57, 57],
+        vec![58, 58, 58, 58, 58, 58, 58, 58],
+        vec![59, 59, 59, 59, 59, 59, 59, 59, 59],
+        vec![],
+        vec![61],
+        vec![62, 62],
+        vec![63, 63, 63],
+        vec![64, 64, 64, 64],
+        vec![65, 65, 65, 65, 65],
+        vec![66, 66, 66, 66, 66, 66],
+        vec![67, 67, 67, 67, 67, 67, 67],
+        vec![68, 68, 68, 68, 68, 68, 68, 68],
+        vec![69, 69, 69, 69, 69, 69, 69, 69, 69],
+        vec![],
+        vec![71],
+        vec![72, 72],
+        vec![73, 73, 73],
+        vec![74, 74, 74, 74],
+        vec![75, 75, 75, 75, 75],
+        vec![76, 76, 76, 76, 76, 76],
+        vec![77, 77, 77, 77, 77, 77, 77],
+        vec![78, 78, 78, 78, 78, 78, 78, 78],
+        vec![79, 79, 79, 79, 79, 79, 79, 79, 79],
+        vec![],
+        vec![81],
+        vec![82, 82],
+        vec![83, 83, 83],
+        vec![84, 84, 84, 84],
+        vec![85, 85, 85, 85, 85],
+        vec![86, 86, 86, 86, 86, 86],
+        vec![87, 87, 87, 87, 87, 87, 87],
+        vec![88, 88, 88, 88, 88, 88, 88, 88],
+        vec![89, 89, 89, 89, 89, 89, 89, 89, 89],
+        vec![],
+        vec![91],
+        vec![92, 92],
+        vec![93, 93, 93],
+        vec![94, 94, 94, 94],
+        vec![95, 95, 95, 95, 95],
+        vec![96, 96, 96, 96, 96, 96],
+        vec![97, 97, 97, 97, 97, 97, 97],
+        vec![98, 98, 98, 98, 98, 98, 98, 98],
+        vec![99, 99, 99, 99, 99, 99, 99, 99, 99],
+    ];
+
+    assert_eq!(v, good);
 
     Ok(())
 }

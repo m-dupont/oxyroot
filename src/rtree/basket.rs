@@ -28,21 +28,21 @@ pub(crate) enum BasketData {
 
 impl Basket {
     pub(crate) fn raw_data(&self, file: &mut RootFileReader) -> BasketData {
-        trace!("basket:  = {}", self.name());
-        trace!(
-            "basket: objlen = {} border = {}",
-            self.key.obj_len(),
-            self.border()
-        );
-
-        trace!(
-            "basket: compressed_bytes = {} uncompressed_bytes = {}",
-            self.compressed_bytes(),
-            self.uncompressed_bytes()
-        );
+        // trace!("basket:  = {}", self.name());
+        // trace!(
+        //     "basket: objlen = {} border = {}",
+        //     self.key.obj_len(),
+        //     self.border()
+        // );
+        //
+        // trace!(
+        //     "basket: compressed_bytes = {} uncompressed_bytes = {}",
+        //     self.compressed_bytes(),
+        //     self.uncompressed_bytes()
+        // );
 
         let ret = self.key.bytes(file, None).unwrap();
-        trace!("len buf = {}", ret.len());
+        // trace!("len buf = {}", ret.len());
 
         if self.border() != self.uncompressed_bytes() {
             let (data, byte_offsets) = ret.split_at(self.border() as usize);
@@ -56,13 +56,13 @@ impl Basket {
             let last = byte_offsets.len() - 1;
             byte_offsets[last] = self.border();
 
-            trace!("byte_offsets = {:?}", byte_offsets);
+            // trace!("byte_offsets = {:?}", byte_offsets);
 
-            trace!(
-                "new len buf = {}, len byte_offsets = {}",
-                data.len(),
-                byte_offsets.len()
-            );
+            // trace!(
+            //     "new len buf = {}, len byte_offsets = {}",
+            //     data.len(),
+            //     byte_offsets.len()
+            // );
             return BasketData::UnTrustNEntries((self.n_entry_buf, data.to_vec(), byte_offsets));
         }
 
@@ -86,8 +86,6 @@ impl Basket {
 
 impl Unmarshaler for Basket {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("BASKET:unmarshal, name = {}", self.name());
-
         r.read_object(&mut self.key)?;
         let _vers = r.read_i16()?;
         let _buf_size = r.read_u32()?;
@@ -97,19 +95,8 @@ impl Unmarshaler for Basket {
             unimplemented!();
         }
 
-        trace!(
-            "_buf_size = {} _entry_size = {}",
-            _buf_size,
-            self.entry_size
-        );
-
         self.n_entry_buf = r.read_u32()?;
         self.last = r.read_i32()?;
-
-        trace!("n_entry_buf = {} ", self.n_entry_buf);
-        // trace!("_last = {} ", _last);
-        // trace!(" = {} ", _last);
-        trace!("border = {} ", self.border());
 
         // todo!();
         Ok(())

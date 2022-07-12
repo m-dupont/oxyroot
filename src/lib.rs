@@ -15,15 +15,71 @@ NJet.for_each(|v| println!("v = {v}"));
 
 # Which types can be read from a branch ?
 
+## Primitives and C++ STL standards
+
 oxyroot can iterate over  branch which contains :
 - primitive types like i32, f64, bool...
 - String (from TString, char* or std::string)
-- Vec (from std::vec or array)
+- Vec (from std::vector or array)
+- HashMap
 
-Examples can be found in `tests`
 
-# Structures
-Structure serialized in `Branch` can
+| C++ | Rust |
+|---------|---------|
+| std::string     | String     |
+| std::vector     | [Vec](Vec)     |
+| std::map     | [HashMap](std::collections::HashMap)    |
+| std::set     | [HashSet](std::collections::HashSet)      |
+| T*     | [`Slice<T>`](Slice)    |
+| T\[N\]     | [array]     |
+| TString     | String     |
+
+
+Examples can be found in tests.
+
+## Structures
+Structure serialized in `Branch` can be also read but the parsing code has to be written :
+
+```C++
+struct sd_t {
+         Int_t a;
+         Int_t b;
+};
+
+sd_t sd;
+tree->Branch("v_i",&sd, 3200000, 0);
+```
+
+The `sd` struct can be read with a code like this :
+
+
+```no_run
+use oxyroot::RBuffer;
+use oxyroot::RootFile;
+struct Sd {
+    a: i32,
+    b: i32,
+};
+
+let parse = |r: &mut RBuffer| Sd {
+    a: r.read_i32().unwrap(),
+    b: r.read_i32().unwrap(),
+};
+
+
+let s = "tests_data/doc/struct_sd.root";
+let tree = RootFile::open(s).unwrap().get_tree("T").unwrap().unwrap();
+
+// branch v_i contains v_i which will be zipped.
+let mut b = tree.branch("v_i").unwrap().get_basket(parse);
+
+for i in -10..10 {
+    let sd = b.next().unwrap();
+}
+```
+
+
+
 
  */
 
@@ -33,7 +89,7 @@ extern crate core;
 
 mod gen_factory;
 mod rbase;
-pub mod rbytes;
+mod rbytes;
 pub mod rcolors;
 mod rcompress;
 mod rcont;
@@ -49,10 +105,15 @@ mod utils;
 
 pub use riofs::file;
 
-pub use rbytes::rbuffer::RBuffer;
 pub use riofs::file::RootFile;
-pub use rtree::branch::TBranch;
+pub use rtree::branch::Branch;
 pub use rtree::tree::Tree;
+
+pub use rbytes::rbuffer::RBuffer;
+pub use rbytes::Unmarshaler;
+pub use rbytes::UnmarshalerInto;
+
+pub use rusty::Slice;
 
 #[cfg(test)]
 mod tests {

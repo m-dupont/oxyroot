@@ -9,7 +9,6 @@ use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
 use crate::rvers;
 use anyhow::{bail, ensure};
-use log::{debug, trace};
 use std::io::Read;
 
 #[derive(Default)]
@@ -27,8 +26,6 @@ pub struct TioFeatures(u8);
 
 impl Unmarshaler for TioFeatures {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("TioFeatures:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::ROOT_IOFEATURES,
@@ -39,13 +36,10 @@ impl Unmarshaler for TioFeatures {
         );
 
         let mut buf = [0 as u8; 4];
-        r.read(&mut buf[..1])?;
-
-        trace!("buf = {:?}", buf);
+        r.read_exact(&mut buf[..1])?;
 
         self.0 = if buf[0] != 0 {
-            trace!("buf[0] = {:?}", buf[0]);
-            r.read(&mut buf[1..])?;
+            r.read_exact(&mut buf[1..])?;
             r.read_u8()?
         } else {
             0
@@ -156,7 +150,6 @@ impl Tree {
 
 impl Unmarshaler for Tree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("TREE:unmarshal");
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::TREE,
@@ -191,8 +184,6 @@ impl Unmarshaler for Tree {
             self.zip_bytes = r.read_f64()? as i64;
             self.saved_bytes = r.read_f64()? as i64;
         }
-
-        trace!("nentries = {}", self.entries);
 
         if hdr.vers >= 18 {
             self.flushed_bytes = r.read_i64()?;
@@ -248,15 +239,11 @@ impl Unmarshaler for Tree {
 
             let _ = r.read_i8();
             r.read_array_i64(&mut self.clusters.sizes)?;
-
-            trace!("ranges = {:?}", self.clusters.ranges);
         }
 
         if hdr.vers >= 20 {
             r.read_object(&mut self.iobits)?;
         }
-
-        trace!("iobits = {:?}", self.iobits);
 
         {
             let mut branches = r.read_object_into::<ObjArray>()?;
@@ -277,7 +264,6 @@ impl Unmarshaler for Tree {
             let mut _leaves = r.read_object_into::<ObjArray>()?;
         }
 
-        debug!("read new element");
         if hdr.vers > 5 {
             let v = r.read_object_any_into()?;
             if v.is_some() {

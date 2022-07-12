@@ -3,6 +3,7 @@ use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::rcont::objarray::ObjArray;
+use crate::rdict::StreamerInfo;
 use crate::root::traits::{Named, Object};
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::leaf::Leaf;
@@ -19,7 +20,7 @@ use std::marker::PhantomData;
 
 pub enum BranchChunks {
     RegularSized((u32, i32, Vec<u8>)),
-    IrregularSized((u32, Vec<Vec<u8>>)),
+    IrregularSized((u32, Vec<Vec<u8>>, i32)), // _,_, header_bytes
 }
 
 pub enum Branch {
@@ -153,13 +154,17 @@ impl Branch {
                             }
                             v
                         }
-                        BranchChunks::IrregularSized((_n, data_chuncked)) => data_chuncked
-                            .iter()
-                            .map(|buf| {
-                                let mut r = RBuffer::new(&buf, 0);
-                                func(&mut r)
-                            })
-                            .collect::<Vec<_>>(),
+                        BranchChunks::IrregularSized((_n, data_chuncked, header_bytes)) => {
+                            data_chuncked
+                                .iter()
+                                .map(|buf| {
+                                    let mut r = RBuffer::new(&buf, 0);
+                                    r.set_skip_header(Some(header_bytes));
+
+                                    func(&mut r)
+                                })
+                                .collect::<Vec<_>>()
+                        }
                     })
                     .flatten(),
             );
@@ -313,7 +318,7 @@ impl<'a, T> ZiperBranches<'a, T> {
 
                 let n = match chunk {
                     BranchChunks::RegularSized((n, _, _)) => n,
-                    BranchChunks::IrregularSized((n, _)) => n,
+                    BranchChunks::IrregularSized((n, _, _)) => n,
                 };
 
                 self.output_buffers.push(Some(chunk));
@@ -330,7 +335,7 @@ impl<'a, T> ZiperBranches<'a, T> {
         if let Some(chunk) = it_branch.next() {
             let n = match chunk {
                 BranchChunks::RegularSized((n, _, _)) => n,
-                BranchChunks::IrregularSized((n, _)) => n,
+                BranchChunks::IrregularSized((n, _, _)) => n,
             };
 
             trace!("n = {}", n);
@@ -540,7 +545,6 @@ impl Named for TBranch {
 
 impl Unmarshaler for TBranch {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("TBranch:unmarshal, name = {}", self.name());
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::BRANCH,
@@ -577,7 +581,6 @@ impl Unmarshaler for TBranch {
 
             {
                 let mut branches = r.read_object_into::<ObjArray>()?;
-                trace!("branches for {} = {:?}", self.name(), branches);
                 self.branches = branches
                     .take_objs()
                     .into_iter()
@@ -587,7 +590,6 @@ impl Unmarshaler for TBranch {
 
             {
                 let mut leaves = r.read_object_into::<ObjArray>()?;
-                trace!("leaves = {:?}", leaves);
                 if !leaves.objs.is_empty() {
                     self.leaves = leaves
                         .take_objs()
@@ -599,19 +601,15 @@ impl Unmarshaler for TBranch {
 
             {
                 let mut baskets = r.read_object_into::<ObjArray>()?;
-                trace!("leaves = {:?}", baskets);
                 if !baskets.objs.is_empty() {
                     self.baskets = baskets.take_objs();
                 }
-
-                trace!("self.baskets = {:?}", self.baskets);
             }
 
             {
                 let _ = r.read_i8()?;
                 let mut b = vec![0; self.max_baskets as usize];
                 r.read_array_i32(b.as_mut_slice())?;
-                trace!("b = {:?}", b);
 
                 self.basket_bytes
                     .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
@@ -621,7 +619,6 @@ impl Unmarshaler for TBranch {
                 let _ = r.read_i8()?;
                 let mut b = vec![0 as i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
-                trace!("b = {:?}", b);
 
                 self.basket_entry
                     .extend_from_slice(&b.as_slice()[..(self.write_basket + 1) as usize]);
@@ -631,15 +628,10 @@ impl Unmarshaler for TBranch {
                 let _ = r.read_i8()?;
                 let mut b = vec![0 as i64; self.max_baskets as usize];
                 r.read_array_i64(b.as_mut_slice())?;
-                trace!("b = {:?}", b);
 
                 self.basket_seek
                     .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
             }
-
-            trace!("self.basket_bytes = {:?}", self.basket_bytes);
-            trace!("self.basket_entry = {:?}", self.basket_entry);
-            trace!("self.basket_seek = {:?}", self.basket_seek);
 
             self.fname = r.read_string()?.to_string();
         } else if hdr.vers >= 6 {
@@ -725,7 +717,6 @@ impl TBranchElement {
     }
 
     pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
-        trace!("We are in branch = {}", self.name());
         let mut size_leaves = self
             .branch
             .leaves
@@ -733,14 +724,13 @@ impl TBranchElement {
             .map(|e| e.etype())
             .collect::<Vec<_>>();
 
-        trace!("leaves = {:?}", self.branch.leaves.len());
-
-        trace!(
-            "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size = {:?})",
-            &self.branch.basket_seek,
-            &self.branch.basket_bytes,
-            size_leaves
-        );
+        //
+        // trace!(
+        //     "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size = {:?})",
+        //     &self.branch.basket_seek,
+        //     &self.branch.basket_bytes,
+        //     size_leaves
+        // );
 
         if size_leaves.len() != self.branch.basket_seek.len() {
             for _i in 1..self.branch.basket_seek.len() {
@@ -755,90 +745,102 @@ impl TBranchElement {
                 size_leaves,
                 &self.branch.leaves
             )
-                .map(|(start, len, mut chunk_size, leave)| {
-                    trace!(
-                    "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
-                    *start as i64 + *len as i64,
-                    chunk_size, leave
+            .map(|(start, len, mut chunk_size, leave)| {
+                //     trace!(
+                //     "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
+                //     *start as i64 + *len as i64,
+                //     chunk_size, leave
+                // );
+                let mut reader = self.branch.reader.as_ref().unwrap().clone();
+                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                let mut r = RBuffer::new(&buf, 0);
+                let b = r.read_object_into::<Basket>().unwrap();
+
+                trace!(
+                    "chunk_size = {}, b.entry_size() = {}",
+                    chunk_size,
+                    b.entry_size()
                 );
-                    let mut reader = self.branch.reader.as_ref().unwrap().clone();
-                    let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                    let mut r = RBuffer::new(&buf, 0);
-                    let b = r.read_object_into::<Basket>().unwrap();
 
-
-                    trace!("chunk_size = {}, b.entry_size() = {}", chunk_size, b.entry_size());
-
-                    match leave {
-                        // In case of string, we have to use n
-                        Leaf::C(_) | Leaf::Element(_) => {
-                            chunk_size = b.entry_size();
-                        },
-                        _ => {}
+                match leave {
+                    // In case of string, we have to use n
+                    Leaf::C(_) | Leaf::Element(_) => {
+                        chunk_size = b.entry_size();
                     }
+                    _ => {}
+                }
 
-                    trace!("classname = {} streamer_type = {}, stl_type = {}", self.class_name(), self.streamer_type(), self.stl_type());
+                trace!(
+                    "classname = {} streamer_type = {}, stl_type = {}",
+                    self.class_name(),
+                    self.streamer_type(),
+                    self.stl_type()
+                );
 
-                    match b.raw_data(&mut reader) {
-                        BasketData::TrustNEntries((n, buf)) => {
+                match b.raw_data(&mut reader) {
+                    BasketData::TrustNEntries((n, buf)) => {
+                        trace!("send ({n},{chunk_size},{:?})", buf);
+                        return BranchChunks::RegularSized((n, chunk_size, buf));
+                    }
+                    BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
+                        // In case of string, we have to use n
+                        Leaf::C(_) => {
                             trace!("send ({n},{chunk_size},{:?})", buf);
                             return BranchChunks::RegularSized((n, chunk_size, buf));
                         }
-                        BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
-                            // In case of string, we have to use n
-                            Leaf::C(_) => {
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::RegularSized((n, chunk_size, buf));
-                            },
-                            Leaf::Element(_) => {
-                                let streamer = self.branch.sinfos.as_ref().unwrap().get(&self.class);
+                        Leaf::Element(_) => {
+                            let streamer = self.branch.sinfos.as_ref().unwrap().get(&self.class);
 
-                                let streamer = streamer.expect("streaminfo must exist");
+                            let streamer = streamer;
 
+                            let element = match streamer {
+                                None => None,
+                                Some(streamer) => streamer.get(self.clean_name()),
+                            };
 
-                                // for streamer in self.branch.sinfos.as_ref().unwrap().list().iter().rev() {
-                                //     trace!("streamer name = = {}", streamer.name())
-                                // }
+                            let header_bytes = streamer_type::header_bytes_from_type(
+                                self.streamer_type(),
+                                element,
+                                self.class_name(),
+                            );
 
-                                let element = streamer.get(self.clean_name());
+                            trace!("header_bytes = {}", header_bytes);
+                            // trace!("buf = {:?}", buf);
 
-                                // let elem = streamer.s
+                            let byte_offsets: Vec<_> = byte_offsets
+                                .iter()
+                                .map(|o| o + 0)
+                                .zip(byte_offsets.iter().skip(1))
+                                .collect();
+                            // trace!("byte_offsets = {:?}", byte_offsets);
+                            // trace!("buf = {:?}", buf);
 
+                            let data: Vec<_> = byte_offsets
+                                .iter()
+                                .map(|(start, stop)| {
+                                    let ref b = buf[*start as usize..**stop as usize];
+                                    b.to_vec()
+                                })
+                                .collect();
+                            // trace!("data = {:?}", data);
 
-                                let header_bytes = streamer_type::header_bytes_from_type(self.streamer_type(), element, self.class_name());
-
-                                trace!("header_bytes = {}", header_bytes);
-                                trace!("buf = {:?}", buf);
-
-                                let byte_offsets: Vec<_> = byte_offsets.iter().map(|o| o + header_bytes).zip(byte_offsets.iter().skip(1)).collect();
-                                trace!("byte_offsets = {:?}", byte_offsets);
-
-
-                                let data: Vec<_> = byte_offsets.iter().map(|(start, stop)|
-                                    {
-                                        let ref b = buf[*start as usize..**stop as usize];
-                                        b.to_vec()
-                                    }).collect();
-                                trace!("data = {:?}", data);
-
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::IrregularSized((n, data));
-                            },
-                            _ => {
-                                let n = buf.len() / chunk_size as usize;
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::RegularSized((n as u32, chunk_size, buf));
-                            }
-                        },
-                    };
-                }),
+                            trace!("send ({n},{chunk_size},{:?})", data);
+                            return BranchChunks::IrregularSized((n, data, header_bytes));
+                        }
+                        _ => {
+                            let n = buf.len() / chunk_size as usize;
+                            trace!("send ({n},{chunk_size},{:?})", buf);
+                            return BranchChunks::RegularSized((n as u32, chunk_size, buf));
+                        }
+                    },
+                };
+            }),
         )
     }
 }
 
 impl Unmarshaler for TBranchElement {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("TBranchElement:unmarshal, name = {}", self.name());
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::BRANCH_ELEMENT,

@@ -4,7 +4,6 @@ use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
 use crate::rvers;
 use anyhow::ensure;
-use log::trace;
 
 use crate::rcolors::Color;
 
@@ -17,7 +16,6 @@ pub struct AttMarker {
 
 impl Unmarshaler for AttMarker {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("ATT_MARKER:unmarshal");
         let hdr = r.read_header(self.class())?;
 
         ensure!(
@@ -32,7 +30,6 @@ impl Unmarshaler for AttMarker {
 
         self.style = r.read_i16()?;
         self.width = r.read_f32()?;
-        trace!("width = {:?}", self.width);
         r.check_header(&hdr)?;
         Ok(())
     }

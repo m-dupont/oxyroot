@@ -2,6 +2,9 @@ use crate::rdict::StreamerInfo;
 use crate::root;
 use anyhow::Result;
 use rbuffer::RBuffer;
+use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
+use std::hash::Hash;
 
 pub mod consts;
 pub mod rbuffer;
@@ -44,6 +47,12 @@ pub trait StreamerInfoContext {
     fn streamer_info(&self, name: &str, version: i32) -> Option<&StreamerInfo>;
 }
 
+/// Trait that permits reading a type from an ROOT file.
+///
+/// Examples of types that implement this:
+///
+/// * Primitive integers, floats, etc
+/// * Owned byte containers (`Vec<T>`, `HashMap<K,V>`, HashSet<K> )
 pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
 }
@@ -83,6 +92,7 @@ impl_unmarshaler_primitive!(bool);
 
 impl Unmarshaler for String {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        r.do_skip_header()?;
         *self = r.read_string()?.to_string();
         Ok(())
     }
@@ -93,14 +103,69 @@ where
     T: UnmarshalerInto<Item = T>,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
-        let mut len = r.len() as usize;
-        while len > 0 {
-            let before = r.pos();
-            self.push(r.read_object_into::<T>().unwrap());
-            let after = r.pos();
-            len -= (after - before) as usize;
+        r.do_skip_header()?;
+        let size = r.read_i32()?;
+
+        r.set_skip_header(None);
+
+        for _ in 0..size {
+            let a = r.read_object_into::<T>()?;
+            self.push(a);
+        }
+
+        Ok(())
+    }
+}
+
+impl<T> Unmarshaler for HashSet<T>
+where
+    T: UnmarshalerInto<Item = T> + Eq + Hash + Debug,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        r.do_skip_header()?;
+        let size = r.read_i32()?;
+        r.set_skip_header(None);
+        for _ in 0..size {
+            let a = r.read_object_into::<T>()?;
+            self.insert(a);
         }
         Ok(())
+    }
+}
+
+impl<K, V> Unmarshaler for HashMap<K, V>
+where
+    V: UnmarshalerInto<Item = V> + Debug,
+    K: UnmarshalerInto<Item = K> + Eq + Hash + Debug,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        r.do_skip_header()?;
+
+        let size = r.read_i32()?;
+        let mut keys = Vec::with_capacity(size as usize);
+        let mut values = Vec::with_capacity(size as usize);
+
+        r.set_skip_header(Some(6));
+
+        for _i in 0..size {
+            // r.set_skip_header(Some(0));
+            let k = r.read_object_into::<K>()?;
+            r.set_skip_header(Some(0));
+            keys.push(k);
+        }
+
+        r.set_skip_header(Some(6));
+        for _i in 0..size {
+            let v = r.read_object_into::<V>()?;
+            r.set_skip_header(Some(0));
+            values.push(v);
+        }
+
+        keys.into_iter().zip(values.into_iter()).for_each(|(k, v)| {
+            self.insert(k, v);
+        });
+
+        return Ok(());
     }
 }
 
@@ -118,7 +183,6 @@ where
 
     fn unmarshal_into(r: &mut RBuffer) -> Result<Self::Item> {
         let mut a: Self::Item = Self::Item::default();
-        // let mut b: Unmarshaler2
         Unmarshaler::unmarshal(&mut a, r)?;
         Ok(a)
     }

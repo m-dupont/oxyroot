@@ -128,7 +128,6 @@ impl RootFileReader {
 
 impl Clone for RootFileReader {
     fn clone(&self) -> Self {
-        debug!("create new RootFileReader");
         RootFileReader::new(self.path.clone()).unwrap()
     }
 }
@@ -203,7 +202,7 @@ impl RootFile {
         let buf = self.read_at(0, HEADER_LEN + HEADER_EXTRA_LEN)?;
         let mut r = RBuffer::new(&buf, 0);
         let mut magic: [u8; 4] = [0; 4];
-        r.read(&mut magic)?;
+        r.read_exact(&mut magic)?;
 
         trace!("magic = {:?}", magic);
 
@@ -246,7 +245,7 @@ impl RootFile {
 
         let _ = r.read_u16()?;
         let mut uuid: [u8; 16] = [0; 16];
-        r.read(&mut uuid)?;
+        r.read_exact(&mut uuid)?;
         self.inner.header.uuid = Uuid::from_bytes(uuid);
 
         trace!("uuid = {}", self.inner.header.uuid);
@@ -303,8 +302,6 @@ impl RootFile {
     }
 
     fn read_streamer_info(&mut self) -> Result<()> {
-        trace!("read_streamer_info");
-
         if self.inner.header.seek_info <= 0 || self.inner.header.seek_info >= self.end() {
             return Err(anyhow!(
                 "riofs: invalid pointer to STREAMER_INFO (pos={} end={})",
@@ -327,26 +324,21 @@ impl RootFile {
         }
 
         let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
-        trace!("si_key = {:?}", si_key);
 
         let ogj = si_key.object(&mut self.inner.reader, None)?.unwrap();
 
         let mut objs: Box<List> = ogj.downcast::<List>().unwrap();
-        trace!("len of objs = {}", objs.len());
 
         for i in (0..objs.len()).rev() {
             let obj = objs.at(i);
-            debug!(" i = {i}, class = {}", obj.class());
 
             if obj.class() == "TStreamerInfo" {
                 let obj: Box<StreamerInfo> = obj.downcast::<StreamerInfo>().unwrap();
-                trace!("obj.name = {}", obj.name());
                 self.sinfos.push(*obj);
             } else {
                 let mut list: Box<List> = obj.downcast::<List>().unwrap();
                 for j in (0..list.len()).rev() {
                     let jobj = list.at(j);
-                    debug!("\tj = {j}, class = {}", jobj.class());
                     // let obj: Box<StreamerInfo> = jobj.downcast::<StreamerInfo>().unwrap();
                     // trace!("\tobj.name = {}", obj.name());
                 }
@@ -395,8 +387,6 @@ impl RootFileStreamerInfoContext {
     pub fn push(&mut self, info: StreamerInfo) {
         let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
         v.push(info);
-
-        trace!("len = {}", self.list.len());
     }
     pub fn list(&self) -> &Rc<Vec<StreamerInfo>> {
         &self.list

@@ -1,10 +1,9 @@
 use crate::factory_all_for_register_impl;
-use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
 use crate::rvers;
+use crate::RBuffer;
 use anyhow::ensure;
-use log::trace;
 
 use crate::rcolors::Color;
 
@@ -18,7 +17,6 @@ pub struct AttFill {
 
 impl Unmarshaler for AttFill {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("AttFill:unmarshal");
         let hdr = r.read_header(self.class())?;
 
         ensure!(
@@ -31,7 +29,6 @@ impl Unmarshaler for AttFill {
 
         self.color = Color::from_i16(r.read_i16()?);
 
-        trace!("color = {:?}", self.color);
         self.style = r.read_i16()?;
 
         r.check_header(&hdr)?;

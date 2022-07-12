@@ -1,6 +1,5 @@
 use anyhow::Result;
 use flate2::read::ZlibDecoder;
-use log::trace;
 use lz4::block::decompress_to_buffer as LZ4_decompress_to_buffer;
 use std::io::Read;
 use xz2::read::XzDecoder;
@@ -52,13 +51,11 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
         let _ = src.read_exact(&mut hdr)?;
         // let _ = src.read_exact(dst)?;
         // let _ = src.read_exact(dst)?;
-        trace!("decompress: hdr = {:?}", hdr);
 
         let _srcsz = hdr[3] as i64 | (hdr[4] as i64) << 8 | (hdr[5] as i64) << 16;
         let tgtsz = hdr[6] as i64 | (hdr[7] as i64) << 8 | (hdr[8] as i64) << 16;
         // let tgtsz = hdr[6]) | int64(hdr[7])<<8 | int64(hdr[8])<<16
         end += tgtsz;
-        trace!("end = {}", end);
 
         match kind_of(hdr.as_ref()) {
             Kind::Inherit => {
@@ -69,7 +66,6 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
             }
 
             Kind::ZLIB => {
-                trace!("case zlib");
                 let mut d = ZlibDecoder::new(src);
                 d.read_exact(dst.as_mut())?;
                 return Ok(0);

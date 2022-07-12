@@ -115,6 +115,6 @@ impl TemplateWriter {
 impl Drop for TemplateWriter {
     fn drop(&mut self) {
         println!("Delete {}", self.out_dir.to_str().unwrap());
-        fs::remove_dir_all(&self.out_dir).expect("TODO: panic message");
+        // fs::remove_dir_all(&self.out_dir).expect("TODO: panic message");
     }
 }

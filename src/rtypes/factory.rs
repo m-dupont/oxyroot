@@ -13,7 +13,6 @@ use trait_set::trait_set;
 use downcast::{downcast, Any};
 
 use anyhow::{bail, Result};
-use log::trace;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
 pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItem>;
@@ -97,7 +96,6 @@ impl<'a> Factory<'a> {
     }
 
     pub fn get(&self, s: &'a str) -> Option<&FactoryBuilderValue> {
-        trace!("get: s: {}", s);
         self.map.get(s)
     }
 

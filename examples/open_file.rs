@@ -2,8 +2,8 @@ use chrono::Local;
 use env_logger::{Builder, Target, WriteStyle};
 use log::{error, trace, LevelFilter};
 use oxyroot::file::RootFile;
-use oxyroot::rbytes::rbuffer::RBuffer;
 use oxyroot::root::traits::Named;
+use oxyroot::RBuffer;
 use std::io::Write;
 
 fn main() {

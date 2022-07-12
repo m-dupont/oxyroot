@@ -23,21 +23,6 @@ impl fmt::Debug for objects::Object {
         // Ok(())
     }
 }
-// impl fmt::Debug for KeyObject {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         let op = &self.0;
-//         match op {
-//             None => f
-//                 .debug_struct("KeyObject")
-//                 .field("OBJECT", &STRING::from("None"))
-//                 .finish(),
-//             Some(obj) => f
-//                 .debug_struct("KeyObject")
-//                 .field("OBJECT", &obj.class())
-//                 .finish(),
-//         }
-//     }
-// }
 
 #[derive(Debug)]
 pub struct Key {
@@ -118,7 +103,6 @@ impl Unmarshaler for Key {
         let class = r.read_string()?.to_string();
 
         let name = r.read_string()?.to_string();
-        trace!("class = '{}', name = '{}'", class, name);
         let title = r.read_string()?.to_string();
 
         // todo!();
@@ -170,31 +154,17 @@ impl Key {
     fn load(&self, file: &mut RootFileReader) -> Result<Vec<u8>> {
         if self.is_compressed() {
             let mut buf = vec![0 as u8; self.obj_len as usize];
-            trace!("load, is_compressed");
             let start = self.seek_key as u64 + self.key_len as u64;
             let sr = file.read_at(start, (self.n_bytes as u64) - (self.key_len as u64))?;
-            trace!("sr[0..16] = {:?}", &sr[0..16]);
 
             rcompress::decompress(&mut buf, &sr)?;
 
             return Ok(buf);
-
-            // if let Ok(_) = rcompress::decompress(&mut buf, &sr) {
-            //     // trace!("buf = {:?}..", &buf[0..16]);
-            //     return Ok(buf);
-            // } else {
-            //     return Err(anyhow!("riofs: could not decompress key payload"));
-            // }
-
-            // trace!("buf = ..{:?}", buf.iter().rev().collect::<u8>()[0..100]);
         }
 
         let start = self.seek_key as u64 + self.key_len as u64;
 
-        // trace!("read from {} for {}", start, self.obj_len);
-
         let buf = file.read_at(start, self.obj_len as u64)?;
-        // trace!("buf = {:?}", buf);
         Ok(buf)
     }
 
@@ -212,8 +182,6 @@ impl Key {
         let buf = self
             .bytes(file, None)
             .map_err(|e| anyhow!("riofs: could not load key payload: {}", e))?;
-
-        trace!("k.class = {}", self.class);
 
         let fct = rtypes::FACTORY.get(&self.class).ok_or(anyhow!(
             "riofs: no registered factory for class {} (key={})",
@@ -233,12 +201,9 @@ impl Key {
 
         // self.objarr = *objs.downcast::<rcont::objarray::OBJ_ARRAY>().unwrap();
 
-        trace!("class = {} vv class = {}", self.class, vv.class());
-
         self.obj = Some(vv);
 
         if let Ok(_) = self.obj.as_ref().unwrap().downcast_ref::<TDirectoryFile>() {
-            trace!("TDirectoryFile = true");
             todo!();
         }
 

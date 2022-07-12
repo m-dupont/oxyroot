@@ -62,8 +62,6 @@ impl traits::Named for ObjArray {
 
 impl Unmarshaler for ObjArray {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("OBJ_ARRAY:unmarshal");
-
         let hdr = r.read_header(self.class())?;
 
         ensure!(
@@ -85,7 +83,6 @@ impl Unmarshaler for ObjArray {
         self.low = r.read_i32()?;
 
         for i in 0..nobjs {
-            debug!("OBJ_ARRAY:unmarshal: {}", i);
             let obj = r.read_object_any_into()?;
             if obj.is_some() {
                 self.objs.push(obj.unwrap());

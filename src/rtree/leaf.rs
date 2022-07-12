@@ -119,8 +119,6 @@ pub fn leaf_dim(_s: &str) -> Option<Vec<i32>> {
 
 impl Unmarshaler for TLeaf {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("TLeaf:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::Leaf,
@@ -131,14 +129,12 @@ impl Unmarshaler for TLeaf {
         );
 
         r.read_object(&mut self.named)?;
-        trace!("title = {}", self.title());
 
         self.shape = match leaf_dim(self.title()) {
             None => Vec::new(),
             Some(v) => v,
         };
 
-        trace!("shape = {:?}", self.shape);
         self.len = r.read_i32()?;
         self.etype = r.read_i32()?;
         self.offset = r.read_i32()?;

@@ -5,7 +5,7 @@ use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
 use anyhow::{anyhow, bail, ensure, Result};
-use log::{trace, warn};
+use log::warn;
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -42,6 +42,10 @@ impl<'a> Rbuff<'a> {
         }
         Ok(buf)
     }
+
+    pub fn visible_buffer(&self) -> &'_ [u8] {
+        &self.p[self.c..]
+    }
 }
 
 impl<'a> Read for Rbuff<'a> {
@@ -77,6 +81,7 @@ pub struct RBuffer<'a> {
     offset: u32,
     sictx: Option<&'a dyn StreamerInfoContext>,
     refs: HashMap<i64, RBufferRefsItem<'a>>,
+    skip_header: Option<i32>,
 }
 
 impl<'a> RBuffer<'a> {
@@ -103,8 +108,18 @@ impl<'a> RBuffer<'a> {
 
     pub fn set_pos(&mut self, pos: i64) {
         let pos = pos - self.offset as i64;
-        assert!(pos > 0);
+        assert!(pos >= 0);
         self.r.c = pos as usize;
+    }
+
+    pub fn skip(&mut self, s: i64) -> Result<()> {
+        self.set_pos(self.pos() + s);
+        Ok(())
+    }
+
+    pub fn rewind(&mut self, s: i64) -> Result<()> {
+        self.set_pos(self.pos() - s);
+        Ok(())
     }
 
     pub fn read_u8(&mut self) -> Result<u8> {
@@ -202,6 +217,8 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_object_into<T: UnmarshalerInto<Item = T>>(&mut self) -> Result<T> {
+        // trace!("pos = {} buf = {:?}", self.pos(), self.r.p);
+        // trace!("vbuf = {:?}", self.r.visible_buffer());
         T::unmarshal_into(self)
     }
 
@@ -229,20 +246,20 @@ impl<'a> RBuffer<'a> {
             tag = self.read_u32()?;
         }
 
-        trace!(
-            "\t\t beg = {} bcnt = {} start = {} tag = {}",
-            beg,
-            bcnt,
-            start,
-            tag
-        );
+        // trace!(
+        //     "\t\t beg = {} bcnt = {} start = {} tag = {}",
+        //     beg,
+        //     bcnt,
+        //     start,
+        //     tag
+        // );
 
         let tag64 = tag as i64;
 
-        trace!(
-            "read_object_any_into: before case, pos = {}, tag64 = {tag64}",
-            self.pos()
-        );
+        // trace!(
+        //     "read_object_any_into: before case, pos = {}, tag64 = {tag64}",
+        //     self.pos()
+        // );
 
         if tag64 & kClassMask == 0 {
             if tag64 == kNullTag {
@@ -253,7 +270,7 @@ impl<'a> RBuffer<'a> {
                 bail!("rbytes: tag == 1 means 'self'; not implemented yet");
             }
 
-            warn!("Sadly return None");
+            // warn!("Sadly return None");
 
             return Ok(None);
 
@@ -278,12 +295,10 @@ impl<'a> RBuffer<'a> {
 
             let mut obj: Box<dyn rtypes::FactoryItem> = fct();
 
-            trace!("read_object_any_into: after cname pos = {}", self.pos());
             // obj.unmarshal(self);
             self.read_boxed_object(&mut obj)?;
 
             if vers > 0 {
-                trace!(">store: have to store object at {}", beg + kMapOffset);
 
                 // self.refs.insert(beg + kMapOffset, Obj(&obj));
                 // todo!()
@@ -294,7 +309,6 @@ impl<'a> RBuffer<'a> {
             return Ok(Some(obj));
         } else {
             let uref = tag64 & !kClassMask;
-            trace!("read_object_any_into, uref = {}", uref);
 
             let fct = self.refs.get(&uref);
             assert!(fct.is_some());
@@ -353,7 +367,7 @@ impl<'a> RBuffer<'a> {
             ..Default::default()
         };
 
-        trace!(">>read_header, pos = {}", self.pos());
+        // trace!(">>read_header, pos = {}", self.pos());
 
         let bcnt = self.read_u32()? as i64;
 
@@ -376,9 +390,9 @@ impl<'a> RBuffer<'a> {
             }
         }
 
-        trace!("hdr = {:?}", hdr);
-
-        trace!("<<read_header, pos = {}", self.pos());
+        // trace!("hdr = {:?}", hdr);
+        //
+        // trace!("<<read_header, pos = {}", self.pos());
 
         Ok(hdr)
     }
@@ -397,6 +411,35 @@ impl<'a> RBuffer<'a> {
 
         ensure!(!(class != "" && version <= 1), "not implemented");
 
+        Ok(())
+    }
+    pub fn set_skip_header(&mut self, skip_header: Option<i32>) {
+        self.skip_header = skip_header;
+    }
+    pub fn skip_header(&self) -> Option<i32> {
+        self.skip_header
+    }
+
+    pub fn do_skip_header(&mut self) -> Result<()> {
+        if let Some(s) = self.skip_header() {
+            if self.len() < s as i64 {
+                return Ok(());
+            }
+
+            if self.len() > 3 && s > 3 {
+                let mut hdr = [0 as u8; 3];
+                self.read_array_u8(&mut hdr)?;
+                self.rewind(3)?;
+
+                if hdr != [64, 0, 0] {
+                    return Ok(());
+                }
+            }
+
+            let hdr = self.r.extract_n(s as usize)?;
+
+            // self.skip(s.into())?;
+        }
         Ok(())
     }
 }

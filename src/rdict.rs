@@ -5,6 +5,7 @@ use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase};
 use anyhow::ensure;
 use log::{info, trace};
+use std::fmt::Debug;
 
 use crate::rbytes;
 use crate::rcont;
@@ -60,7 +61,7 @@ impl TryFrom<Box<dyn FactoryItem>> for Streamer {
 }
 
 impl Streamer {
-    fn name(&self) -> &'_ str {
+    pub fn name(&self) -> &'_ str {
         match self {
             Streamer::String(a) => a.element.name(),
             Streamer::STLstring(a) => a.streamer_stl.element.name(),
@@ -87,7 +88,6 @@ impl Streamers {
 
     pub fn get(&self, name: &str) -> Option<&Streamer> {
         for s in self.list.iter() {
-            trace!("looking for name = {}, s.name = {}", name, s.name());
             if s.name() == name {
                 return Some(s);
             }
@@ -127,8 +127,6 @@ impl Unmarshaler for StreamerInfo {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        trace!("hdr = {:?}", hdr);
-
         ensure!(
             !(hdr.vers > rvers::STREAMER_INFO),
             "rdict: invalid {} version={} > {}",
@@ -139,8 +137,6 @@ impl Unmarshaler for StreamerInfo {
 
         r.read_object(&mut self.named)?;
 
-        trace!("named = {:?}", self.named);
-
         self.chksum = r.read_u32()?;
         self.clsver = r.read_i32()?;
 
@@ -150,11 +146,11 @@ impl Unmarshaler for StreamerInfo {
 
         // self.objarr = r.read_object_into::<rcont::objarray::OBJ_ARRAY>()?;
 
-        objarr
-            .objs
-            .iter()
-            .enumerate()
-            .for_each(|(i, elem)| trace!("i = {i}, elem class = {}", elem.class()));
+        // objarr
+        //     .objs
+        //     .iter()
+        //     .enumerate()
+        //     .for_each(|(i, elem)| trace!("i = {i}, elem class = {}", elem.class()));
 
         for elem in objarr.objs {
             self.elems.push(elem.try_into()?);
@@ -218,7 +214,6 @@ impl root::traits::Named for StreamerElement {
 }
 
 fn get_range(s: &str) -> (f64, f64, f64) {
-    trace!("get_range on {s}");
     let (xmin, xmax, factor) = (0., 0., 0.);
 
     if s == "" {
@@ -247,8 +242,6 @@ fn get_range(s: &str) -> (f64, f64, f64) {
 
     let s = &s[beg + 1..end];
 
-    trace!("s = {s}");
-
     if s.rfind(",").is_none() {
         return (xmin, xmax, factor);
     }
@@ -260,7 +253,6 @@ fn get_range(s: &str) -> (f64, f64, f64) {
 
 impl Unmarshaler for StreamerElement {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_ELEMENT:unmarshal");
         let hdr = r.read_header(self.class())?;
 
         ensure!(
@@ -278,8 +270,6 @@ impl Unmarshaler for StreamerElement {
         // self.etype = num::FromPrimitive::from_i32(r.read_i32()?).unwrap();
         self.etype = Enum::from_i32(r.read_i32()?);
 
-        trace!("STREAMER_ELEMENT:unmarshal self.etype = {:?}", self.etype);
-
         self.esize = r.read_i32()?;
         self.arr_len = r.read_i32()?;
         self.arr_dim = r.read_i32()?;
@@ -290,13 +280,7 @@ impl Unmarshaler for StreamerElement {
             r.read_array_i32(&mut self.max_idx)?;
         }
 
-        trace!(
-            "STREAMER_ELEMENT:unmarshal self.max_idx = {:?}",
-            self.max_idx
-        );
-
         self.ename = r.read_string()?.to_string();
-        trace!("STREAMER_ELEMENT:unmarshal self.ename = {:?}", self.ename);
 
         match &self.etype {
             Enum::Named(ty) => match ty {
@@ -315,8 +299,6 @@ impl Unmarshaler for StreamerElement {
             self.xmin = r.read_f64()?;
             todo!()
         } else if hdr.vers > 3 {
-            trace!("title = {}", self.title());
-
             (self.xmin, self.xmax, self.factor) = get_range(self.title());
         } else {
             self.xmin = 0.;
@@ -340,7 +322,6 @@ pub struct StreamerBase {
 
 impl Unmarshaler for StreamerBase {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("STREAMER_BASE:unmarshal");
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_BASE,
@@ -377,8 +358,6 @@ impl StreamerString {
 
 impl Unmarshaler for StreamerString {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("STREAMER_STRING:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_STRING,
@@ -404,8 +383,6 @@ pub struct StreamerBasicType {
 
 impl Unmarshaler for StreamerBasicType {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        trace!("STREAMER_STRING:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_BASIC_TYPE,
@@ -419,12 +396,9 @@ impl Unmarshaler for StreamerBasicType {
 
         let mut etype = self.element.etype.to_i32();
 
-        trace!("etype = {etype}");
-
         if EnumNamed::OffsetL.to_i32()? < etype && etype < EnumNamed::OffsetP.to_i32()? {
             etype -= EnumNamed::OffsetL.to_i32()?;
         }
-        trace!("etype = {etype}");
 
         let mut basic = true;
 
@@ -464,8 +438,6 @@ impl Unmarshaler for StreamerBasicType {
             self.element.esize *= self.element.arr_len;
         }
 
-        trace!("esize = {}", self.element.esize);
-
         // todo!();
 
         r.check_header(&hdr)?;
@@ -483,8 +455,6 @@ pub struct StreamerObject {
 
 impl Unmarshaler for StreamerObject {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_OBJECT:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_OBJECT,
@@ -509,8 +479,6 @@ pub struct StreamerObjectPointer {
 
 impl Unmarshaler for StreamerObjectPointer {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_OBJECT_POINTER:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_OBJECT_POINTER,
@@ -535,8 +503,6 @@ pub struct StreamerObjectAny {
 
 impl Unmarshaler for StreamerObjectAny {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_OBJECT_ANY:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_OBJECT_ANY,
@@ -569,8 +535,6 @@ factory_all_for_register_impl!(StreamerBasicPointer, "TStreamerBasicPointer");
 
 impl Unmarshaler for StreamerBasicPointer {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_OBJECT_ANY:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_BASIC_POINTER,
@@ -585,8 +549,6 @@ impl Unmarshaler for StreamerBasicPointer {
         self.cvers = r.read_i32()?;
         self.cname = r.read_string()?.to_string();
         self.ccls = r.read_string()?.to_string();
-
-        trace!("ccls = {}", self.ccls);
 
         r.check_header(&hdr)?;
         Ok(())
@@ -612,8 +574,6 @@ impl RVersioner for StreamerSTL {
 
 impl Unmarshaler for StreamerSTL {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("STREAMER_STL:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::STREAMER_STL,
@@ -645,9 +605,6 @@ impl Unmarshaler for StreamerSTL {
             _ => {}
         }
 
-        trace!("self.vtype = {:?}", self.vtype);
-        trace!("self.ctype = {:?}", self.ctype);
-
         r.check_header(&hdr)?;
         Ok(())
     }
@@ -662,8 +619,6 @@ factory_all_for_register_impl!(StreamerSTLstring, "TStreamerSTLstring");
 
 impl Unmarshaler for StreamerSTLstring {
     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        info!("StreamerSTLstring:unmarshal");
-
         let hdr = r.read_header(self.class())?;
         ensure!(
             hdr.vers <= rvers::StreamerSTLstring,
