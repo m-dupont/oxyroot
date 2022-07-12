@@ -16,7 +16,7 @@ use std::fmt::Debug;
 /// tree.branch("SliceI16")
 ///         .unwrap()
 ///         .get_basket_into::<oxyroot::Slice<i16>>()
-///         .map(|a| a.to_vec())
+///         .map(|a| a.into_vec())
 ///         .enumerate()
 ///         .for_each(|(i, val)| {
 ///             assert_eq!(val.len(), i % 10);
@@ -35,14 +35,14 @@ pub struct Slice<T> {
 }
 
 impl<T> Slice<T> {
-    pub fn to_vec(self) -> Vec<T> {
+    pub fn into_vec(self) -> Vec<T> {
         self.inner
     }
 }
 
 impl<T> From<Slice<T>> for Vec<T> {
     fn from(slice: Slice<T>) -> Self {
-        slice.to_vec()
+        slice.into_vec()
     }
 }
 

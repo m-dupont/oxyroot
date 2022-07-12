@@ -212,7 +212,7 @@ fn open_tree_with_slice_i16() -> Result<()> {
     tree.branch("SliceI16")
         .unwrap()
         .get_basket_into::<oxyroot::Slice<i16>>()
-        .map(|a| a.to_vec())
+        .map(|a| a.into_vec())
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
