@@ -9,7 +9,7 @@ in Go and  [uproot](https://github.com/scikit-hep/uproot5) written in Python.
 use oxyroot::RootFile;
 let s = "examples/from_uproot/data/HZZ.root";
 let tree = RootFile::open(s).unwrap().get_tree("events").unwrap().unwrap();
-let NJet = tree.branch("NJet").unwrap().get_basket_into::<i32>();
+let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 NJet.for_each(|v| println!("v = {v}"));
 ```
 

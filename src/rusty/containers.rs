@@ -15,7 +15,7 @@ use std::fmt::Debug;
 /// let tree = tree.unwrap();
 /// tree.branch("SliceI16")
 ///         .unwrap()
-///         .get_basket_into::<oxyroot::Slice<i16>>()
+///         .as_iter::<oxyroot::Slice<i16>>()
 ///         .map(|a| a.into_vec())
 ///         .enumerate()
 ///         .for_each(|(i, val)| {

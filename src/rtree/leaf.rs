@@ -106,14 +106,6 @@ impl Named for TLeaf {
 
 pub fn leaf_dim(_s: &str) -> Option<Vec<i32>> {
     None
-
-    // let re = Regex::new(r"\w*?\[(\d*)\]+?").unwrap();
-    //
-    // if re.captures_iter(s).collect() == 0 {
-    //     None
-    // }
-    //
-    // todo!()
 }
 
 impl Unmarshaler for TLeaf {

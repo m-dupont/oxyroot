@@ -266,7 +266,7 @@ macro_rules! read_primitive_branch {
             temp.execute_macro()?;
 
             let tree = temp.tree()?;
-            let mut b = tree.branch("v_i").unwrap().get_basket_into::<$ftype>();
+            let mut b = tree.branch("v_i").unwrap().as_iter::<$ftype>();
 
             for i in -10..10 {
                 assert_eq!(i as $ftype, b.next().unwrap());

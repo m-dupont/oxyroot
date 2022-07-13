@@ -8,12 +8,12 @@ fn open_nested() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
 
     let tree = RootFile::open(s)?.get_tree("events")?.unwrap();
-    let NJet = tree.branch("NJet").unwrap().get_basket_into::<i32>();
+    let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 
     let n = NJet.count();
     assert_eq!(n, 2421);
 
-    let mut Jet_Py = tree.branch("Jet_Py").unwrap().get_basket_into::<f32>();
+    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>();
     assert_eq!(Jet_Py.count(), 2773);
 
     Ok(())
@@ -34,7 +34,7 @@ fn open_simple_root() -> Result<()> {
     let one = tree
         .branch("one")
         .unwrap()
-        .get_basket_into::<i32>()
+        .as_iter::<i32>()
         .collect::<Vec<_>>();
 
     assert_eq!(one, [1, 2, 3, 4]);
@@ -42,7 +42,7 @@ fn open_simple_root() -> Result<()> {
     let two = tree
         .branch("two")
         .unwrap()
-        .get_basket_into::<f32>()
+        .as_iter::<f32>()
         .collect::<Vec<_>>();
 
     assert_eq!(two, [1.1, 2.2, 3.3, 4.4]);
@@ -50,7 +50,7 @@ fn open_simple_root() -> Result<()> {
     let three = tree
         .branch("three")
         .unwrap()
-        .get_basket_into::<String>()
+        .as_iter::<String>()
         .collect::<Vec<_>>();
 
     assert_eq!(three, ["uno", "dos", "tres", "quatro"]);
@@ -69,7 +69,7 @@ fn open_tree_with_string() -> Result<()> {
     let tree = tree.unwrap();
     tree.branch("Beg")
         .unwrap()
-        .get_basket_into::<String>()
+        .as_iter::<String>()
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("beg-{:03}", i));
@@ -77,7 +77,7 @@ fn open_tree_with_string() -> Result<()> {
 
     tree.branch("End")
         .unwrap()
-        .get_basket_into::<String>()
+        .as_iter::<String>()
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("end-{:03}", i));
@@ -97,7 +97,7 @@ fn open_tree_with_stl_string() -> Result<()> {
     let tree = tree.unwrap();
     tree.branch("StdStr")
         .unwrap()
-        .get_basket_into::<String>()
+        .as_iter::<String>()
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("std-{:03}", i));
@@ -184,7 +184,7 @@ fn open_tree_with_vector_into() -> Result<()> {
     let tree = f.get_tree("t1")?.unwrap();
     tree.branch("int32_array")
         .unwrap()
-        .get_basket_into::<Vec<i32>>()
+        .as_iter::<Vec<i32>>()
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
@@ -211,7 +211,7 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     tree.branch("SliceI16")
         .unwrap()
-        .get_basket_into::<oxyroot::Slice<i16>>()
+        .as_iter::<oxyroot::Slice<i16>>()
         .map(|a| a.into_vec())
         .enumerate()
         .for_each(|(i, val)| {
@@ -241,7 +241,7 @@ fn open_tree_with_slice_i16_into_vec() -> Result<()> {
     let v: Vec<Vec<i16>> = tree
         .branch("SliceI16")
         .unwrap()
-        .get_basket_into::<oxyroot::Slice<i16>>()
+        .as_iter::<oxyroot::Slice<i16>>()
         .map(|s| s.into())
         .collect();
 
@@ -366,7 +366,7 @@ fn open_tree_with_vector_of_string() -> Result<()> {
 
     tree.branch("StlVecStr")
         .unwrap()
-        .get_basket_into::<Vec<String>>()
+        .as_iter::<Vec<String>>()
         .enumerate()
         .for_each(|(i, val)| {
             println!("StlVecStr: i = {i} val = {:?}", val);
@@ -421,7 +421,7 @@ where
     let tree = f.get_tree("tree")?.unwrap();
     tree.branch(name_branch)
         .unwrap()
-        .get_basket_into::<Vec<T>>()
+        .as_iter::<Vec<T>>()
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);

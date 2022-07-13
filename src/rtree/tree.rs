@@ -56,7 +56,9 @@ impl Unmarshaler for TioFeatures {
 }
 
 factory_all_for_register_impl!(TioFeatures, "TIOFeatures");
-
+/// Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
+///
+/// Mainly used to retrieve [crate::Branch] ant iterate over them
 #[derive(Default)]
 pub struct Tree {
     rvers: i16,

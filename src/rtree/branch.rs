@@ -17,11 +17,16 @@ use log::trace;
 use regex::Regex;
 use std::marker::PhantomData;
 
-pub enum BranchChunks {
+enum BranchChunks {
     RegularSized((u32, i32, Vec<u8>)),
     IrregularSized((u32, Vec<Vec<u8>>, i32)), // _,_, header_bytes
 }
 
+/// Rust equivalent of [`TBranch`](https://root.cern/doc/master/classTBranch.html)
+/// or [`TBranchElement`](https://root.cern/doc/master/classTBranchElement.html) (ie column) of a TTree
+///
+/// Choice between `TBranch` or `TBranchElement` is done when Root file is read.
+/// [Branch] should not be constructed by user but accessed via [crate::Tree::branch]
 pub enum Branch {
     Base(TBranch),
     Element(TBranchElement),
@@ -66,6 +71,13 @@ impl Branch {
         b.class()
     }
 
+    pub fn class_name(&self) -> &str {
+        match self {
+            Branch::Base(bb) => bb.class_name(),
+            Branch::Element(be) => be.class_name(),
+        }
+    }
+
     pub fn entries(&self) -> i64 {
         let b: &TBranch = self.into();
         b.entries()
@@ -100,7 +112,7 @@ impl Branch {
         }
     }
 
-    pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+    fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         match self {
             Branch::Base(bb) => bb.get_baskets_buffer(),
             Branch::Element(be) => be.get_baskets_buffer(),
@@ -169,7 +181,8 @@ impl Branch {
         it
     }
 
-    pub fn get_basket_into<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
+    /// Create an iterator over the data of a column (`TBranch`)
+    pub fn as_iter<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
     where
         T: UnmarshalerInto<Item = T> + 'a,
     {
@@ -447,7 +460,7 @@ impl TBranch {
         self.sinfos = Some(sinfos);
     }
 
-    pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+    fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         trace!("We are in branch = {}", self.name());
         let mut size_leaves = self.leaves.iter().map(|e| e.etype()).collect::<Vec<_>>();
 
@@ -516,13 +529,16 @@ impl TBranch {
                                 return BranchChunks::RegularSized((n as u32, chunk_size, buf));
                             }
                         },
-                };
-            }),
+                    };
+                }),
         )
     }
 
     pub fn entries(&self) -> i64 {
         self.entries
+    }
+    pub fn class_name(&self) -> &str {
+        &self.class()
     }
 }
 
@@ -682,21 +698,20 @@ impl Named for TBranchElement {
 }
 
 impl TBranchElement {
-    pub fn branch(self) -> TBranch {
+    fn branch(self) -> TBranch {
         self.branch
     }
     pub fn streamer_type(&self) -> i32 {
         self.stype
     }
+
     pub fn class_name(&self) -> &str {
         &self.class
     }
-    pub fn clean_name(&self) -> &str {
+    fn clean_name(&self) -> &str {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"(.*\.)*([^\.\[\]]*)(\[.*\])*").unwrap();
         }
-        //
-        // let RE: Regex = Regex::new(r"(.*\.)*([^\.\[\]]*)(\[.*\])*").unwrap();
 
         RE.captures(self.name()).unwrap().get(2).unwrap().as_str()
     }
@@ -705,21 +720,13 @@ impl TBranchElement {
         self.stltyp
     }
 
-    pub fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+    fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         let mut size_leaves = self
             .branch
             .leaves
             .iter()
             .map(|e| e.etype())
             .collect::<Vec<_>>();
-
-        //
-        // trace!(
-        //     "get_baskets_buffer: (start = {:?}, len = {:?}, chunk_size = {:?})",
-        //     &self.branch.basket_seek,
-        //     &self.branch.basket_bytes,
-        //     size_leaves
-        // );
 
         if size_leaves.len() != self.branch.basket_seek.len() {
             for _i in 1..self.branch.basket_seek.len() {
