@@ -165,7 +165,7 @@ pub const LeafB: i16 = 1;
 pub const LeafS: i16 = 1;
 // ROOT version for TLeafS
 /// ROOT version for TLeafI
-pub const LEAF_I: i16 = 1;
+pub const LeafI: i16 = 1;
 #[allow(non_upper_case_globals)]
 pub const LeafL: i16 = 1;
 // ROOT version for TLeafL

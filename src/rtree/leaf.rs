@@ -22,9 +22,53 @@ pub enum Leaf {
 }
 
 impl Leaf {
-    pub fn etype(&self) -> i32 {
+    fn tleaf(&self) -> &TLeaf {
         let l: &TLeaf = self.into();
-        l.etype
+        l
+    }
+
+    pub fn etype(&self) -> i32 {
+        self.tleaf().etype
+    }
+
+    pub fn title(&self) -> &str {
+        self.tleaf().title()
+    }
+
+    pub fn unsigned(&self) -> Option<bool> {
+        match self {
+            Leaf::Base(_) => None,
+            Leaf::Element(_) => None,
+            _ => Some(self.tleaf().unsigned),
+        }
+    }
+
+    pub fn type_name(&self) -> Option<&str> {
+        match self {
+            Leaf::Base(_) => None,
+            Leaf::Element(_) => None,
+
+            Leaf::I(_) => Some(match self.unsigned().unwrap() {
+                true => "uint32_t",
+                false => "int32_t",
+            }),
+            Leaf::S(_) => Some(match self.unsigned().unwrap() {
+                true => "uint16_t",
+                false => "int16_t",
+            }),
+            Leaf::D(_) => Some("double"),
+            Leaf::F(_) => Some("float"),
+            Leaf::B(_) => Some(match self.unsigned().unwrap() {
+                true => "uint8_t",
+                false => "int8_t",
+            }),
+            Leaf::L(_) => Some(match self.unsigned().unwrap() {
+                true => "uint64_t",
+                false => "int64_t",
+            }),
+            Leaf::O(_) => Some("bool"),
+            Leaf::C(_) => Some("char*"),
+        }
     }
 }
 
@@ -153,42 +197,42 @@ impl Unmarshaler for TLeaf {
 
 factory_fn_register_impl!(TLeaf, "TLeaf");
 
-#[derive(Default, Debug)]
-pub struct LeafI {
-    rvers: i16,
-    tleaf: TLeaf,
-    min: i32,
-    max: i32,
-    // ptr: &i32;
-}
-
-impl Unmarshaler for LeafI {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-        let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::LEAF_I,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::LEAF_I
-        );
-
-        self.rvers = hdr.vers;
-
-        r.read_object(&mut self.tleaf)?;
-
-        r.read_object(&mut self.min)?;
-        r.read_object(&mut self.max)?;
-
-        r.check_header(&hdr)?;
-
-        Ok(())
-
-        // todo!()
-    }
-}
-
-factory_all_for_register_impl!(LeafI, "TLeafI");
+// #[derive(Default, Debug)]
+// pub struct LeafI {
+//     rvers: i16,
+//     tleaf: TLeaf,
+//     min: i32,
+//     max: i32,
+//     // ptr: &i32;
+// }
+//
+// impl Unmarshaler for LeafI {
+//     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+//         let hdr = r.read_header(self.class())?;
+//         ensure!(
+//             hdr.vers <= rvers::LEAF_I,
+//             "rtree: invalid {} version={} > {}",
+//             self.class(),
+//             hdr.vers,
+//             rvers::LEAF_I
+//         );
+//
+//         self.rvers = hdr.vers;
+//
+//         r.read_object(&mut self.tleaf)?;
+//
+//         r.read_object(&mut self.min)?;
+//         r.read_object(&mut self.max)?;
+//
+//         r.check_header(&hdr)?;
+//
+//         Ok(())
+//
+//         // todo!()
+//     }
+// }
+//
+// factory_all_for_register_impl!(LeafI, "TLeafI");
 
 #[derive(Default, Debug)]
 pub struct LeafC {
@@ -268,6 +312,7 @@ macro_rules! make_tleaf_variant {
     };
 }
 
+make_tleaf_variant!(LeafI, "TLeafI", i32);
 make_tleaf_variant!(LeafB, "TLeafB", i8);
 make_tleaf_variant!(LeafS, "TLeafS", i16);
 make_tleaf_variant!(LeafL, "TLeafL", i64);
@@ -284,7 +329,7 @@ pub struct LeafElement {
     /// element serial number in fInfo
     id: i32,
     /// leaf type
-    ltype: i32,
+    pub(crate) ltype: i32,
     // ptr: &i32;
 }
 

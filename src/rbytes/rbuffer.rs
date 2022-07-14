@@ -92,7 +92,7 @@ impl<'a> RBuffer<'a> {
         }
     }
 
-    pub(crate) fn with_info_context(mut self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
+    pub(crate) fn with_info_context(self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
         // self.sictx = ctx;
         self
     }

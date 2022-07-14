@@ -1,0 +1,378 @@
+use crate::rcont::objarray::ObjArray;
+use crate::rdict::Streamer;
+use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
+use crate::root::traits::Named;
+use crate::root::traits::Object;
+use crate::rtree::basket::{Basket, BasketData};
+use crate::rtree::branch::tbranch_props::TBranchProps;
+use crate::rtree::branch::{BranchChunks, TBranch};
+use crate::rtree::leaf::Leaf;
+use crate::rtree::streamer_type;
+use crate::rtree::streamer_type::{_from_leaftype_to_str, clean_type_name};
+use crate::rtree::tree::TioFeatures;
+use crate::rtypes::FactoryItem;
+use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
+use anyhow::ensure;
+use itertools::izip;
+use lazy_static::lazy_static;
+use log::trace;
+use regex::Regex;
+use std::cell::{Cell, RefCell};
+
+#[derive(Default)]
+pub struct TBranchElement {
+    pub(crate) branch: TBranch,
+
+    class_name: String,
+    // class name of referenced object
+    parent: String,
+    // name of parent class
+    clones: String,
+    // named of class in TClonesArray (if any)
+    chksum: i32,
+    // checksum of class
+    clsver: i16,
+    // version number of class
+    id: i32,
+    // element serial number in fInfo
+    btype: i32,
+    // branch type
+    /// branch streamer type
+    stype: i32,
+
+    max: i32,
+    // maximum entries for a TClonesArray or variable array
+    stltyp: i32,
+    // STL container type
+    // bcount1: *tbranchElement // pointer to primary branchcount branch
+    // bcount2: *tbranchElement // pointer to secondary branchcount branch
+    pub(crate) props: RefCell<TBranchProps>,
+}
+
+impl Named for TBranchElement {
+    fn name(&self) -> &'_ str {
+        self.branch.name()
+    }
+}
+
+impl TBranchElement {
+    fn branch(self) -> TBranch {
+        self.branch
+    }
+    pub fn streamer_type(&self) -> i32 {
+        self.stype
+    }
+
+    pub fn class_name(&self) -> &str {
+        &self.class_name
+    }
+
+    pub fn is_top_level(&self) -> Option<bool> {
+        self.props.borrow().is_top_level
+        // let props = self.props.take();
+        // let ret = props.is_top_level;
+        // self.props.set(props);
+        // ret
+    }
+
+    pub fn set_is_top_level(&self, v: Option<bool>) {
+        self.props.borrow_mut().is_top_level = v;
+
+        // let mut props = self.props.take();
+        // props.is_top_level = v;
+        // self.props.set(props);
+    }
+
+    pub fn streamer(&self) -> Option<&Streamer> {
+        let streamer = self.branch.sinfos.as_ref().unwrap().get(&self.class_name());
+
+        let streamer = streamer;
+
+        let element = match streamer {
+            None => None,
+            Some(streamer) => streamer.get(self.clean_name()),
+        };
+
+        element
+    }
+
+    pub fn item_type_name(&self) -> String {
+        return self._item_type_name();
+        // if self.props.borrow().item_type_name.is_none() {
+        //     self.props.borrow_mut().item_type_name = Some(self._item_type_name());
+        // }
+        //
+        // self.props.borrow().item_type_name.unwrap()
+    }
+
+    fn _item_type_name(&self) -> String {
+        if self.branch.branches().len() > 0 {
+            if let Some(true) = self.is_top_level() {
+                if !self.class_name.is_empty() {
+                    return self.class_name.to_string();
+                } else {
+                    todo!()
+                }
+            } else {
+                match self.streamer() {
+                    None => {
+                        todo!()
+                    }
+                    Some(streamer) => {
+                        return streamer.name().into();
+                        // trace!("current streamer = {:?}", streamer);
+                    }
+                }
+                todo!();
+            }
+        } else if self.branch.leaves.len() == 1 {
+            let leave = self.branch.leaves.get(0).unwrap();
+            trace!("leave = {:?}", leave);
+            lazy_static! {
+                static ref RE_TITLE_HAS_DIMS: Regex =
+                    Regex::new(r"^([^\[\]]*)(\[[^\[\]]+\])+").unwrap();
+                static ref RE_ITEM_DIM_PATTERN: Regex = Regex::new(r"\[([1-9][0-9]*)\]").unwrap();
+            }
+
+            let m = RE_TITLE_HAS_DIMS.captures(leave.title());
+            trace!("RE_TITLE_HAS_DIMS = {:?}", m);
+
+            let dim = if m.is_some() {
+                if let Some(m) = RE_ITEM_DIM_PATTERN.captures(leave.title()) {
+                    trace!("m = {:?}", m);
+                    let dim: &str = m.get(1).unwrap().as_str();
+                    Some(dim.parse::<i32>().unwrap())
+                } else {
+                    Some(0)
+                }
+            } else {
+                None
+            };
+
+            return match leave.type_name() {
+                Some(t) => t.into(),
+                None => match leave {
+                    Leaf::Base(_) => {
+                        todo!()
+                    }
+                    Leaf::Element(leave) => {
+                        let leaftype = leave.ltype;
+                        if let Some(s) = _from_leaftype_to_str(leaftype) {
+                            trace!("dim = {:?}", dim);
+                            match dim {
+                                None => {}
+                                Some(dim) => {
+                                    if dim > 0 {
+                                        return format!("{}[{}]", s, dim);
+                                    } else {
+                                        return format!("{}[]", s);
+                                    }
+                                }
+                            }
+                            return s.into();
+                        }
+
+                        if self.streamer_type() == streamer_type::kTString {
+                            return "TString".to_string();
+                        }
+
+                        if self.streamer_type() == streamer_type::kSTL || self.streamer_type() == -1
+                        {
+                            match self.streamer() {
+                                None => {
+                                    return clean_type_name(self.class_name());
+                                }
+                                Some(s) => {
+                                    return clean_type_name(s.item_type_name());
+                                }
+                            }
+                            return self.class().to_string();
+                        }
+
+                        todo!()
+                    }
+                    _ => {
+                        panic!("Impossible to leaf like that");
+                    }
+                },
+            };
+        }
+
+        let unknown = "unknown";
+        self.branch.item_type_name().to_string()
+    }
+
+    fn clean_name(&self) -> &str {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"(.*\.)*([^\.\[\]]*)(\[.*\])*").unwrap();
+        }
+
+        RE.captures(self.name()).unwrap().get(2).unwrap().as_str()
+    }
+
+    pub fn stl_type(&self) -> i32 {
+        self.stltyp
+    }
+
+    pub(crate) fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+        let mut size_leaves = self
+            .branch
+            .leaves
+            .iter()
+            .map(|e| e.etype())
+            .collect::<Vec<_>>();
+
+        if size_leaves.len() != self.branch.basket_seek.len() {
+            for _i in 1..self.branch.basket_seek.len() {
+                size_leaves.push(size_leaves[0]);
+            }
+        }
+
+        Box::new(
+            izip!(
+                &self.branch.basket_seek,
+                &self.branch.basket_bytes,
+                size_leaves,
+                &self.branch.leaves
+            )
+            .map(|(start, len, mut chunk_size, leave)| {
+                //     trace!(
+                //     "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
+                //     *start as i64 + *len as i64,
+                //     chunk_size, leave
+                // );
+                let mut reader = self.branch.reader().as_ref().unwrap().clone();
+                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                let mut r = RBuffer::new(&buf, 0);
+                let b = r.read_object_into::<Basket>().unwrap();
+
+                trace!(
+                    "chunk_size = {}, b.entry_size() = {}",
+                    chunk_size,
+                    b.entry_size()
+                );
+
+                match leave {
+                    // In case of string, we have to use n
+                    Leaf::C(_) | Leaf::Element(_) => {
+                        chunk_size = b.entry_size();
+                    }
+                    _ => {}
+                }
+
+                trace!(
+                    "classname = {} streamer_type = {}, stl_type = {}",
+                    self.class_name(),
+                    self.streamer_type(),
+                    self.stl_type()
+                );
+
+                match b.raw_data(&mut reader) {
+                    BasketData::TrustNEntries((n, buf)) => {
+                        trace!("send ({n},{chunk_size},{:?})", buf);
+                        return BranchChunks::RegularSized((n, chunk_size, buf));
+                    }
+                    BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
+                        // In case of string, we have to use n
+                        Leaf::C(_) => {
+                            trace!("send ({n},{chunk_size},{:?})", buf);
+                            return BranchChunks::RegularSized((n, chunk_size, buf));
+                        }
+                        Leaf::Element(_) => {
+                            let element = self.streamer();
+
+                            let header_bytes = streamer_type::header_bytes_from_type(
+                                self.streamer_type(),
+                                element,
+                                self.class_name(),
+                            );
+
+                            trace!("header_bytes = {}", header_bytes);
+                            // trace!("buf = {:?}", buf);
+
+                            let byte_offsets: Vec<_> = byte_offsets
+                                .iter()
+                                .zip(byte_offsets.iter().skip(1))
+                                .collect();
+                            // trace!("byte_offsets = {:?}", byte_offsets);
+                            // trace!("buf = {:?}", buf);
+
+                            let data: Vec<_> = byte_offsets
+                                .iter()
+                                .map(|(start, stop)| {
+                                    let b = &buf[**start as usize..**stop as usize];
+                                    b.to_vec()
+                                })
+                                .collect();
+                            // trace!("data = {:?}", data);
+
+                            trace!("send ({n},{chunk_size},{:?})", data);
+                            BranchChunks::IrregularSized((n, data, header_bytes))
+                        }
+                        _ => {
+                            let n = buf.len() / chunk_size as usize;
+                            trace!("send ({n},{chunk_size},{:?})", buf);
+                            BranchChunks::RegularSized((n as u32, chunk_size, buf))
+                        }
+                    },
+                }
+            }),
+        )
+    }
+}
+
+impl Unmarshaler for TBranchElement {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+        let hdr = r.read_header(self.class())?;
+        ensure!(
+            hdr.vers <= crate::rvers::BRANCH_ELEMENT,
+            "rtree: invalid {} version={} > {}",
+            self.class(),
+            hdr.vers,
+            crate::rvers::BRANCH_ELEMENT
+        );
+
+        r.read_object(&mut self.branch)?;
+
+        self.class_name = r.read_string()?.to_string();
+
+        // trace!("class = {}", self.class);
+
+        if hdr.vers > 1 {
+            self.parent = r.read_string()?.to_string();
+            self.clones = r.read_string()?.to_string();
+            self.chksum = r.read_i32()?;
+        }
+        if hdr.vers >= 10 {
+            self.clsver = r.read_i16()?;
+        } else {
+            self.clsver = r.read_i32()? as i16;
+        }
+
+        self.id = r.read_i32()?;
+        self.btype = r.read_i32()?;
+        self.stype = r.read_i32()?;
+
+        if hdr.vers > 1 {
+            self.max = r.read_i32()?;
+
+            let _bcount1 = r.read_object_any_into()?;
+            let _bcount2 = r.read_object_any_into()?;
+
+            // bcount1 := r.ReadObjectAny()
+            // if bcount1 != nil {
+            //     b.bcount1 = bcount1.(*tbranchElement)
+            // }
+
+            // bcount2 := r.ReadObjectAny()
+            // if bcount2 != nil {
+            //     b.bcount2 = bcount2.(*tbranchElement)
+            // }
+        }
+
+        // todo!();
+        Ok(())
+    }
+}
+
+factory_fn_register_impl!(TBranchElement, "TBranchElement");

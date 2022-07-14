@@ -1,5 +1,7 @@
 use crate::rdict::Streamer;
 use crate::rmeta::{Enum, EnumNamed};
+use crate::rtree::streamer_type;
+use anyhow::Result;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
@@ -232,4 +234,116 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
     };
 
     header_bytes
+}
+
+pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
+    trace!("leaftype = {}", leaftype);
+
+    if leaftype < 0 {
+        return None;
+    }
+
+    let leaftype = if kOffsetL < leaftype && leaftype < kOffsetP {
+        leaftype - kOffsetL
+    } else {
+        leaftype
+    };
+
+    // trace!("leaftype = {}", leaftype);
+    let leaftype = if leaftype > kOffsetP && (leaftype - kOffsetP) < kOffsetP {
+        leaftype - kOffsetP
+    } else {
+        leaftype
+    };
+
+    assert!(leaftype > 0);
+
+    trace!("leaftype = {}", leaftype);
+
+    match leaftype {
+        streamer_type::kChar => {
+            return Some("int8_t");
+        }
+        streamer_type::kUChar => {
+            return Some("uint8_t");
+        }
+
+        streamer_type::kShort => {
+            return Some("int16_t");
+        }
+        streamer_type::kUShort => {
+            return Some("uint16_t");
+        }
+        streamer_type::kInt => {
+            return Some("int32_t");
+        }
+        streamer_type::kUInt | streamer_type::kBits | streamer_type::kCounter => {
+            return Some("uint32_t");
+        }
+
+        streamer_type::kLong => {
+            return Some("int64_t");
+        }
+        streamer_type::kULong => {
+            return Some("uint64_t");
+        }
+
+        streamer_type::kFloat => {
+            return Some("float");
+        }
+
+        streamer_type::kDouble => {
+            return Some("double");
+        }
+
+        streamer_type::kTString => {
+            return Some("TString");
+        }
+
+        _ => {
+            // todo!()
+            None
+        }
+    }
+}
+
+pub(crate) fn clean_type_name(ty: &str) -> String {
+    let ret = ty.replace("unsigned int", "uint32_t");
+    let ret = ret.replace("int", "int32_t");
+    let ret = ret.replace("uint32_t32_t", "uint32_t");
+
+    let ret = ret.replace("unsigned short", "uint16_t");
+    let ret = ret.replace("short", "int16_t");
+
+    let ret = ret.replace("unsigned long", "uint64_t");
+    let ret = ret.replace("long", "int64_t");
+
+    let ret = ret.replace(" ", "");
+
+    ret
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::Result;
+
+    #[test]
+    fn test_clean_type_name() -> Result<()> {
+        assert_eq!(clean_type_name("vector<int>"), "vector<int32_t>");
+        assert_eq!(clean_type_name("vector<unsigned int>"), "vector<uint32_t>");
+
+        assert_eq!(clean_type_name("vector<short>"), "vector<int16_t>");
+        assert_eq!(
+            clean_type_name("vector<unsigned short>"),
+            "vector<uint16_t>"
+        );
+
+        assert_eq!(
+            clean_type_name("vector<unsigned short >"),
+            "vector<uint16_t>"
+        );
+
+        Ok(())
+    }
 }

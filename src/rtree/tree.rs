@@ -260,6 +260,11 @@ impl Unmarshaler for Tree {
                 .into_iter()
                 .map(|obj| obj.into())
                 .collect();
+
+            self.branches.iter_mut().for_each(|b| {
+                b.set_top_level(Some(true));
+                // b.set_item_type_name();
+            });
         }
 
         {

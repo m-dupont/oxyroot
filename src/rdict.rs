@@ -13,9 +13,11 @@ use crate::root;
 use crate::root::traits;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
+use crate::rtree::branch::TBranchElement;
 use crate::rtypes::factory::FactoryItem;
 use crate::rvers;
 
+#[derive(Debug)]
 pub enum Streamer {
     String(StreamerString),
     STLstring(StreamerSTLstring),
@@ -72,6 +74,36 @@ impl Streamer {
             Streamer::ObjectPointer(a) => a.element.name(),
         }
     }
+
+    fn element(&self) -> &StreamerElement {
+        match self {
+            Streamer::String(a) => &a.element,
+            Streamer::STLstring(a) => &a.streamer_stl.element,
+            Streamer::BasicType(a) => &a.element,
+            Streamer::BasicPointer(a) => &a.element,
+            Streamer::ObjectAny(a) => &a.element,
+            Streamer::Stl(a) => &a.element,
+            Streamer::Base(a) => &a.element,
+            Streamer::Object(a) => &a.element,
+            Streamer::ObjectPointer(a) => &a.element,
+        }
+    }
+
+    pub fn item_type_name(&self) -> &str {
+        self.element().ename.as_str()
+    }
+    //     match self {
+    //         Streamer::String(_) => {}
+    //         Streamer::STLstring(_) => {}
+    //         Streamer::BasicType(_) => {}
+    //         Streamer::BasicPointer(_) => {}
+    //         Streamer::ObjectAny(_) => {}
+    //         Streamer::Stl(_) => {}
+    //         Streamer::Base(_) => {}
+    //         Streamer::Object(_) => {}
+    //         Streamer::ObjectPointer(_) => {}
+    //     }
+    // }
 }
 
 #[derive(Default)]
@@ -164,7 +196,7 @@ impl Unmarshaler for StreamerInfo {
 
 factory_fn_register_impl!(StreamerInfo, "TStreamerInfo");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerElement {
     named: rbase::Named,
     etype: rmeta::Enum,
@@ -305,7 +337,7 @@ impl Unmarshaler for StreamerElement {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerBase {
     element: StreamerElement,
     vbase: i32,
@@ -336,7 +368,7 @@ impl Unmarshaler for StreamerBase {
 
 factory_all_for_register_impl!(StreamerBase, "TStreamerBase");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerString {
     element: StreamerElement,
 }
@@ -367,7 +399,7 @@ impl Unmarshaler for StreamerString {
 
 factory_all_for_register_impl!(StreamerString, "TStreamerString");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerBasicType {
     element: StreamerElement,
 }
@@ -439,7 +471,7 @@ impl Unmarshaler for StreamerBasicType {
 
 factory_all_for_register_impl!(StreamerBasicType, "TStreamerBasicType");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerObject {
     element: StreamerElement,
 }
@@ -463,7 +495,7 @@ impl Unmarshaler for StreamerObject {
 
 factory_all_for_register_impl!(StreamerObject, "TStreamerObject");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerObjectPointer {
     element: StreamerElement,
 }
@@ -487,7 +519,7 @@ impl Unmarshaler for StreamerObjectPointer {
 
 factory_all_for_register_impl!(StreamerObjectPointer, "TStreamerObjectPointer");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerObjectAny {
     element: StreamerElement,
 }
@@ -511,7 +543,7 @@ impl Unmarshaler for StreamerObjectAny {
 
 factory_all_for_register_impl!(StreamerObjectAny, "TStreamerObjectAny");
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerBasicPointer {
     element: StreamerElement,
     /// version number of the class with the counter
@@ -546,7 +578,7 @@ impl Unmarshaler for StreamerBasicPointer {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerSTL {
     element: StreamerElement,
     /// type of STL vector
@@ -601,7 +633,7 @@ impl Unmarshaler for StreamerSTL {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerSTLstring {
     streamer_stl: StreamerSTL,
 }

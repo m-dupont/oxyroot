@@ -1,4 +1,5 @@
 use anyhow::Result;
+use downcast::Any;
 use oxyroot::{RootFile, UnmarshalerInto};
 use regex::internal::Input;
 use std::fmt::Debug;
@@ -30,6 +31,10 @@ fn open_simple_root() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(tree.branch("one").unwrap().item_type_name(), "int32_t");
+    assert_eq!(tree.branch("two").unwrap().item_type_name(), "float");
+    assert_eq!(tree.branch("three").unwrap().item_type_name(), "char*");
 
     let one = tree
         .branch("one")
@@ -67,6 +72,10 @@ fn open_tree_with_string() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(tree.branch("Beg").unwrap().item_type_name(), "TString");
+    assert_eq!(tree.branch("End").unwrap().item_type_name(), "TString");
+
     tree.branch("Beg")
         .unwrap()
         .as_iter::<String>()
@@ -95,6 +104,9 @@ fn open_tree_with_stl_string() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(tree.branch("StdStr").unwrap().item_type_name(), "string");
+
     tree.branch("StdStr")
         .unwrap()
         .as_iter::<String>()
@@ -119,6 +131,12 @@ fn open_tree_with_struct_p3() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(tree.branch("P3").unwrap().item_type_name(), "P3");
+    assert_eq!(tree.branch("P3.Px").unwrap().item_type_name(), "int32_t");
+    assert_eq!(tree.branch("P3.Py").unwrap().item_type_name(), "double");
+    assert_eq!(tree.branch("P3.Pz").unwrap().item_type_name(), "int32_t");
+
     tree.branch("P3")
         .unwrap()
         .get_basket(|r| {
@@ -148,6 +166,11 @@ fn open_tree_with_vector_parse() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("t1")?.unwrap();
+
+    assert_eq!(
+        tree.branch("int32_array").unwrap().item_type_name(),
+        "vector<int32_t>"
+    );
 
     tree.branch("int32_array")
         .unwrap()
@@ -208,6 +231,38 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(
+        tree.branch("SliceI16").unwrap().item_type_name(),
+        "int16_t[]"
+    );
+    assert_eq!(
+        tree.branch("SliceI32").unwrap().item_type_name(),
+        "int32_t[]"
+    );
+    assert_eq!(
+        tree.branch("SliceI64").unwrap().item_type_name(),
+        "int64_t[]"
+    );
+
+    assert_eq!(
+        tree.branch("SliceU16").unwrap().item_type_name(),
+        "uint16_t[]"
+    );
+    assert_eq!(
+        tree.branch("SliceU32").unwrap().item_type_name(),
+        "uint32_t[]"
+    );
+    assert_eq!(
+        tree.branch("SliceU64").unwrap().item_type_name(),
+        "uint64_t[]"
+    );
+
+    assert_eq!(tree.branch("SliceF32").unwrap().item_type_name(), "float[]");
+    assert_eq!(
+        tree.branch("SliceF64").unwrap().item_type_name(),
+        "double[]"
+    );
 
     tree.branch("SliceI16")
         .unwrap()
@@ -364,6 +419,11 @@ fn open_tree_with_vector_of_string() -> Result<()> {
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
 
+    assert_eq!(
+        tree.branch("StlVecStr").unwrap().item_type_name(),
+        "vector<string>"
+    );
+
     tree.branch("StlVecStr")
         .unwrap()
         .as_iter::<Vec<String>>()
@@ -392,6 +452,11 @@ fn tree_with_array() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    assert_eq!(
+        tree.branch("ArrayI16[10]").unwrap().item_type_name(),
+        "int16_t[10]"
+    );
 
     tree.branch("ArrayI16[10]")
         .unwrap()

@@ -15,6 +15,8 @@ fn tree_with_stl_containers__string() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(tree.branch("string").unwrap().item_type_name(), "string");
+
     let v = tree
         .branch("string")
         .expect("No branch string")
@@ -39,6 +41,8 @@ fn tree_with_stl_containers__tstring() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(tree.branch("tstring").unwrap().item_type_name(), "TString");
+
     let v = tree
         .branch("tstring")
         .expect("No branch string")
@@ -62,6 +66,11 @@ fn tree_with_stl_containers__vector_int32() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("vector_int32").unwrap().item_type_name(),
+        "vector<int32_t>"
+    );
 
     let v = tree
         .branch("vector_int32")
@@ -96,6 +105,11 @@ fn tree_with_stl_containers__vector_string() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("vector_string").unwrap().item_type_name(),
+        "vector<string>"
+    );
+
     let v = tree
         .branch("vector_string")
         .expect("No branch vector_string")
@@ -129,6 +143,11 @@ fn tree_with_stl_containers__vector_tstring() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("vector_tstring").unwrap().item_type_name(),
+        "vector<TString>"
+    );
+
     let v = tree
         .branch("vector_tstring")
         .expect("No branch vector_tstring")
@@ -161,6 +180,11 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("vector_vector_int32").unwrap().item_type_name(),
+        "vector<vector<int32_t>>"
+    );
 
     let v = tree
         .branch("vector_vector_int32")
@@ -203,6 +227,13 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("vector_vector_string")
+            .unwrap()
+            .item_type_name(),
+        "vector<vector<string>>"
+    );
 
     let v = tree
         .branch("vector_vector_string")
@@ -251,6 +282,13 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("vector_vector_tstring")
+            .unwrap()
+            .item_type_name(),
+        "vector<vector<TString>>"
+    );
+
     let v = tree
         .branch("vector_vector_tstring")
         .expect("No branch vector_vector_tstring")
@@ -298,6 +336,11 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("vector_set_int32").unwrap().item_type_name(),
+        "vector<set<int32_t>>"
+    );
+
     let v = tree
         .branch("vector_set_int32")
         .expect("No branch vector_set_int32")
@@ -339,6 +382,11 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("vector_set_string").unwrap().item_type_name(),
+        "vector<set<string>>"
+    );
 
     let v = tree
         .branch("vector_set_string")
@@ -402,6 +450,11 @@ fn tree_with_stl_containers__set_int32() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("set_int32").unwrap().item_type_name(),
+        "set<int32_t>"
+    );
+
     let v = tree
         .branch("set_int32")
         .expect("No branch set_int32")
@@ -434,6 +487,11 @@ fn tree_with_stl_containers__set_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("set_string").unwrap().item_type_name(),
+        "set<string>"
+    );
 
     let v = tree
         .branch("set_string")
@@ -468,6 +526,11 @@ fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_int32_int16").unwrap().item_type_name(),
+        "map<int32_t,int16_t>"
+    );
+
     let v = tree
         .branch("map_int32_int16")
         .expect("No branch map_int32_int16")
@@ -499,6 +562,13 @@ fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_int32_vector_int16")
+            .unwrap()
+            .item_type_name(),
+        "map<int32_t,vector<int16_t>>"
+    );
 
     let v = tree
         .branch("map_int32_vector_int16")
@@ -542,6 +612,13 @@ fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_int32_vector_string")
+            .unwrap()
+            .item_type_name(),
+        "map<int32_t,vector<string>>"
+    );
 
     let v = tree
         .branch("map_int32_vector_string")
@@ -627,6 +704,11 @@ fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_int32_set_int16").unwrap().item_type_name(),
+        "map<int32_t,set<int16_t>>"
+    );
+
     let v = tree
         .branch("map_int32_set_int16")
         .expect("No branch map_int32_set_int16")
@@ -673,6 +755,13 @@ fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_int32_set_string")
+            .unwrap()
+            .item_type_name(),
+        "map<int32_t,set<string>>"
+    );
 
     let v = tree
         .branch("map_int32_set_string")
@@ -758,6 +847,11 @@ fn tree_with_stl_containers__map_string_int16() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_string_int16").unwrap().item_type_name(),
+        "map<string,int16_t>"
+    );
+
     let v = tree
         .branch("map_string_int16")
         .expect("No branch map_string_int16")
@@ -804,6 +898,13 @@ fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_string_vector_int16")
+            .unwrap()
+            .item_type_name(),
+        "map<string,vector<int16_t>>"
+    );
 
     let v = tree
         .branch("map_string_vector_int16")
@@ -854,6 +955,13 @@ fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_string_vector_string")
+            .unwrap()
+            .item_type_name(),
+        "map<string,vector<string>>"
+    );
 
     let v = tree
         .branch("map_string_vector_string")
@@ -951,6 +1059,13 @@ fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_string_set_int16")
+            .unwrap()
+            .item_type_name(),
+        "map<string,set<int16_t>>"
+    );
+
     let v = tree
         .branch("map_string_set_int16")
         .expect("No branch map_string_set_int16")
@@ -1000,6 +1115,13 @@ fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_string_set_string")
+            .unwrap()
+            .item_type_name(),
+        "map<string,set<string>>"
+    );
 
     let v = tree
         .branch("map_string_set_string")
@@ -1097,6 +1219,11 @@ fn tree_with_stl_containers__map_string_string() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_string_string").unwrap().item_type_name(),
+        "map<string,string>"
+    );
+
     let v = tree
         .branch("map_string_string")
         .expect("No branch map_string_string")
@@ -1147,6 +1274,11 @@ fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
 
     let tree = f.get_tree("tree")?.unwrap();
 
+    assert_eq!(
+        tree.branch("map_string_tstring").unwrap().item_type_name(),
+        "map<string,TString>"
+    );
+
     let v = tree
         .branch("map_string_tstring")
         .expect("No branch map_string_tstring")
@@ -1196,6 +1328,13 @@ fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_int32_vector_vector_int16")
+            .unwrap()
+            .item_type_name(),
+        "map<int32_t,vector<vector<int16_t>>>"
+    );
 
     let v = tree
         .branch("map_int32_vector_vector_int16")
@@ -1258,6 +1397,13 @@ fn tree_with_stl_containers__map_int32_vector_set_int16() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    assert_eq!(
+        tree.branch("map_int32_vector_set_int16")
+            .unwrap()
+            .item_type_name(),
+        "map<int32_t,vector<set<int16_t>>>"
+    );
 
     let v = tree
         .branch("map_int32_vector_set_int16")

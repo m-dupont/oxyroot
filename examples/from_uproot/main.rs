@@ -23,14 +23,14 @@ fn open_HZZ_root() -> Result<()> {
 
     for b in tree.branches() {
         println!(
-            "branch = {}, class_name = {}, entries = {}",
+            "branch = {},\tclass_name = {},\tentries = {}",
             b.name(),
-            b.class_name(),
+            b.item_type_name(),
             b.entries()
         );
     }
 
-    panic!("plop");
+    // panic!("plop");
 
     println!("entries = {}", tree.entries());
 
@@ -66,6 +66,15 @@ fn open_simple_root() -> Result<()> {
 
     let tree = f.get_tree("tree")?;
     let tree = tree.unwrap();
+
+    for b in tree.branches() {
+        println!(
+            "branch = {},\tclass_name = {},\tentries = {}",
+            b.name(),
+            b.item_type_name(),
+            b.entries()
+        );
+    }
 
     let one = tree
         .branch("one")
@@ -112,13 +121,28 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
     let tree = tree.unwrap();
 
     for b in tree.branches() {
-        println!("branch = {}, entries = {}", b.name(), b.entries());
+        println!(
+            "branch = {},\tclass_name = {},\tentries = {}",
+            b.name(),
+            b.item_type_name(),
+            b.entries()
+        );
 
         for bb in b.branches() {
-            println!("\tbranch = {}, entries = {}", bb.name(), bb.entries());
+            println!(
+                "\tbranch = {},\tclass_name = {},\tentries = {}",
+                bb.name(),
+                bb.item_type_name(),
+                bb.entries()
+            );
 
             for bbb in bb.branches() {
-                println!("\t\tbranch = {}, entries = {}", bbb.name(), bbb.entries());
+                println!(
+                    "branch = {},\tclass_name = {},\tentries = {}",
+                    bbb.name(),
+                    bbb.item_type_name(),
+                    bbb.entries()
+                );
             }
         }
     }
@@ -128,6 +152,8 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
         .as_iter::<oxyroot::Slice<i16>>()
         .enumerate()
         .for_each(|(i, val)| println!("SliceI16: i = {i} val = {:?}", val));
+
+    // panic!("plop");
 
     tree.branch("Beg")
         .unwrap()
@@ -206,6 +232,15 @@ fn tree_with_jagged_array() -> Result<()> {
     let tree = f.get_tree("t1")?.unwrap();
     // let tree = tree.unwrap();
 
+    for b in tree.branches() {
+        println!(
+            "branch = {},\tclass_name = {},\tentries = {}",
+            b.name(),
+            b.item_type_name(),
+            b.entries()
+        )
+    }
+
     tree.branch("int32_array")
         .unwrap()
         .get_basket(|r| {
@@ -249,6 +284,15 @@ fn tree_with_stl_containers() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    for b in tree.branches() {
+        println!(
+            "branch = {},\tclass_name = {},\tentries = {}",
+            b.name(),
+            b.item_type_name(),
+            b.entries()
+        )
+    }
 
     let v = tree
         .branch("string")
@@ -1307,10 +1351,10 @@ fn main() {
     error!("info");
     println!("example of opening file");
 
-    open_HZZ_root().expect("NOOOO");
+    // open_HZZ_root().expect("NOOOO");
     // open_simple_root().expect("NOOOO");
     // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
     // tree_with_jagged_array().expect("NOOOO");
-    // tree_with_stl_containers().expect("NOOOO");
+    tree_with_stl_containers().expect("NOOOO");
     // tree_with_stl_containers_tmp().expect("NOOOO");
 }
