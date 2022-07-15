@@ -36,10 +36,10 @@ impl Unmarshaler for TioFeatures {
         );
 
         let mut buf = [0_u8; 4];
-        r.read_exact(&mut buf[..1])?;
+        r.read_array_u8(&mut buf[..1])?;
 
         self.0 = if buf[0] != 0 {
-            r.read_exact(&mut buf[1..])?;
+            r.read_array_u8(&mut buf[1..])?;
             r.read_u8()?
         } else {
             0

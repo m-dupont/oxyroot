@@ -39,42 +39,6 @@ struct RootFileHeader {
     uuid: Uuid,
 }
 
-impl RootFileHeader {
-    pub fn version(&self) -> i32 {
-        self.version
-    }
-    pub fn begin(&self) -> i64 {
-        self.begin
-    }
-    pub fn end(&self) -> i64 {
-        self.end
-    }
-    pub fn seek_free(&self) -> i64 {
-        self.seek_free
-    }
-    pub fn n_bytes_free(&self) -> i32 {
-        self.n_bytes_free
-    }
-    pub fn n_free(&self) -> i32 {
-        self.n_free
-    }
-    pub fn n_bytes_name(&self) -> i32 {
-        self.n_bytes_name
-    }
-    pub fn units(&self) -> u8 {
-        self.units
-    }
-    pub fn compression(&self) -> i32 {
-        self.compression
-    }
-    pub fn seek_info(&self) -> i64 {
-        self.seek_info
-    }
-    pub fn n_bytes_info(&self) -> i32 {
-        self.n_bytes_info
-    }
-}
-
 #[derive(Default)]
 pub(crate) struct RootFileReader {
     path: PathBuf,
@@ -128,6 +92,9 @@ struct RootFileInner {
     header: RootFileHeader,
 }
 
+/// Rust equivalent of [`TFile`](https://root.cern/doc/master/classTFile.html).
+///
+/// Can only read for now. Aims to be constructed with [open](crate::RootFile::open) method.
 #[derive(Default)]
 pub struct RootFile {
     inner: RootFileInner,
@@ -153,19 +120,11 @@ impl RootFile {
         self.inner.header.end
     }
 
+    /// Open file, use [std::io::BufReader] for reading, so it can only handle local files for now.
     pub fn open<P>(path: P) -> Result<Self>
     where
-        P: AsRef<Path> + Debug,
+        P: AsRef<Path>,
     {
-        trace!("Open file, '{:?}'", path);
-        // let f = File::open(path)?;
-
-        // let buf_reader = BufReader::new(f);
-
-        // let reader = RootFileReader {
-        //     reader: Some(buf_reader),
-        // };
-
         let reader = RootFileReader::new(path)?;
 
         let inner = RootFileInner {
@@ -192,7 +151,7 @@ impl RootFile {
         let buf = self.read_at(0, HEADER_LEN + HEADER_EXTRA_LEN)?;
         let mut r = RBuffer::new(&buf, 0);
         let mut magic: [u8; 4] = [0; 4];
-        r.read_exact(&mut magic)?;
+        r.read_array_u8(&mut magic)?;
 
         trace!("magic = {:?}", magic);
 
@@ -235,7 +194,7 @@ impl RootFile {
 
         let _ = r.read_u16()?;
         let mut uuid: [u8; 16] = [0; 16];
-        r.read_exact(&mut uuid)?;
+        r.read_array_u8(&mut uuid)?;
         self.inner.header.uuid = Uuid::from_bytes(uuid);
 
         trace!("uuid = {}", self.inner.header.uuid);

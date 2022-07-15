@@ -451,11 +451,11 @@ impl<'a> RBuffer<'a> {
     }
 }
 
-impl<'a> Read for RBuffer<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        self.r.read(buf)
-    }
-}
+// impl<'a> Read for RBuffer<'a> {
+//     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+//         self.r.read(buf)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
