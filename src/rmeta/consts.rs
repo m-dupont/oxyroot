@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use num;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
+use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub enum Enum {
@@ -157,5 +158,115 @@ impl ESTLType {
 
     pub fn to_i32(&self) -> Result<i32> {
         num::ToPrimitive::to_i32(self).ok_or_else(|| anyhow!("Cant make a i32 from {:?}", self))
+    }
+}
+
+#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+pub enum EReadWrite {
+    #[default]
+    Base = 0,
+    OffsetL = 20,
+    OffsetP = 40,
+    Counter = 6,
+    CharStar = 7,
+    Char = 1,
+    Short = 2,
+    Int = 3,
+    Long = 4,
+    Float = 5,
+    Double = 8,
+    Double32 = 9,
+    UChar = 11,
+    UShort = 12,
+    UInt = 13,
+    ULong = 14,
+    Bits = 15,
+    Long64 = 16,
+    ULong64 = 17,
+    Bool = 18,
+    Float16 = 19,
+    Object = 61,
+    Any = 62,
+    Objectp = 63,
+    ObjectP = 64,
+    TString = 65,
+    TObject = 66,
+    TNamed = 67,
+    Anyp = 68,
+    AnyP = 69,
+    AnyPnoVT = 70,
+    STLp = 71,
+    Skip = 100,
+    SkipL = 120,
+    SkipP = 140,
+    Conv = 200,
+    ConvL = 220,
+    ConvP = 240,
+    STL = 300,
+    //ROOT::kSTLany /* 300 */,
+    STLstring = 365,
+    //ROOT::kSTLstring /* 365 */,
+    Streamer = 500,
+    StreamLoop = 501,
+    Cache = 600,
+    // Cache the value in memory than is not part of the object but is accessible via a SchemaRule
+    Artificial = 1000,
+    CacheNew = 1001,
+    CacheDelete = 1002,
+    NeedObjectForVirtualBaseClass = 99997,
+    Missing = 99999,
+}
+
+impl EReadWrite {
+    pub fn from_i32(i: i32) -> Result<Self> {
+        num::FromPrimitive::from_i32(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        num::ToPrimitive::to_i32(self).expect("Can not go wrong")
+    }
+}
+
+impl From<EReadWrite> for i32 {
+    fn from(e: EReadWrite) -> Self {
+        e.to_i32()
+    }
+}
+
+impl PartialEq<EReadWrite> for i32 {
+    fn eq(&self, other: &EReadWrite) -> bool {
+        *self == other.to_i32()
+    }
+}
+
+impl PartialOrd<EReadWrite> for i32 {
+    fn partial_cmp(&self, other: &EReadWrite) -> Option<Ordering> {
+        Some(self.cmp(&other.to_i32()))
+    }
+}
+
+impl PartialEq<i32> for EReadWrite {
+    fn eq(&self, other: &i32) -> bool {
+        self.to_i32() == *other
+    }
+}
+
+impl PartialOrd<i32> for EReadWrite {
+    fn partial_cmp(&self, other: &i32) -> Option<Ordering> {
+        Some(self.to_i32().cmp(other))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::rmeta::EReadWrite;
+
+    #[test]
+    fn compare_eread_write() {
+        let offset_p_p1 = EReadWrite::OffsetP.to_i32();
+        assert_eq!(offset_p_p1, EReadWrite::OffsetP);
+        let offset_p_p1 = offset_p_p1 + 1;
+        assert!(offset_p_p1 > EReadWrite::OffsetP);
+        assert!(EReadWrite::OffsetP < offset_p_p1);
     }
 }

@@ -1,4 +1,5 @@
 use crate::rdict::Streamer;
+use crate::rmeta::EReadWrite;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::basket::{Basket, BasketData};
@@ -168,12 +169,11 @@ impl TBranchElement {
                             return s.into();
                         }
 
-                        if self.streamer_type() == streamer_type::kTString {
+                        if self.streamer_type() == EReadWrite::TString.to_i32() {
                             return "TString".to_string();
                         }
 
-                        if self.streamer_type() == streamer_type::kSTL || self.streamer_type() == -1
-                        {
+                        if self.streamer_type() == EReadWrite::STL || self.streamer_type() == -1 {
                             match self.streamer() {
                                 None => {
                                     return clean_type_name(self.class_name());
