@@ -13,7 +13,6 @@ use crate::root;
 use crate::root::traits;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::rtree::branch::TBranchElement;
 use crate::rtypes::factory::FactoryItem;
 use crate::rvers;
 

@@ -1,6 +1,4 @@
-use crate::rcont::objarray::ObjArray;
 use crate::rdict::Streamer;
-use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::basket::{Basket, BasketData};
@@ -9,15 +7,13 @@ use crate::rtree::branch::{BranchChunks, TBranch};
 use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::streamer_type::{_from_leaftype_to_str, clean_type_name};
-use crate::rtree::tree::TioFeatures;
-use crate::rtypes::FactoryItem;
-use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
+use crate::{factory_fn_register_impl, RBuffer, Unmarshaler};
 use anyhow::ensure;
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 
 #[derive(Default)]
 pub struct TBranchElement {
@@ -84,7 +80,7 @@ impl TBranchElement {
     }
 
     pub fn streamer(&self) -> Option<&Streamer> {
-        let streamer = self.branch.sinfos.as_ref().unwrap().get(&self.class_name());
+        let streamer = self.branch.sinfos.as_ref().unwrap().get(self.class_name());
 
         let streamer = streamer;
 
@@ -97,7 +93,7 @@ impl TBranchElement {
     }
 
     pub fn item_type_name(&self) -> String {
-        return self._item_type_name();
+        self._item_type_name()
         // if self.props.borrow().item_type_name.is_none() {
         //     self.props.borrow_mut().item_type_name = Some(self._item_type_name());
         // }
@@ -106,7 +102,7 @@ impl TBranchElement {
     }
 
     fn _item_type_name(&self) -> String {
-        if self.branch.branches().len() > 0 {
+        if !self.branch.branches().is_empty() {
             if let Some(true) = self.is_top_level() {
                 if !self.class_name.is_empty() {
                     return self.class_name.to_string();
@@ -198,8 +194,7 @@ impl TBranchElement {
             };
         }
 
-        let unknown = "unknown";
-        self.branch.item_type_name().to_string()
+        self.branch.item_type_name()
     }
 
     fn clean_name(&self) -> &str {

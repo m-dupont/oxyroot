@@ -9,7 +9,7 @@ use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
 use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
-use anyhow::{bail, ensure};
+use anyhow::ensure;
 use itertools::izip;
 use log::trace;
 

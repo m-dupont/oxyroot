@@ -5,24 +5,13 @@ mod tbranch_props;
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
 
-use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::{Unmarshaler, UnmarshalerInto};
-use crate::rcont::objarray::ObjArray;
+use crate::rbytes::UnmarshalerInto;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
-use crate::rtree::basket::{Basket, BasketData};
 
-use crate::rtree::leaf::Leaf;
-use crate::rtree::streamer_type;
-use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
-use crate::{factory_fn_register_impl, rvers};
-use anyhow::ensure;
-use itertools::izip;
-use lazy_static::lazy_static;
 use log::trace;
-use regex::Regex;
 use std::marker::PhantomData;
 
 pub(crate) enum BranchChunks {
@@ -104,15 +93,15 @@ impl Branch {
 
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         match self {
-            Branch::Base(bb) => bb.set_reader(Some(reader.unwrap().clone())),
-            Branch::Element(be) => be.branch.set_reader(Some(reader.unwrap().clone())),
+            Branch::Base(bb) => bb.set_reader(Some(reader.unwrap())),
+            Branch::Element(be) => be.branch.set_reader(Some(reader.unwrap())),
         }
     }
 
     pub(crate) fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
         match self {
-            Branch::Base(bb) => bb.set_streamer_info(sinfos.clone()),
-            Branch::Element(be) => be.branch.set_streamer_info(sinfos.clone()),
+            Branch::Base(bb) => bb.set_streamer_info(sinfos),
+            Branch::Element(be) => be.branch.set_streamer_info(sinfos),
         }
     }
 
@@ -145,7 +134,7 @@ impl Branch {
 
         let it = if !tbranch.branches().is_empty() {
             let b: Box<dyn Iterator<Item = T>> = Box::new(
-                ZiperBranches::<usize>::new(&tbranch.branches(), tbranch.entries() as u32).map(
+                ZiperBranches::<usize>::new(tbranch.branches(), tbranch.entries() as u32).map(
                     move |(_n, _chunk_size, buf)| {
                         let mut r = RBuffer::new(&buf, 0);
                         func(&mut r)

@@ -112,7 +112,7 @@ pub struct Tree {
 
 impl Tree {
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
-        if let Some(ref r) = reader {
+        if let Some(r) = &reader {
             for b in self.branches.iter_mut() {
                 b.set_reader(Some(r.clone()));
             }
@@ -141,8 +141,6 @@ impl Tree {
     }
 
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
-        // self.branches.iter().map()
-
         self.branches.iter()
     }
     pub fn entries(&self) -> i64 {

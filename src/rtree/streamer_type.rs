@@ -1,7 +1,5 @@
 use crate::rdict::Streamer;
 use crate::rmeta::{Enum, EnumNamed};
-use crate::rtree::streamer_type;
-use anyhow::Result;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
@@ -237,7 +235,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
 }
 
 pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
-    trace!("leaftype = {}", leaftype);
+    // trace!("leaftype = {}", leaftype);
 
     if leaftype < 0 {
         return None;
@@ -258,47 +256,25 @@ pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
 
     assert!(leaftype > 0);
 
-    trace!("leaftype = {}", leaftype);
+    // trace!("leaftype = {}", leaftype);
 
     match leaftype {
-        streamer_type::kChar => {
-            return Some("int8_t");
-        }
-        streamer_type::kUChar => {
-            return Some("uint8_t");
-        }
+        kChar => Some("int8_t"),
+        kUChar => Some("uint8_t"),
 
-        streamer_type::kShort => {
-            return Some("int16_t");
-        }
-        streamer_type::kUShort => {
-            return Some("uint16_t");
-        }
-        streamer_type::kInt => {
-            return Some("int32_t");
-        }
-        streamer_type::kUInt | streamer_type::kBits | streamer_type::kCounter => {
-            return Some("uint32_t");
-        }
+        kShort => Some("int16_t"),
+        kUShort => Some("uint16_t"),
 
-        streamer_type::kLong => {
-            return Some("int64_t");
-        }
-        streamer_type::kULong => {
-            return Some("uint64_t");
-        }
+        kInt => Some("int32_t"),
+        kUInt | kBits | kCounter => Some("uint32_t"),
 
-        streamer_type::kFloat => {
-            return Some("float");
-        }
+        kLong => Some("int64_t"),
+        kULong => Some("uint64_t"),
 
-        streamer_type::kDouble => {
-            return Some("double");
-        }
+        kFloat => Some("float"),
+        kDouble => Some("double"),
 
-        streamer_type::kTString => {
-            return Some("TString");
-        }
+        kTString => Some("TString"),
 
         _ => {
             // todo!()

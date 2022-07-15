@@ -1351,10 +1351,10 @@ fn main() {
     error!("info");
     println!("example of opening file");
 
-    // open_HZZ_root().expect("NOOOO");
+    open_HZZ_root().expect("NOOOO");
     // open_simple_root().expect("NOOOO");
     // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
     // tree_with_jagged_array().expect("NOOOO");
-    tree_with_stl_containers().expect("NOOOO");
+    // tree_with_stl_containers().expect("NOOOO");
     // tree_with_stl_containers_tmp().expect("NOOOO");
 }
