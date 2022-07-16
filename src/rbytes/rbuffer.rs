@@ -17,6 +17,18 @@ struct Rbuff<'a> {
 }
 
 impl<'a> Rbuff<'a> {
+    // fn extract_as_array_ref<const N: usize>(&mut self) -> Result<&'_ [u8; N]> {
+    //     let buf: &[u8; N] = &self.p[self.c..(self.c + N)].try_into()?;
+    //     self.c += N;
+    //     Ok(buf)
+    // }
+
+    fn extract_N<const N: usize>(&mut self) -> Result<&[u8]> {
+        let buf = &self.p[self.c..(self.c + N)];
+        self.c += N;
+        Ok(buf)
+    }
+
     fn extract_as_array<const N: usize>(&mut self) -> Result<[u8; N]> {
         let buf: [u8; N] = self.p[self.c..(self.c + N)].as_ref().try_into()?;
         self.c += N;
@@ -53,18 +65,22 @@ impl<'a> Read for Rbuff<'a> {
             return Ok(0);
         }
 
-        fn copy_slice(dst: &mut [u8], src: &[u8]) -> usize {
-            let mut c = 0;
-            for (d, s) in dst.iter_mut().zip(src.iter()) {
-                *d = *s;
-                c += 1;
-            }
-            c
-        }
+        buf.copy_from_slice(&self.p[self.c..self.c + buf.len()]);
+        self.c += buf.len();
+        Ok(buf.len())
 
-        let n = copy_slice(buf, &self.p[self.c..]);
-        self.c += n;
-        Ok(n)
+        // fn copy_slice(dst: &mut [u8], src: &[u8]) -> usize {
+        //     let mut c = 0;
+        //     for (d, s) in dst.iter_mut().zip(src.iter()) {
+        //         *d = *s;
+        //         c += 1;
+        //     }
+        //     c
+        // }
+        //
+        // let n = copy_slice(buf, &self.p[self.c..]);
+        // self.c += n;
+        // Ok(n)
     }
 }
 
@@ -88,6 +104,7 @@ impl<'a> RBuffer<'a> {
         RBuffer {
             r: Rbuff { p: data, c: 0 },
             offset,
+
             ..Default::default()
         }
     }
@@ -127,8 +144,11 @@ impl<'a> RBuffer<'a> {
 
     pub fn read_u8(&mut self) -> Result<u8> {
         const SIZE: usize = size_of::<u8>();
-        let buf = self.r.extract_as_array::<SIZE>()?;
-        Ok(u8::from_be_bytes(buf))
+        // let mut buf = [0_u8; SIZE];
+        // self.r.read(&mut buf)?;
+        // let buf = self.r.extract_as_array::<SIZE>()?;
+        let buf = self.r.extract_N::<SIZE>()?;
+        Ok(u8::from_be_bytes(buf.try_into()?))
     }
 
     pub fn read_array_u8(&mut self, arr: &mut [u8]) -> Result<()> {
@@ -215,8 +235,10 @@ impl<'a> RBuffer<'a> {
 
     pub fn read_f32(&mut self) -> Result<f32> {
         const SIZE: usize = size_of::<f32>();
-        let buf = self.r.extract_as_array::<SIZE>()?;
-        Ok(f32::from_be_bytes(buf))
+        // let buf = self.r.extract_as_array::<SIZE>()?;
+        // Ok(f32::from_be_bytes(buf))
+        let buf = self.r.extract_N::<SIZE>()?;
+        Ok(f32::from_be_bytes(buf.try_into()?))
     }
 
     pub fn read_object_into<T: UnmarshalerInto<Item = T>>(&mut self) -> Result<T> {

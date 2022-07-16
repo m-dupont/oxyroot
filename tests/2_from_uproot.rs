@@ -471,6 +471,15 @@ fn tree_with_array() -> Result<()> {
             buf.map(|v| assert_eq!(v, i as i16));
         });
 
+    tree.branch("ArrayI16[10]")
+        .unwrap()
+        .as_iter::<[i16; 10]>()
+        .enumerate()
+        .for_each(|(i, buf)| {
+            // println!("buf = {:?}", buf);
+            buf.map(|v| assert_eq!(v, i as i16));
+        });
+
     Ok(())
 }
 

@@ -4,6 +4,8 @@ mod tbranch_props;
 
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
+use std::fmt::{format, Debug, Formatter, Write};
+use std::iter::{once, Once};
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::UnmarshalerInto;
@@ -11,7 +13,8 @@ use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
 
 use crate::rtypes::FactoryItem;
-use log::trace;
+use itertools::chain;
+use log::{debug, trace};
 use std::marker::PhantomData;
 
 pub(crate) enum BranchChunks {
@@ -36,6 +39,18 @@ impl From<Box<dyn FactoryItem>> for Branch {
             "TBranchElement" => Branch::Element(*obj.downcast::<TBranchElement>().unwrap()),
             &_ => todo!(),
         }
+    }
+}
+
+impl Debug for Branch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Branch::Base(bb) => f.write_str("TBranch{")?,
+            Branch::Element(be) => f.write_str("TBranchElement{")?,
+        };
+        f.write_str(format!("name: {}", self.name()).as_str())?;
+        f.write_str(format!("item_t: {}", self.item_type_name()).as_str())?;
+        f.write_str("}")
     }
 }
 
@@ -69,6 +84,19 @@ impl Branch {
         }
     }
 
+    pub fn branches_r(&self) -> Vec<&Branch> {
+        let mut v = Vec::new();
+
+        for b in self.branches() {
+            v.push(b);
+            for bb in b.branches_r() {
+                v.push(bb);
+            }
+        }
+
+        v
+    }
+
     /// search in children branches
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         match self {
@@ -76,6 +104,20 @@ impl Branch {
             Branch::Element(be) => be.branch.branch(name),
         }
     }
+
+    // pub fn branches_recursively_apply<'a, B, F>(&'a self, f: &'a F) -> impl Iterator<Item = B> + 'a
+    // where
+    //     B: 'a,
+    //     F: Fn(&Branch) -> B + 'a,
+    // {
+    //     // once(f(self))
+    //     // chain(once(self), self.branches()).map(|b| b.branches_recursively_apply(f))
+    //
+    //     self.branches()
+    //         .map(|b| b.branches_recursively_apply(f))
+    //         .flatten()
+    //
+    // }
 
     pub(crate) fn set_top_level(&mut self, v: Option<bool>) {
         match self {
@@ -112,10 +154,10 @@ impl Branch {
         }
     }
 
-    pub fn get_basket<'a, F, T>(&'a self, func: F) -> impl Iterator<Item = T> + 'a
+    pub fn get_basket<'a, F, T>(&'a self, mut func: F) -> impl Iterator<Item = T> + 'a
     where
         T: 'a,
-        F: Fn(&mut RBuffer) -> T + 'a,
+        F: FnMut(&mut RBuffer) -> T + 'a,
     {
         trace!("get_basket in BRANCH = {}", self.name());
 
@@ -148,7 +190,7 @@ impl Branch {
                     match chunk {
                         BranchChunks::RegularSized((n, _chunk_size, buf)) => {
                             let mut r = RBuffer::new(&buf, 0);
-                            let mut v = Vec::new();
+                            let mut v = Vec::with_capacity(n as usize);
 
                             for _i in 0..n {
                                 v.push(func(&mut r));
@@ -159,6 +201,7 @@ impl Branch {
                             data_chuncked
                                 .iter()
                                 .map(|buf| {
+                                    trace!("buf = {:?}", buf);
                                     let mut r = RBuffer::new(buf, 0);
                                     r.set_skip_header(Some(header_bytes));
 

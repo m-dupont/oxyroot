@@ -1,6 +1,7 @@
 use crate::rdict::StreamerInfo;
 use crate::root;
 use anyhow::Result;
+use chrono::format::Item;
 use rbuffer::RBuffer;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -160,6 +161,22 @@ where
             self.insert(k, v);
         });
 
+        Ok(())
+    }
+}
+
+impl<T, const N: usize> Unmarshaler for [T; N]
+where
+    T: Unmarshaler,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+        // for i in 0..N {
+        //     self[i].unmarshal(r).unwrap();
+        // }
+
+        for item in self.iter_mut().take(N) {
+            item.unmarshal(r).unwrap();
+        }
         Ok(())
     }
 }

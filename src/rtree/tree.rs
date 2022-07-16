@@ -9,7 +9,7 @@ use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
 use crate::rvers;
 use anyhow::{bail, ensure};
-use std::io::Read;
+use log::trace;
 
 #[derive(Default)]
 pub struct Clusters {
@@ -145,6 +145,43 @@ impl Tree {
     }
     pub fn entries(&self) -> i64 {
         self.entries
+    }
+
+    // pub fn branches_recursively_apply<'a, B, F>(&'a self, f: &'a F) -> impl Iterator<Item = B> + 'a
+    // where
+    //     B: 'a,
+    //     F: Fn(&Branch) -> B + 'a,
+    // {
+    //     self.branches()
+    //         .map(|b| b.branches_recursively_apply(f))
+    //         .flatten()
+    // }
+
+    pub fn branches_r(&self) -> Vec<&Branch> {
+        let mut v = Vec::new();
+
+        for b in self.branches() {
+            trace!("ADD {:?}", b);
+            v.push(b);
+            for bb in b.branches_r() {
+                v.push(bb);
+            }
+        }
+
+        v
+    }
+
+    pub fn show(&self) {
+        println!("{:<30} | {:<30}", "name", "typename");
+        let s: String = ['-' as char; 31].iter().collect();
+        println!("{}+{}", s, s);
+        fn show_one_branch(b: &&Branch) {
+            println!("{:<30} | {:<30}", b.name(), b.item_type_name());
+        }
+
+        // println!("branches_r: {:?}", self.branches_r());
+
+        self.branches_r().iter().for_each(show_one_branch);
     }
 }
 

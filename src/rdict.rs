@@ -172,14 +172,8 @@ impl Unmarshaler for StreamerInfo {
         let objs: Box<dyn FactoryItem> = r.read_object_any_into()?.expect("something is wrong");
 
         let objarr = *objs.downcast::<rcont::objarray::ObjArray>().unwrap();
-
-        // self.objarr = r.read_object_into::<rcont::objarray::OBJ_ARRAY>()?;
-
-        // objarr
-        //     .objs
-        //     .iter()
-        //     .enumerate()
-        //     .for_each(|(i, elem)| trace!("i = {i}, elem class = {}", elem.class()));
+        //
+        // let objarr = r.read_object_into::<rcont::objarray::ObjArray>()?;
 
         for elem in objarr.objs {
             self.elems.push(elem.try_into()?);

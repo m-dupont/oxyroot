@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Write;
 use std::mem;
+use std::time::{Duration, Instant};
 
 fn open_HZZ_root() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
@@ -30,7 +31,9 @@ fn open_HZZ_root() -> Result<()> {
         );
     }
 
-    // panic!("plop");
+    tree.show();
+
+    panic!("plop");
 
     println!("entries = {}", tree.entries());
 
@@ -146,6 +149,10 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
             }
         }
     }
+
+    tree.show();
+
+    panic!("plop");
 
     tree.branch("SliceI16")
         .unwrap()
@@ -1227,10 +1234,8 @@ fn tree_with_stl_containers() -> Result<()> {
     Ok(())
 }
 
-fn tree_with_stl_containers_tmp() -> Result<()> {
-    // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
-
-    let s = "tests/stl_containers/stl_containers.root";
+fn tree_open_huge() -> Result<()> {
+    let s = "tests/huge/huge.root";
 
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
@@ -1240,92 +1245,53 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
     let tree = f.get_tree("tree")?.unwrap();
 
     let v = tree
-        .branch("map_int32_vector_set_int16")
-        .expect("No branch map_int32_vector_set_int16")
-        .as_iter::<HashMap<i32, Vec<HashSet<i16>>>>()
+        .branch("int_array_25")
+        .expect("No branch int_array_25")
+        .as_iter::<[i32; 25]>()
         .collect::<Vec<_>>();
 
-    let good = [
-        HashMap::from_iter([(1, vec![HashSet::from([1])])]),
-        HashMap::from_iter([
-            (1, vec![HashSet::from([1])]),
-            (2, vec![HashSet::from([1]), HashSet::from([1, 2])]),
-        ]),
-        HashMap::from_iter([
-            (1, vec![HashSet::from([1])]),
-            (2, vec![HashSet::from([1]), HashSet::from([1, 2])]),
-            (
-                3,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                ],
-            ),
-        ]),
-        HashMap::from_iter([
-            (1, vec![HashSet::from([1])]),
-            (2, vec![HashSet::from([1]), HashSet::from([1, 2])]),
-            (
-                3,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                ],
-            ),
-            (
-                4,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                    HashSet::from([1, 2, 3, 4]),
-                ],
-            ),
-        ]),
-        HashMap::from_iter([
-            (1, vec![HashSet::from([1])]),
-            (2, vec![HashSet::from([1]), HashSet::from([1, 2])]),
-            (
-                3,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                ],
-            ),
-            (
-                4,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                    HashSet::from([1, 2, 3, 4]),
-                ],
-            ),
-            (
-                5,
-                vec![
-                    HashSet::from([1]),
-                    HashSet::from([1, 2]),
-                    HashSet::from([1, 2, 3]),
-                    HashSet::from([1, 2, 3, 4]),
-                    HashSet::from([1, 2, 3, 4, 5]),
-                ],
-            ),
-        ]),
-    ];
+    // assert_eq!(v, good);
 
-    assert_eq!(v, good);
+    // println!("v = {:?}", v);
+    println!("len(v) = {}", v.len());
+    Ok(())
+}
 
-    println!("v = {:?}", v);
+fn tree_with_stl_containers_tmp() -> Result<()> {
+    // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
+
+    let s = "tests/huge/huge.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?.unwrap();
+
+    let start = Instant::now();
+
+    let v = tree
+        .branch("int_array_25")
+        .expect("No branch int_array_25")
+        .as_iter::<[i32; 25]>()
+        .collect::<Vec<_>>();
+
+    let duration = start.elapsed();
+    println!("Time elapsed int_array_25: {:?}", duration);
+    assert_eq!(v.len(), tree.entries() as usize);
+
+    // assert_eq!(v, good);
+
+    // println!("v = {:?}", v);
+    println!("len(v) = {}", v.len());
+
     Ok(())
 }
 
 fn main() {
     let _stylish_logger = Builder::new()
-        .filter(None, LevelFilter::Trace)
+        .filter(None, LevelFilter::Debug)
         .write_style(WriteStyle::Always)
         .format(|buf, record| {
             let level = record.metadata().level().as_str().to_ascii_uppercase();
@@ -1352,9 +1318,9 @@ fn main() {
     println!("example of opening file");
 
     // open_HZZ_root().expect("NOOOO");
-    open_simple_root().expect("NOOOO");
+    // open_simple_root().expect("NOOOO");
     // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
     // tree_with_jagged_array().expect("NOOOO");
     // tree_with_stl_containers().expect("NOOOO");
-    // tree_with_stl_containers_tmp().expect("NOOOO");
+    tree_with_stl_containers_tmp().expect("NOOOO");
 }

@@ -223,12 +223,28 @@ impl TBranchElement {
             }
         }
 
+        let leaves = if self.branch.leaves.len() == 1 {
+            let mut v = Vec::new();
+            for _ in 0..self.branch.basket_seek.len() {
+                v.push(&self.branch.leaves[0]);
+            }
+            v
+        } else if self.branch.leaves.len() == self.branch.basket_seek.len() {
+            let mut v = Vec::new();
+            for l in self.branch.leaves.iter() {
+                v.push(l);
+            }
+            v
+        } else {
+            unimplemented!();
+        };
+
         Box::new(
             izip!(
                 &self.branch.basket_seek,
                 &self.branch.basket_bytes,
                 size_leaves,
-                &self.branch.leaves
+                leaves
             )
             .map(|(start, len, mut chunk_size, leave)| {
                 //     trace!(

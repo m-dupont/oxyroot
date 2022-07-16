@@ -27,21 +27,7 @@ pub(crate) enum BasketData {
 
 impl Basket {
     pub(crate) fn raw_data(&self, file: &mut RootFileReader) -> BasketData {
-        // trace!("basket:  = {}", self.name());
-        // trace!(
-        //     "basket: objlen = {} border = {}",
-        //     self.key.obj_len(),
-        //     self.border()
-        // );
-        //
-        // trace!(
-        //     "basket: compressed_bytes = {} uncompressed_bytes = {}",
-        //     self.compressed_bytes(),
-        //     self.uncompressed_bytes()
-        // );
-
         let ret = self.key.bytes(file, None).unwrap();
-        // trace!("len buf = {}", ret.len());
 
         if self.border() != self.uncompressed_bytes() {
             let (data, byte_offsets) = ret.split_at(self.border() as usize);
@@ -54,14 +40,6 @@ impl Basket {
 
             let last = byte_offsets.len() - 1;
             byte_offsets[last] = self.border();
-
-            // trace!("byte_offsets = {:?}", byte_offsets);
-
-            // trace!(
-            //     "new len buf = {}, len byte_offsets = {}",
-            //     data.len(),
-            //     byte_offsets.len()
-            // );
             return BasketData::UnTrustNEntries((self.n_entry_buf, data.to_vec(), byte_offsets));
         }
 

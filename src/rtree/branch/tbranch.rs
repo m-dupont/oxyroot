@@ -11,7 +11,10 @@ use crate::rtypes::FactoryItem;
 use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
 use anyhow::ensure;
 use itertools::izip;
+use lazy_static::lazy_static;
 use log::trace;
+use regex::Regex;
+use std::iter::repeat;
 
 #[derive(Default)]
 pub struct TBranch {
@@ -140,12 +143,36 @@ impl TBranch {
             }
         }
 
+        let leaves = if self.leaves.len() == 1 {
+            let mut v = Vec::new();
+            for _ in 0..self.basket_seek.len() {
+                v.push(&self.leaves[0]);
+            }
+            v
+        } else if self.leaves.len() == self.basket_seek.len() {
+            let mut v = Vec::new();
+            for l in self.leaves.iter() {
+                v.push(l);
+            }
+            v
+        } else {
+            unimplemented!();
+        };
+
+        trace!(
+            "{} {} {} {}",
+            self.basket_seek.len(),
+            self.basket_bytes.len(),
+            size_leaves.len(),
+            self.leaves.len()
+        );
+
         Box::new(
             izip!(
                 &self.basket_seek,
                 &self.basket_bytes,
                 size_leaves,
-                &self.leaves
+                leaves
             )
                 .map(|(start, len, mut chunk_size, leave)| {
                     trace!(
@@ -202,12 +229,46 @@ impl TBranch {
     pub fn item_type_name(&self) -> String {
         let unknown = "unknown";
 
-        trace!("len = {} leaves = {:?}", self.leaves.len(), self.leaves);
+        // trace!("len = {} leaves = {:?}", self.leaves.len(), self.leaves);
 
         if self.leaves.len() == 1 {
             let leave = self.leaves.get(0).unwrap();
-            return match leave.type_name() {
-                Some(t) => t.to_string(),
+            trace!("leave = {:?}", leave);
+
+            lazy_static! {
+                static ref RE_TITLE_HAS_DIMS: Regex =
+                    Regex::new(r"^([^\[\]]*)(\[[^\[\]]+\])+").unwrap();
+                static ref RE_ITEM_DIM_PATTERN: Regex = Regex::new(r"\[([1-9][0-9]*)\]").unwrap();
+            }
+
+            let m = RE_TITLE_HAS_DIMS.captures(leave.title());
+            trace!("RE_TITLE_HAS_DIMS = {:?}", m);
+
+            let dim = if m.is_some() {
+                if let Some(m) = RE_ITEM_DIM_PATTERN.captures(leave.title()) {
+                    trace!("m = {:?}", m);
+                    let dim: &str = m.get(1).unwrap().as_str();
+                    Some(dim.parse::<i32>().unwrap())
+                } else {
+                    Some(0)
+                }
+            } else {
+                None
+            };
+
+            match leave.type_name() {
+                Some(s) => match dim {
+                    None => {
+                        return s.to_string();
+                    }
+                    Some(dim) => {
+                        if dim > 0 {
+                            return format!("{}[{}]", s, dim);
+                        } else {
+                            return format!("{}[]", s);
+                        }
+                    }
+                },
                 None => panic!("can not be here"),
             };
         }
