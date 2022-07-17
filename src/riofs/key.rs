@@ -168,7 +168,7 @@ impl Key {
     }
 
     pub(crate) fn object(
-        mut self,
+        &self,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,
     ) -> Result<Option<Box<dyn FactoryItem>>> {
@@ -202,10 +202,9 @@ impl Key {
 
         // self.objarr = *objs.downcast::<rcont::objarray::OBJ_ARRAY>().unwrap();
 
-        self.obj = Some(vv);
+        let obj = Some(vv);
 
-        if self
-            .obj
+        if obj
             .as_ref()
             .unwrap()
             .downcast_ref::<TDirectoryFile>()
@@ -220,7 +219,7 @@ impl Key {
 
         // if let Some(fct) = rtypes::FACTORY.get(&self.class);
 
-        Ok(self.obj)
+        Ok(obj)
 
         // Err(anyhow!("euh"))
     }

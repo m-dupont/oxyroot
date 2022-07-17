@@ -159,19 +159,20 @@ impl TDirectoryFile {
         trace!("get_object, name = {}", name);
         trace!("self.keys.len = {}", self.keys.len());
 
-        let mut keys = Vec::new();
-
-        for i in 0..self.keys.len() {
-            let k = self.keys.remove(i);
-            if k.name() == name {
-                if cycle != 9999 {
-                    todo!();
+        let mut keys = self
+            .keys
+            .iter()
+            .filter(|k| {
+                if k.name() == name {
+                    if cycle != 9999 {
+                        todo!();
+                    }
+                    return true;
+                } else {
+                    false
                 }
-                keys.push(k);
-
-                // todo!()
-            }
-        }
+            })
+            .collect::<Vec<_>>();
 
         let key = match keys.len() {
             0 => {
