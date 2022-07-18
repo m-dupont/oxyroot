@@ -13,7 +13,7 @@ fn tree_with_stl_containers__string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("string").unwrap().item_type_name(), "string");
 
@@ -39,7 +39,7 @@ fn tree_with_stl_containers__tstring() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("tstring").unwrap().item_type_name(), "TString");
 
@@ -65,7 +65,7 @@ fn tree_with_stl_containers__vector_int32() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_int32").unwrap().item_type_name(),
@@ -103,7 +103,7 @@ fn tree_with_stl_containers__vector_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_string").unwrap().item_type_name(),
@@ -141,7 +141,7 @@ fn tree_with_stl_containers__vector_tstring() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_tstring").unwrap().item_type_name(),
@@ -179,7 +179,7 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_vector_int32").unwrap().item_type_name(),
@@ -226,7 +226,7 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_vector_string")
@@ -280,7 +280,7 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_vector_tstring")
@@ -334,7 +334,7 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_set_int32").unwrap().item_type_name(),
@@ -381,7 +381,7 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("vector_set_string").unwrap().item_type_name(),
@@ -448,7 +448,7 @@ fn tree_with_stl_containers__set_int32() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("set_int32").unwrap().item_type_name(),
@@ -486,7 +486,7 @@ fn tree_with_stl_containers__set_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("set_string").unwrap().item_type_name(),
@@ -524,7 +524,7 @@ fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_int16").unwrap().item_type_name(),
@@ -561,7 +561,7 @@ fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_vector_int16")
@@ -611,7 +611,7 @@ fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_vector_string")
@@ -702,7 +702,7 @@ fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_set_int16").unwrap().item_type_name(),
@@ -754,7 +754,7 @@ fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_set_string")
@@ -845,7 +845,7 @@ fn tree_with_stl_containers__map_string_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_int16").unwrap().item_type_name(),
@@ -897,7 +897,7 @@ fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_vector_int16")
@@ -954,7 +954,7 @@ fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_vector_string")
@@ -1057,7 +1057,7 @@ fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_set_int16")
@@ -1114,7 +1114,7 @@ fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_set_string")
@@ -1217,7 +1217,7 @@ fn tree_with_stl_containers__map_string_string() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_string").unwrap().item_type_name(),
@@ -1272,7 +1272,7 @@ fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_string_tstring").unwrap().item_type_name(),
@@ -1327,7 +1327,7 @@ fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_vector_vector_int16")
@@ -1396,7 +1396,7 @@ fn tree_with_stl_containers__map_int32_vector_set_int16() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("map_int32_vector_set_int16")

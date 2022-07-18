@@ -20,7 +20,6 @@ fn open_HZZ_root() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("events")?;
-    let tree = tree.unwrap();
 
     for b in tree.branches() {
         println!(
@@ -68,7 +67,6 @@ fn open_simple_root() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     for b in tree.branches() {
         println!(
@@ -121,7 +119,6 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     for b in tree.branches() {
         println!(
@@ -236,8 +233,7 @@ fn tree_with_jagged_array() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("t1")?.unwrap();
-    // let tree = tree.unwrap();
+    let tree = f.get_tree("t1")?;
 
     for b in tree.branches() {
         println!(
@@ -290,7 +286,7 @@ fn tree_with_stl_containers() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     for b in tree.branches() {
         println!(
@@ -1242,7 +1238,7 @@ fn tree_open_huge() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     let v = tree
         .branch("int_array_25")
@@ -1267,7 +1263,7 @@ fn huge() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     tree.show();
 
@@ -1307,7 +1303,7 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     tree.show();
 

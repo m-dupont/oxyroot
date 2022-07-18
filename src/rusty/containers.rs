@@ -12,7 +12,7 @@ use std::fmt::Debug;
 /// let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";///
 /// let mut f = RootFile::open(s).unwrap();
 /// let tree = f.get_tree("tree").unwrap();
-/// let tree = tree.unwrap();
+///
 /// tree.branch("SliceI16")
 ///         .unwrap()
 ///         .as_iter::<oxyroot::Slice<i16>>()

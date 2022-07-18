@@ -11,7 +11,7 @@ fn tree_with_int_array_25() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("int_array_25").unwrap().item_type_name(),
@@ -44,7 +44,7 @@ fn tree_with_int_vector() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
 
     assert_eq!(
         tree.branch("int_vector").unwrap().item_type_name(),

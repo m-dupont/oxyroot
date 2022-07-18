@@ -49,7 +49,6 @@ fn main() {
     // f.get_object("Spectrum").unwrap();
     // f.get_object("T").unwrap();
     let tree = f.get_tree("T").unwrap();
-    let tree = tree.unwrap();
 
     for b in tree.branches() {
         println!("branch = {}, class = {}", b.name(), b.class());

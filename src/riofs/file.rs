@@ -303,12 +303,12 @@ impl RootFile {
         // Ok(obj)
     }
 
-    pub fn get_tree(&mut self, name: &str) -> Result<Option<Tree>> {
+    pub fn get_tree(&mut self, name: &str) -> Result<Tree> {
         let objet = self.get_object(name)?;
-        let mut objet: Tree = *objet.downcast::<Tree>().unwrap();
+        let mut objet: Tree = *objet.downcast::<Tree>().expect("");
         objet.set_reader(Some(self.inner.reader.clone()));
         objet.set_streamer_info(self.sinfos.clone());
-        Ok(Some(objet))
+        Ok(objet)
     }
 
     pub fn keys(&self) -> impl Iterator<Item = &str> {

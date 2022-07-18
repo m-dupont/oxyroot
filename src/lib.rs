@@ -8,7 +8,7 @@ in Go and  [uproot](https://github.com/scikit-hep/uproot5) written in Python.
 ```rust
 use oxyroot::RootFile;
 let s = "examples/from_uproot/data/HZZ.root";
-let tree = RootFile::open(s).unwrap().get_tree("events").unwrap().unwrap();
+let tree = RootFile::open(s).expect("Can not open file").get_tree("events").unwrap();
 let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 NJet.for_each(|v| println!("v = {v}"));
 ```
@@ -19,7 +19,7 @@ NJet.for_each(|v| println!("v = {v}"));
 ```rust
 use oxyroot::RootFile;
 let s = "tests/stl_containers/stl_containers.root";
-let tree = RootFile::open(s).unwrap().get_tree("tree").unwrap().unwrap();
+let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
 let vector_int32 = tree.branch("vector_int32")
                    .unwrap().as_iter::<Vec<i32>>()
                    .collect::<Vec<_>>();
@@ -90,7 +90,7 @@ let parse = |r: &mut RBuffer| Sd {
 
 
 let s = "tests_data/doc/struct_sd.root";
-let tree = RootFile::open(s).unwrap().get_tree("T").unwrap().unwrap();
+let tree = RootFile::open(s).expect("Can not open file").get_tree("T").unwrap();
 
 // branch v_i contains v_i which will be zipped.
 let mut b = tree.branch("v_i").unwrap().get_basket(parse);

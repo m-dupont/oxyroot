@@ -8,7 +8,7 @@ use std::fmt::Debug;
 fn open_nested() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
 
-    let tree = RootFile::open(s)?.get_tree("events")?.unwrap();
+    let tree = RootFile::open(s)?.get_tree("events")?;
     let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 
     let n = NJet.count();
@@ -30,7 +30,6 @@ fn open_simple_root() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(tree.branch("one").unwrap().item_type_name(), "int32_t");
     assert_eq!(tree.branch("two").unwrap().item_type_name(), "float");
@@ -71,7 +70,6 @@ fn open_tree_with_string() -> Result<()> {
     let mut f = RootFile::open(s)?;
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(tree.branch("Beg").unwrap().item_type_name(), "TString");
     assert_eq!(tree.branch("End").unwrap().item_type_name(), "TString");
@@ -103,7 +101,6 @@ fn open_tree_with_stl_string() -> Result<()> {
     let mut f = RootFile::open(s)?;
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(tree.branch("StdStr").unwrap().item_type_name(), "string");
 
@@ -130,7 +127,7 @@ fn open_tree_with_struct_p3() -> Result<()> {
     let mut f = RootFile::open(s)?;
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
+    let tree = tree;
 
     assert_eq!(tree.branch("P3").unwrap().item_type_name(), "P3");
     assert_eq!(tree.branch("P3.Px").unwrap().item_type_name(), "int32_t");
@@ -165,7 +162,7 @@ fn open_tree_with_vector_parse() -> Result<()> {
 
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
-    let tree = f.get_tree("t1")?.unwrap();
+    let tree = f.get_tree("t1")?;
 
     assert_eq!(
         tree.branch("int32_array").unwrap().item_type_name(),
@@ -204,7 +201,7 @@ fn open_tree_with_vector_into() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
-    let tree = f.get_tree("t1")?.unwrap();
+    let tree = f.get_tree("t1")?;
     tree.branch("int32_array")
         .unwrap()
         .as_iter::<Vec<i32>>()
@@ -230,7 +227,6 @@ fn open_tree_with_slice_i16() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(
         tree.branch("SliceI16").unwrap().item_type_name(),
@@ -291,7 +287,6 @@ fn open_tree_with_slice_i16_into_vec() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     let v: Vec<Vec<i16>> = tree
         .branch("SliceI16")
@@ -417,7 +412,6 @@ fn open_tree_with_vector_of_string() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(
         tree.branch("StlVecStr").unwrap().item_type_name(),
@@ -451,7 +445,6 @@ fn tree_with_array() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
-    let tree = tree.unwrap();
 
     assert_eq!(
         tree.branch("ArrayI16[10]").unwrap().item_type_name(),
@@ -492,7 +485,7 @@ where
 
     let mut f = RootFile::open(s)?;
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
-    let tree = f.get_tree("tree")?.unwrap();
+    let tree = f.get_tree("tree")?;
     tree.branch(name_branch)
         .unwrap()
         .as_iter::<Vec<T>>()
