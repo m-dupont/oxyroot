@@ -4,8 +4,7 @@ mod tbranch_props;
 
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
-use std::fmt::{format, Debug, Formatter, Write};
-use std::iter::{once, Once};
+use std::fmt::{Debug, Formatter};
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::UnmarshalerInto;
@@ -13,8 +12,7 @@ use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
 
 use crate::rtypes::FactoryItem;
-use itertools::chain;
-use log::{debug, trace};
+use log::trace;
 use std::marker::PhantomData;
 
 pub(crate) enum BranchChunks {

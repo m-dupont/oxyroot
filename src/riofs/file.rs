@@ -58,14 +58,11 @@ impl RootFileReader {
         P: AsRef<Path>,
     {
         let f = File::open(path.as_ref())?;
-
         let buf_reader = BufReader::new(f);
-
         let reader = Self {
             path: path.as_ref().to_path_buf(),
             reader: Some(buf_reader),
         };
-
         Ok(reader)
     }
 

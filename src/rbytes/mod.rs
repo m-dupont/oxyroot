@@ -1,7 +1,6 @@
 use crate::rdict::StreamerInfo;
 use crate::root;
 use anyhow::Result;
-use chrono::format::Item;
 use rbuffer::RBuffer;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -17,7 +16,7 @@ use paste::paste;
 #[derive(Default, Debug)]
 pub struct Header {
     /// name of the type being guarded by this header.
-    name: String,
+    _name: String,
     /// version of the type being guarded by this header.
     pub(crate) vers: i16,
     /// position of the type in the ROOT buffer.
@@ -102,6 +101,7 @@ where
         r.do_skip_header()?;
         let size = r.read_i32()?;
 
+        self.reserve(size as usize);
         r.set_skip_header(None);
 
         for _ in 0..size {

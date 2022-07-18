@@ -1257,7 +1257,7 @@ fn tree_open_huge() -> Result<()> {
     Ok(())
 }
 
-fn tree_with_stl_containers_tmp() -> Result<()> {
+fn huge() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
     let s = "tests/huge/huge.root";
@@ -1268,6 +1268,8 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?.unwrap();
+
+    tree.show();
 
     let start = Instant::now();
 
@@ -1281,9 +1283,53 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
     println!("Time elapsed int_array_25: {:?}", duration);
     assert_eq!(v.len(), tree.entries() as usize);
 
+    v.iter().enumerate().for_each(|(i, int_array_25)| {
+        int_array_25.iter().enumerate().for_each(|(k, val)| {
+            assert_eq!((i + k) as i32, *val);
+        });
+    });
+
     // assert_eq!(v, good);
 
     // println!("v = {:?}", v);
+    println!("len(v) = {}", v.len());
+
+    Ok(())
+}
+
+fn tree_with_stl_containers_tmp() -> Result<()> {
+    // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
+
+    let s = "tests/huge/huge.root";
+
+    // RootFile::open("old.root").unwrap();
+    let mut f = RootFile::open(s)?;
+
+    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+
+    let tree = f.get_tree("tree")?.unwrap();
+
+    tree.show();
+
+    let start = Instant::now();
+
+    let v = tree
+        .branch("int_vector")
+        .expect("No branch int_vector")
+        .as_iter::<Vec<i32>>()
+        .collect::<Vec<_>>();
+
+    let duration = start.elapsed();
+    println!("Time elapsed int_vector: {:?}", duration);
+    assert_eq!(v.len(), tree.entries() as usize);
+
+    v.iter().enumerate().for_each(|(i, int_vector)| {
+        assert_eq!(int_vector.len(), i % 25);
+        int_vector.iter().enumerate().for_each(|(k, val)| {
+            assert_eq!((i + k) as i32, *val);
+        });
+    });
+
     println!("len(v) = {}", v.len());
 
     Ok(())
@@ -1322,5 +1368,6 @@ fn main() {
     // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
     // tree_with_jagged_array().expect("NOOOO");
     // tree_with_stl_containers().expect("NOOOO");
+    // huge().expect("NOOOO");
     tree_with_stl_containers_tmp().expect("NOOOO");
 }

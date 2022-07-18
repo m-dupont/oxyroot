@@ -1,5 +1,4 @@
 use crate::riofs::file::{RootFile, RootFileReader};
-use std::io::Read;
 
 use crate::rbase::named::Named as ObjNamed;
 use crate::rbytes::rbuffer::RBuffer;
@@ -167,7 +166,7 @@ impl TDirectoryFile {
                     if cycle != 9999 {
                         todo!();
                     }
-                    return true;
+                    true
                 } else {
                     false
                 }
@@ -180,7 +179,10 @@ impl TDirectoryFile {
             }
             1 => keys.remove(0),
             _ => {
-                unimplemented!()
+                keys.sort_by_key(|k| k.cycle());
+                keys[keys.len() - 1]
+
+                // unimplemented!()
             }
         };
 

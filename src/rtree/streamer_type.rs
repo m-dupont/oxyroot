@@ -198,9 +198,7 @@ pub(crate) fn clean_type_name(ty: &str) -> String {
     let ret = ret.replace("unsigned long", "uint64_t");
     let ret = ret.replace("long", "int64_t");
 
-    let ret = ret.replace(" ", "");
-
-    ret
+    ret.replace(" ", "")
 }
 
 #[cfg(test)]

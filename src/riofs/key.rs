@@ -232,4 +232,7 @@ impl Key {
     pub fn n_bytes(&self) -> i32 {
         self.n_bytes
     }
+    pub fn cycle(&self) -> i32 {
+        self.cycle as i32
+    }
 }

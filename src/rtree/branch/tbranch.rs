@@ -14,7 +14,6 @@ use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::iter::repeat;
 
 #[derive(Default)]
 pub struct TBranch {
@@ -144,13 +143,13 @@ impl TBranch {
         }
 
         let leaves = if self.leaves.len() == 1 {
-            let mut v = Vec::new();
+            let mut v = Vec::with_capacity(self.basket_seek.len());
             for _ in 0..self.basket_seek.len() {
                 v.push(&self.leaves[0]);
             }
             v
         } else if self.leaves.len() == self.basket_seek.len() {
-            let mut v = Vec::new();
+            let mut v = Vec::with_capacity(self.basket_seek.len());
             for l in self.leaves.iter() {
                 v.push(l);
             }

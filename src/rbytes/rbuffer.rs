@@ -119,7 +119,7 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn is_empty(&self) -> bool {
-        !(self.len() > 0)
+        self.len() <= 0
     }
 
     pub fn pos(&self) -> i64 {
@@ -152,10 +152,9 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_u8(&mut self, arr: &mut [u8]) -> Result<()> {
-        for i in 0..arr.len() {
-            arr[i] = self.read_u8()?;
+        for item in arr {
+            *item = self.read_u8()?;
         }
-
         Ok(())
     }
 
@@ -182,8 +181,8 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_i16(&mut self, arr: &mut [i16]) -> Result<()> {
-        for i in 0..arr.len() {
-            arr[i] = self.read_i16()?;
+        for item in arr {
+            *item = self.read_i16()?;
         }
         Ok(())
     }
@@ -195,8 +194,8 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_i32(&mut self, arr: &mut [i32]) -> Result<()> {
-        for i in 0..arr.len() {
-            arr[i] = self.read_i32()?;
+        for item in arr {
+            *item = self.read_i32()?;
         }
         Ok(())
     }
@@ -214,10 +213,9 @@ impl<'a> RBuffer<'a> {
     }
 
     pub fn read_array_i64(&mut self, arr: &mut [i64]) -> Result<()> {
-        for i in 0..arr.len() {
-            arr[i] = self.read_i64()?;
+        for item in arr {
+            *item = self.read_i64()?;
         }
-
         Ok(())
     }
 
@@ -390,7 +388,7 @@ impl<'a> RBuffer<'a> {
 
     pub fn read_header(&mut self, class: &str) -> Result<Header> {
         let mut hdr = Header {
-            name: String::from(class),
+            _name: String::from(class),
             pos: self.pos(),
             ..Default::default()
         };
@@ -455,12 +453,12 @@ impl<'a> RBuffer<'a> {
                 return Ok(());
             }
 
-            if self.len() > 3 && s > 3 {
-                let mut hdr = [0; 3];
+            if self.len() > 1 && s > 1 {
+                let mut hdr = [0; 1];
                 self.read_array_u8(&mut hdr)?;
-                self.rewind(3)?;
+                self.rewind(1)?;
 
-                if hdr != [64, 0, 0] {
+                if hdr != [64] {
                     return Ok(());
                 }
             }

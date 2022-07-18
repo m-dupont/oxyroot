@@ -173,7 +173,7 @@ impl Tree {
 
     pub fn show(&self) {
         println!("{:<30} | {:<30}", "name", "typename");
-        let s: String = ['-' as char; 31].iter().collect();
+        let s: String = ['-'; 31].iter().collect();
         println!("{}+{}", s, s);
         fn show_one_branch(b: &&Branch) {
             println!("{:<30} | {:<30}", b.name(), b.item_type_name());

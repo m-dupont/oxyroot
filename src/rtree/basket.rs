@@ -32,12 +32,21 @@ impl Basket {
         if self.border() != self.uncompressed_bytes() {
             let (data, byte_offsets) = ret.split_at(self.border() as usize);
 
-            let mut byte_offsets: Vec<_> = byte_offsets
+            // let mut byte_offsets: Vec<_> = byte_offsets
+            //     .chunks(4)
+            //     .map(|x| i32::from_be_bytes(x.try_into().unwrap()) - self.key.key_len())
+            //     .skip(1)
+            //     .collect();
+
+            let mut bb: Vec<i32> = Vec::with_capacity(byte_offsets.len() / 4);
+
+            byte_offsets
                 .chunks(4)
                 .map(|x| i32::from_be_bytes(x.try_into().unwrap()) - self.key.key_len())
                 .skip(1)
-                .collect();
+                .for_each(|x| bb.push(x));
 
+            let mut byte_offsets = bb;
             let last = byte_offsets.len() - 1;
             byte_offsets[last] = self.border();
             return BasketData::UnTrustNEntries((self.n_entry_buf, data.to_vec(), byte_offsets));

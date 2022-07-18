@@ -53,9 +53,6 @@ impl Named for TBranchElement {
 }
 
 impl TBranchElement {
-    fn branch(self) -> TBranch {
-        self.branch
-    }
     pub fn streamer_type(&self) -> i32 {
         self.stype
     }
@@ -301,20 +298,18 @@ impl TBranchElement {
                             trace!("header_bytes = {}", header_bytes);
                             // trace!("buf = {:?}", buf);
 
-                            let byte_offsets: Vec<_> = byte_offsets
-                                .iter()
-                                .zip(byte_offsets.iter().skip(1))
-                                .collect();
+                            let byte_offsets = byte_offsets.iter().zip(byte_offsets.iter().skip(1));
+                            // .collect();
                             // trace!("byte_offsets = {:?}", byte_offsets);
                             // trace!("buf = {:?}", buf);
 
                             let data: Vec<_> = byte_offsets
-                                .iter()
                                 .map(|(start, stop)| {
-                                    let b = &buf[**start as usize..**stop as usize];
+                                    let b = &buf[*start as usize..*stop as usize];
                                     b.to_vec()
                                 })
                                 .collect();
+
                             // trace!("data = {:?}", data);
 
                             trace!("send ({n},{chunk_size},{:?})", data);
