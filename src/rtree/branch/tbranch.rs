@@ -199,13 +199,13 @@ impl TBranch {
                     match b.raw_data(&mut reader) {
                         BasketData::TrustNEntries((n, buf)) => {
                             trace!("send ({n},{chunk_size},{:?})", buf);
-                            return BranchChunks::RegularSized((n, chunk_size, buf));
+                            BranchChunks::RegularSized((n, chunk_size, buf))
                         }
                         BasketData::UnTrustNEntries((n, buf, _byte_offsets)) => match leave {
                             Leaf::C(_) => {
                                 // In case of string, we have to use n
                                 trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::RegularSized((n, chunk_size, buf));
+                                BranchChunks::RegularSized((n, chunk_size, buf))
                             },
                             Leaf::Element(_) => {
                                 panic!("I dont want to be here (Element should be in TBranchElement)");
@@ -213,10 +213,10 @@ impl TBranch {
                             _ => {
                                 let n = buf.len() / chunk_size as usize;
                                 trace!("send ({n},{chunk_size},{:?})", buf);
-                                return BranchChunks::RegularSized((n as u32, chunk_size, buf));
+                                BranchChunks::RegularSized((n as u32, chunk_size, buf))
                             }
                         },
-                    };
+                    }
                 }),
         )
     }
@@ -272,7 +272,7 @@ impl TBranch {
             };
         }
 
-        return unknown.to_string();
+        unknown.to_string()
     }
     pub(crate) fn reader(&self) -> &Option<RootFileReader> {
         &self.reader

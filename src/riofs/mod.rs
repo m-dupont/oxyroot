@@ -4,4 +4,4 @@ pub mod file;
 mod key;
 pub mod utils;
 
-pub use key::Key;
+pub(crate) use key::Key;

@@ -115,11 +115,12 @@ where
 
 impl<T> Unmarshaler for HashSet<T>
 where
-    T: UnmarshalerInto<Item = T> + Eq + Hash + Debug,
+    T: UnmarshalerInto<Item = T> + Eq + Hash,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         r.do_skip_header()?;
         let size = r.read_i32()?;
+        self.reserve(size as usize);
         r.set_skip_header(None);
         for _ in 0..size {
             let a = r.read_object_into::<T>()?;
@@ -131,8 +132,8 @@ where
 
 impl<K, V> Unmarshaler for HashMap<K, V>
 where
-    V: UnmarshalerInto<Item = V> + Debug,
-    K: UnmarshalerInto<Item = K> + Eq + Hash + Debug,
+    V: UnmarshalerInto<Item = V>,
+    K: UnmarshalerInto<Item = K> + Eq + Hash,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         r.do_skip_header()?;
@@ -156,6 +157,8 @@ where
             r.set_skip_header(Some(0));
             values.push(v);
         }
+
+        self.reserve(size as usize);
 
         keys.into_iter().zip(values.into_iter()).for_each(|(k, v)| {
             self.insert(k, v);

@@ -99,7 +99,7 @@ pub enum EnumNamed {
     ConvL = 220,
     ConvP = 240,
 
-    STL = 300,
+    Stl = 300,
     STLstring = 365,
 
     Streamer = 500,
@@ -156,9 +156,9 @@ impl ESTLType {
         num::FromPrimitive::from_i32(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
     }
 
-    pub fn to_i32(&self) -> Result<i32> {
-        num::ToPrimitive::to_i32(self).ok_or_else(|| anyhow!("Cant make a i32 from {:?}", self))
-    }
+    // pub fn to_i32(&self) -> Result<i32> {
+    //     num::ToPrimitive::to_i32(self).ok_or_else(|| anyhow!("Cant make a i32 from {:?}", self))
+    // }
 }
 
 #[derive(FromPrimitive, ToPrimitive, Default, Debug)]

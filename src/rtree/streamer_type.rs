@@ -90,7 +90,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
                     EnumNamed::Conv => {}
                     EnumNamed::ConvL => {}
                     EnumNamed::ConvP => {}
-                    EnumNamed::STL => {}
+                    EnumNamed::Stl => {}
                     EnumNamed::STLstring => {}
                     EnumNamed::Streamer => {}
                     EnumNamed::StreamLoop => {}
@@ -198,7 +198,7 @@ pub(crate) fn clean_type_name(ty: &str) -> String {
     let ret = ret.replace("unsigned long", "uint64_t");
     let ret = ret.replace("long", "int64_t");
 
-    ret.replace(" ", "")
+    ret.replace(' ', "")
 }
 
 #[cfg(test)]

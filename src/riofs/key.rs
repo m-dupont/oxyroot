@@ -24,7 +24,7 @@ impl fmt::Debug for objects::Object {
 }
 
 #[derive(Debug)]
-pub struct Key {
+pub(crate) struct Key {
     rvers: i16,
     // version of the Key struct
     n_bytes: i32,
@@ -48,8 +48,6 @@ pub struct Key {
     name: String,
     // name of the object
     title: String, // title of the object
-
-    obj: Option<Box<dyn FactoryItem>>,
 }
 
 impl Default for Key {
@@ -66,7 +64,6 @@ impl Default for Key {
             class: String::new(),
             name: String::new(),
             title: String::new(),
-            obj: None,
         }
     }
 }
@@ -138,7 +135,7 @@ impl Named for Key {
 }
 
 impl Key {
-    pub fn obj_len(&self) -> i32 {
+    pub(crate) fn obj_len(&self) -> i32 {
         self.obj_len
     }
 
@@ -223,16 +220,16 @@ impl Key {
 
         // Err(anyhow!("euh"))
     }
-    pub fn key_len(&self) -> i32 {
+    pub(crate) fn key_len(&self) -> i32 {
         self.key_len
     }
-    pub fn set_class(&mut self, class: &str) {
+    pub(crate) fn set_class(&mut self, class: &str) {
         self.class = class.to_string();
     }
-    pub fn n_bytes(&self) -> i32 {
-        self.n_bytes
-    }
-    pub fn cycle(&self) -> i32 {
+    // pub(crate) fn n_bytes(&self) -> i32 {
+    //     self.n_bytes
+    // }
+    pub(crate) fn cycle(&self) -> i32 {
         self.cycle as i32
     }
 }

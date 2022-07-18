@@ -157,7 +157,7 @@ impl Unmarshaler for StreamerInfo {
         let hdr = r.read_header(self.class())?;
 
         ensure!(
-            !(hdr.vers > rvers::STREAMER_INFO),
+            hdr.vers <= rvers::STREAMER_INFO,
             "rdict: invalid {} version={} > {}",
             self.class(),
             hdr.vers,

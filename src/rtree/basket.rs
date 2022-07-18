@@ -58,9 +58,9 @@ impl Basket {
     pub fn uncompressed_bytes(&self) -> i32 {
         self.key.obj_len()
     }
-    pub fn compressed_bytes(&self) -> i32 {
-        self.key.n_bytes() - self.key.key_len()
-    }
+    // pub fn compressed_bytes(&self) -> i32 {
+    //     self.key.n_bytes() - self.key.key_len()
+    // }
 
     pub fn border(&self) -> i32 {
         self.last - self.key.key_len()

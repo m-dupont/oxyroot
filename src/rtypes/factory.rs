@@ -99,6 +99,7 @@ impl<'a> Factory<'a> {
         self.map.get(s)
     }
 
+    #[allow(dead_code)] // used in tests
     pub fn get_as_box(&self, s: &'a str) -> Option<Box<dyn FactoryItem>> {
         let s = self.get(s);
         if let Some(fct) = s {
@@ -109,8 +110,7 @@ impl<'a> Factory<'a> {
         None
     }
 
-    // pub fn unbox()
-
+    #[allow(dead_code)] // used in tests
     pub fn get_as_boxtyped<T>(&self, s: &'a str) -> Result<Box<T>>
     where
         T: FactoryItem,
@@ -123,6 +123,8 @@ impl<'a> Factory<'a> {
 
         bail!("plop")
     }
+
+    #[allow(dead_code)] // used in tests
     pub fn len(&self) -> usize {
         self.map.len()
     }

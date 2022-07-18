@@ -101,19 +101,19 @@ pub struct RootFile {
 }
 
 impl RootFile {
-    pub fn n_bytes_name(&self) -> i32 {
+    pub(crate) fn n_bytes_name(&self) -> i32 {
         self.inner.header.n_bytes_name
     }
 
-    pub fn version(&self) -> i32 {
+    pub(crate) fn version(&self) -> i32 {
         self.inner.header.version
     }
 
-    pub fn begin(&self) -> i64 {
+    pub(crate) fn begin(&self) -> i64 {
         self.inner.header.begin
     }
 
-    pub fn end(&self) -> i64 {
+    pub(crate) fn end(&self) -> i64 {
         self.inner.header.end
     }
 
@@ -294,14 +294,13 @@ impl RootFile {
         Ok(())
     }
 
-    pub fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
-        let obj = self.dir.as_mut().unwrap().get_object(
-            name,
-            &mut self.inner.reader,
-            Some(&self.sinfos),
-        )?;
+    fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
+        self.dir
+            .as_mut()
+            .unwrap()
+            .get_object(name, &mut self.inner.reader, Some(&self.sinfos))
 
-        Ok(obj)
+        // Ok(obj)
     }
 
     pub fn get_tree(&mut self, name: &str) -> Result<Option<Tree>> {

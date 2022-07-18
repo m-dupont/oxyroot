@@ -13,7 +13,29 @@ let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 NJet.for_each(|v| println!("v = {v}"));
 ```
 
-# Which types can be read from a branch ?
+
+# Example: Iter over a branch tree containing `Vec<i32>`  (aka `std::vector<int32_t>`) values
+
+```rust
+use oxyroot::RootFile;
+let s = "tests/stl_containers/stl_containers.root";
+let tree = RootFile::open(s).unwrap().get_tree("tree").unwrap().unwrap();
+let vector_int32 = tree.branch("vector_int32")
+                   .unwrap().as_iter::<Vec<i32>>()
+                   .collect::<Vec<_>>();
+assert_eq!(
+    vector_int32,
+    [
+        vec![1],
+        vec![1, 2],
+        vec![1, 2, 3],
+        vec![1, 2, 3, 4],
+        vec![1, 2, 3, 4, 5]
+    ]
+);
+```
+
+# Which types can be read from a branch?
 
 ## Primitives and C++ STL standards
 
@@ -26,13 +48,13 @@ oxyroot can iterate over  branch which contains :
 
 | C++ | Rust |
 |---------|---------|
-| std::string     | String     |
+| std::string     | [String](String)     |
 | std::vector     | [Vec](Vec)     |
 | std::map     | [HashMap](std::collections::HashMap)    |
 | std::set     | [HashSet](std::collections::HashSet)      |
 | T*     | [`Slice<T>`](Slice)    |
 | T\[N\]     | [array]     |
-| TString     | String     |
+| TString     | [String]     |
 
 
 Examples can be found in tests.

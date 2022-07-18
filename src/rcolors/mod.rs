@@ -23,12 +23,12 @@ impl Color {
         }
     }
 
-    pub fn to_i16(&self) -> i16 {
-        match self {
-            Self::Named(o) => num::ToPrimitive::to_i16(o).unwrap(),
-            Self::Int(i) => *i,
-        }
-    }
+    // pub fn to_i16(&self) -> i16 {
+    //     match self {
+    //         Self::Named(o) => num::ToPrimitive::to_i16(o).unwrap(),
+    //         Self::Int(i) => *i,
+    //     }
+    // }
 }
 
 #[derive(FromPrimitive, ToPrimitive, Default, Debug)]
@@ -56,7 +56,7 @@ impl ColorNamed {
         num::FromPrimitive::from_i16(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
     }
 
-    pub fn to_i16(&self) -> Result<i16> {
-        num::ToPrimitive::to_i16(self).ok_or_else(|| anyhow!("Cant make a i16 from {:?}", self))
-    }
+    // pub fn to_i16(&self) -> Result<i16> {
+    //     num::ToPrimitive::to_i16(self).ok_or_else(|| anyhow!("Cant make a i16 from {:?}", self))
+    // }
 }

@@ -222,7 +222,7 @@ impl TDirectoryFile {
 
         nbytes
     }
-    pub fn keys(&self) -> &Vec<Key> {
+    pub(crate) fn keys(&self) -> &Vec<Key> {
         &self.keys
     }
 }

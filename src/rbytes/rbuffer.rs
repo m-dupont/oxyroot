@@ -23,7 +23,7 @@ impl<'a> Rbuff<'a> {
     //     Ok(buf)
     // }
 
-    fn extract_N<const N: usize>(&mut self) -> Result<&[u8]> {
+    fn extract_const_n<const N: usize>(&mut self) -> Result<&[u8]> {
         let buf = &self.p[self.c..(self.c + N)];
         self.c += N;
         Ok(buf)
@@ -90,6 +90,9 @@ enum RBufferRefsItem<'a> {
     // Obj(&'a Box<dyn FactoryItem>),
 }
 
+/// Helper struct to parse data read in file
+///
+/// Provided by [crate::Branch::get_basket] as argument in lambda function.
 #[derive(Default, Debug)]
 pub struct RBuffer<'a> {
     r: Rbuff<'a>,
@@ -109,7 +112,7 @@ impl<'a> RBuffer<'a> {
         }
     }
 
-    pub(crate) fn with_info_context(self, ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
+    pub(crate) fn with_info_context(self, _ctx: Option<&'a dyn StreamerInfoContext>) -> Self {
         // self.sictx = ctx;
         self
     }
@@ -142,12 +145,13 @@ impl<'a> RBuffer<'a> {
         Ok(())
     }
 
+    /// read u8 from inner buffer
     pub fn read_u8(&mut self) -> Result<u8> {
         const SIZE: usize = size_of::<u8>();
         // let mut buf = [0_u8; SIZE];
         // self.r.read(&mut buf)?;
         // let buf = self.r.extract_as_array::<SIZE>()?;
-        let buf = self.r.extract_N::<SIZE>()?;
+        let buf = self.r.extract_const_n::<SIZE>()?;
         Ok(u8::from_be_bytes(buf.try_into()?))
     }
 
@@ -235,7 +239,7 @@ impl<'a> RBuffer<'a> {
         const SIZE: usize = size_of::<f32>();
         // let buf = self.r.extract_as_array::<SIZE>()?;
         // Ok(f32::from_be_bytes(buf))
-        let buf = self.r.extract_N::<SIZE>()?;
+        let buf = self.r.extract_const_n::<SIZE>()?;
         Ok(f32::from_be_bytes(buf.try_into()?))
     }
 
@@ -245,15 +249,18 @@ impl<'a> RBuffer<'a> {
         T::unmarshal_into(self)
     }
 
-    pub fn read_object<T: Unmarshaler>(&mut self, obj: &mut T) -> Result<()> {
+    pub(crate) fn read_object<T: Unmarshaler>(&mut self, obj: &mut T) -> Result<()> {
         obj.unmarshal(self)
     }
 
-    pub fn read_boxed_object(&mut self, obj: &mut Box<dyn rtypes::FactoryItem>) -> Result<()> {
+    pub(crate) fn read_boxed_object(
+        &mut self,
+        obj: &mut Box<dyn rtypes::FactoryItem>,
+    ) -> Result<()> {
         obj.unmarshal(self)
     }
 
-    pub fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
+    pub(crate) fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
         let _beg = self.pos();
         let bcnt = self.read_u32()?;
         let mut vers = 0;
@@ -386,7 +393,7 @@ impl<'a> RBuffer<'a> {
         Ok("")
     }
 
-    pub fn read_header(&mut self, class: &str) -> Result<Header> {
+    pub(crate) fn read_header(&mut self, class: &str) -> Result<Header> {
         let mut hdr = Header {
             _name: String::from(class),
             pos: self.pos(),
@@ -424,11 +431,11 @@ impl<'a> RBuffer<'a> {
         Ok(hdr)
     }
 
-    pub fn check_header(&self, _: &Header) -> Result<()> {
+    pub(crate) fn check_header(&self, _: &Header) -> Result<()> {
         Ok(())
     }
 
-    pub fn skip_version(&mut self, class: &str) -> Result<()> {
+    pub(crate) fn skip_version(&mut self, class: &str) -> Result<()> {
         let version = self.read_i16()?;
 
         if ((version as i64) & kByteCountMask) != 0 {

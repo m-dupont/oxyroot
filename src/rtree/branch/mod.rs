@@ -43,8 +43,8 @@ impl From<Box<dyn FactoryItem>> for Branch {
 impl Debug for Branch {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Branch::Base(bb) => f.write_str("TBranch{")?,
-            Branch::Element(be) => f.write_str("TBranchElement{")?,
+            Branch::Base(_) => f.write_str("TBranch{")?,
+            Branch::Element(_) => f.write_str("TBranchElement{")?,
         };
         f.write_str(format!("name: {}", self.name()).as_str())?;
         f.write_str(format!("item_t: {}", self.item_type_name()).as_str())?;
@@ -103,33 +103,12 @@ impl Branch {
         }
     }
 
-    // pub fn branches_recursively_apply<'a, B, F>(&'a self, f: &'a F) -> impl Iterator<Item = B> + 'a
-    // where
-    //     B: 'a,
-    //     F: Fn(&Branch) -> B + 'a,
-    // {
-    //     // once(f(self))
-    //     // chain(once(self), self.branches()).map(|b| b.branches_recursively_apply(f))
-    //
-    //     self.branches()
-    //         .map(|b| b.branches_recursively_apply(f))
-    //         .flatten()
-    //
-    // }
-
     pub(crate) fn set_top_level(&mut self, v: Option<bool>) {
         match self {
             Branch::Base(bb) => bb.props.is_top_level = v,
             Branch::Element(be) => be.set_is_top_level(v),
         }
     }
-
-    // pub(crate) fn set_item_type_name(&mut self) {
-    //     match self {
-    //         Branch::Base(bb) => bb.set_item_type_name(),
-    //         Branch::Element(be) => be.set_item_type_name(),
-    //     }
-    // }
 
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         match self {

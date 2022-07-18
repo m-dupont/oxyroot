@@ -117,7 +117,6 @@ impl TBranchElement {
                         // trace!("current streamer = {:?}", streamer);
                     }
                 }
-                todo!();
             }
         } else if self.branch.leaves.len() == 1 {
             let leave = self.branch.leaves.get(0).unwrap();
@@ -179,7 +178,6 @@ impl TBranchElement {
                                     return clean_type_name(s.item_type_name());
                                 }
                             }
-                            return self.class().to_string();
                         }
 
                         todo!()
@@ -278,13 +276,13 @@ impl TBranchElement {
                 match b.raw_data(&mut reader) {
                     BasketData::TrustNEntries((n, buf)) => {
                         trace!("send ({n},{chunk_size},{:?})", buf);
-                        return BranchChunks::RegularSized((n, chunk_size, buf));
+                        BranchChunks::RegularSized((n, chunk_size, buf))
                     }
                     BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
                         // In case of string, we have to use n
                         Leaf::C(_) => {
                             trace!("send ({n},{chunk_size},{:?})", buf);
-                            return BranchChunks::RegularSized((n, chunk_size, buf));
+                            BranchChunks::RegularSized((n, chunk_size, buf))
                         }
                         Leaf::Element(_) => {
                             let element = self.streamer();
