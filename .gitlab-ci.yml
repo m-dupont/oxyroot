@@ -1,17 +1,29 @@
 stages:
   - build
+  - test
 
-rust-latest:
+build_rust-latest:
   stage: build
   image: rust:latest
   script:
     - cargo build --verbose
-    - cargo test --verbose --test 3_stl_containers --test 2_from_uproot --test 4_huge
 
-rust-nightly:
+build rust-nightly:
   stage: build
   image: rustlang/rust:nightly
   script:
     - cargo build --verbose
+  allow_failure: true
+
+test_rust-latest:
+  stage: test
+  image: rust:latest
+  script:
+    - cargo test --verbose --test 3_stl_containers --test 2_from_uproot --test 4_huge
+
+test_rust-nightly:
+  stage: test
+  image: rustlang/rust:nightly
+  script:
     - cargo test --verbose --test 3_stl_containers --test 2_from_uproot --test 4_huge
   allow_failure: true
