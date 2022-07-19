@@ -9,10 +9,15 @@ Another attempt to make library reading of `.root` binary files which are common
 
 To make this library :
 
-- inspiration taken from [groot](https://github.com/go-hep/hep/tree/main/groot) for reading root file, even the code
+- heavy inspiration taken from [groot](https://github.com/go-hep/hep/tree/main/groot) for reading root file, even the
+  code
   organisation
 - inspiration taken from [uproot](https://github.com/scikit-hep/uproot5) to provide branch interface (for reading basket
   buffer)
+
+## See also
+
+Another rust implementation of a root reader is [`root-io`](https://crates.io/crates/root-io).
 
 ## Getting started
 
