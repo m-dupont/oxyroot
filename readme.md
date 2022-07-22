@@ -1,6 +1,6 @@
 # oxyroot
 
-[![Crates.io](https://img.shields.io/crates/v/oxyroot.svg?maxAge=2592000)](https://crates.io/crates/oxyroot)
+[![Crates.io](https://img.shields.io/crates/v/oxyroot.svg)](https://crates.io/crates/oxyroot)
 [![Documentation](https://docs.rs/oxyroot/badge.svg)](https://docs.rs/oxyroot)
 
 Another attempt to make library reading of `.root` binary files which are commonly used in particle physics
