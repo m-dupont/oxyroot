@@ -3,16 +3,35 @@ This crate aims to provide a way to open data saved in [ROOT](https://root.cern.
 and particularly `Tree` and `Branch` inside `Tree`.
 This crate is in fact a port of [groot](https://pkg.go.dev/go-hep.org/x/hep/groot) written
 in Go and  [uproot](https://github.com/scikit-hep/uproot5) written in Python.
+
+# Example: Show branches from a tree
+
+```rust
+use oxyroot::RootFile;
+let s = "examples/from_uproot/data/simple.root";
+let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
+tree.show();
+```
+
+will display
+
+```ignore
+name                           | typename                       | interpretation
+-------------------------------+-------------------------------+-------------------------------
+one                            | int32_t                        | i32
+two                            | float                          | f32
+three                          | char*                          | String
+```
+
 # Example: Iter over a branch tree containing `i32` values
 
 ```rust
 use oxyroot::RootFile;
-let s = "examples/from_uproot/data/HZZ.root";
-let tree = RootFile::open(s).expect("Can not open file").get_tree("events").unwrap();
-let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
-NJet.for_each(|v| println!("v = {v}"));
+let s = "examples/from_uproot/data/simple.root";
+let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
+let one = tree.branch("one").unwrap().as_iter::<i32>();
+one.for_each(|v| println!("v = {v}"));
 ```
-
 
 # Example: Iter over a branch tree containing `Vec<i32>`  (aka `std::vector<int32_t>`) values
 

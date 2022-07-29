@@ -127,6 +127,7 @@ impl Tree {
         self.sinfos = Some(sinfos);
     }
 
+    /// Get a branch from this tree
     pub fn branch(&self, name: &str) -> Option<&Branch> {
         for b in self.branches.iter() {
             if b.name() == name {
@@ -140,23 +141,17 @@ impl Tree {
         None
     }
 
+    /// Get iterator over top-level branches
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
         self.branches.iter()
     }
+
+    /// Number of entries in the TTree, as reported by fEntries.
     pub fn entries(&self) -> i64 {
         self.entries
     }
 
-    // pub fn branches_recursively_apply<'a, B, F>(&'a self, f: &'a F) -> impl Iterator<Item = B> + 'a
-    // where
-    //     B: 'a,
-    //     F: Fn(&Branch) -> B + 'a,
-    // {
-    //     self.branches()
-    //         .map(|b| b.branches_recursively_apply(f))
-    //         .flatten()
-    // }
-
+    /// Get all (recursively) branches in this tree
     pub fn branches_r(&self) -> Vec<&Branch> {
         let mut v = Vec::new();
 
@@ -171,15 +166,48 @@ impl Tree {
         v
     }
 
-    pub fn show(&self) {
-        println!("{:<30} | {:<30}", "name", "typename");
-        let s: String = ['-'; 31].iter().collect();
-        println!("{}+{}", s, s);
-        fn show_one_branch(b: &&Branch) {
-            println!("{:<30} | {:<30}", b.name(), b.item_type_name());
-        }
+    /// Display branches in this tree
+    ///
+    /// Provide name, C++ type and a possible Rust interpretation.
+    ///
+    /// Example:
+    /// ```ignore
+    /// name                           | typename                       | interpretation                
+    /// -------------------------------+-------------------------------+-------------------------------
+    /// string                         | string                         | String                        
+    /// vector_vector_int32            | vector<vector<int32_t>>        | Vec<Vec<i32>>                      
+    /// vector_int32                   | vector<int32_t>                | Vec<i32>                      
+    /// vector_string                  | vector<string>                 | Vec<String>                   
+    /// three                          | char*                          | String
+    ///```
+    ///
+    /// In this example, last branch can be read with:
+    /// ```ignore    
+    /// let three = tree
+    ///         .branch("three")
+    ///         .unwrap()
+    ///         .as_iter::<String>()
+    ///         .collect::<Vec<_>>();
+    /// ```
 
-        // println!("branches_r: {:?}", self.branches_r());
+    pub fn show(&self) {
+        // const TYPE_NAME_SIZE:usize = 30;
+        println!(
+            "{:<30} | {:<30} | {:<30}",
+            "name", "typename", "interpretation"
+        );
+        let s: String = ['-'; 31].iter().collect();
+        println!("{}+{}+{}", s, s, s);
+        fn show_one_branch(b: &&Branch) {
+            let mut item_type_name = b.item_type_name();
+            item_type_name.truncate(30);
+            println!(
+                "{:<30} | {:<30} | {:<30}",
+                b.name(),
+                item_type_name,
+                b.interpretation()
+            );
+        }
 
         self.branches_r().iter().for_each(show_one_branch);
     }

@@ -187,10 +187,17 @@ pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
     }
 }
 
-pub(crate) fn clean_type_name(ty: &str) -> String {
-    let ret = ty.replace("unsigned int", "uint32_t");
+/// change c++ typename from "int" to int32_t and so on
+pub(crate) fn clean_type_name<T: AsRef<str>>(ty: T) -> String {
+    let ret = ty.as_ref().to_string().replace("unsigned int", "uint32_t");
     let ret = ret.replace("int", "int32_t");
+    // undo change (uint32_t -> uint32_t32_t)
     let ret = ret.replace("uint32_t32_t", "uint32_t");
+    // undo change (int32_t -> int32_t32_t)
+    let ret = ret.replace("int32_t32_t", "int32_t");
+    let ret = ret.replace("uint32_t16_t", "uint16_t");
+    let ret = ret.replace("int32_t16_t", "int16_t");
+    let ret = ret.replace("int32_t64_t", "int64_t");
 
     let ret = ret.replace("unsigned short", "uint16_t");
     let ret = ret.replace("short", "int16_t");
@@ -201,6 +208,60 @@ pub(crate) fn clean_type_name(ty: &str) -> String {
     ret.replace(' ', "")
 }
 
+/// Convert C++ templated name to a rust one
+/// Example vector<int> -> Vec<i32>
+pub(crate) fn type_name_cpp_to_rust(ty: &str) -> String {
+    let ty = clean_type_name(ty);
+    let ret = ty.replace("string", "String");
+    let ret = ret.replace("vector", "Vec");
+    let ret = ret.replace("map", "HashMap");
+    let mut ret = ret.replace("set", "HashSet");
+
+    let replaces = [
+        ("uint64_t", "u64"),
+        ("int64_t", "i64"),
+        ("uint32_t", "u32"),
+        ("int32_t", "i32"),
+        ("uint16_t", "u16"),
+        ("int16_t", "i16"),
+        ("float", "f32"),
+        ("double", "f64"),
+        ("bool", "bool"),
+    ];
+
+    for (cpp, rust) in replaces.iter() {
+        ret = ret.replace(cpp, rust);
+
+        //i32[] -> Slice<i32>
+        let cpp_s = format!("{}[]", rust);
+        let rust_s = format!("Slice<{}>", rust);
+        ret = ret.replace(cpp_s.as_str(), rust_s.as_str());
+
+        let start = &format!("{}[", rust);
+        let end = "]";
+        // println!("ty = {} -> ret = {}", ty, ret);
+        if let Some(start) = ret.find(start) {
+            let start = start + rust.len() + 1;
+            // println!("\tstart = {}", start);
+
+            let right = ret.get(start..).unwrap();
+            // println!("\tright = {}", right);
+            if !right.starts_with(']') {
+                let end = right.find(end).unwrap();
+                // println!("\t\tend = {}", end);
+                let inner = ret.get(start..(end + start)).unwrap();
+                // println!("\t\tinner = {}", inner);
+                let rust_s = format!("{}[{}]", rust, inner);
+                let rust_o = format!("[{};{}]", rust, inner);
+                // println!("\t\trust_s = {}", rust_s);
+                ret = ret.replace(rust_s.as_str(), rust_o.as_str());
+            }
+        }
+    }
+
+    ret.replace("char*", "String")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,19 +269,46 @@ mod tests {
 
     #[test]
     fn test_clean_type_name() -> Result<()> {
-        assert_eq!(clean_type_name("vector<int>"), "vector<int32_t>");
-        assert_eq!(clean_type_name("vector<unsigned int>"), "vector<uint32_t>");
+        let dirties_clean = [
+            ("vector<long>", "vector<int64_t>"),
+            ("vector<long>", "vector<int64_t>"),
+            ("vector<int>", "vector<int32_t>"),
+            ("vector<set<int>>", "vector<set<int32_t>>"),
+            ("vector<unsigned int>", "vector<uint32_t>"),
+            ("vector<short>", "vector<int16_t>"),
+            ("vector<unsigned short>", "vector<uint16_t>"),
+            ("int[10]", "int32_t[10]"),
+            ("unsigned int[10]", "uint32_t[10]"),
+        ];
 
-        assert_eq!(clean_type_name("vector<short>"), "vector<int16_t>");
-        assert_eq!(
-            clean_type_name("vector<unsigned short>"),
-            "vector<uint16_t>"
-        );
+        dirties_clean.iter().for_each(|(dirty, clean)| {
+            assert_eq!(clean_type_name(dirty), *clean);
+            assert_eq!(clean_type_name(dirty), clean_type_name(clean));
+            assert_eq!(clean_type_name(clean_type_name(dirty).as_str()), *clean);
+        });
 
-        assert_eq!(
-            clean_type_name("vector<unsigned short >"),
-            "vector<uint16_t>"
-        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_clean_type_to_rust() -> Result<()> {
+        let names = [
+            ("vector<int>", "Vec<i32>"),
+            ("vector<set<int>>", "Vec<HashSet<i32>>"),
+            ("vector<unsigned int>", "Vec<u32>"),
+            ("vector<short>", "Vec<i16>"),
+            ("vector<unsigned short>", "Vec<u16>"),
+            ("int[10]", "[i32;10]"),
+            ("vector<int[10]>", "Vec<[i32;10]>"),
+            ("int[]", "Slice<i32>"),
+            ("unsigned int[10]", "[u32;10]"),
+        ];
+
+        names.iter().for_each(|(cpp, rust)| {
+            assert_eq!(type_name_cpp_to_rust(cpp), *rust);
+            // assert_eq!(clean_type_name(cpp), clean_type_name(rust));
+            // assert_eq!(clean_type_name(clean_type_name(cpp).as_str()), *rust);
+        });
 
         Ok(())
     }

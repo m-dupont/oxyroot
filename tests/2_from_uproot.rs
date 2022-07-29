@@ -11,8 +11,15 @@ fn open_nested() -> Result<()> {
     let tree = RootFile::open(s)?.get_tree("events")?;
     let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 
+    assert_eq!(tree.branch("NJet").unwrap().interpretation(), "i32");
+
     let n = NJet.count();
     assert_eq!(n, 2421);
+
+    assert_eq!(
+        tree.branch("Jet_Py").unwrap().interpretation(),
+        "Slice<f32>"
+    );
 
     let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>();
     assert_eq!(Jet_Py.count(), 2773);
@@ -34,6 +41,9 @@ fn open_simple_root() -> Result<()> {
     assert_eq!(tree.branch("one").unwrap().item_type_name(), "int32_t");
     assert_eq!(tree.branch("two").unwrap().item_type_name(), "float");
     assert_eq!(tree.branch("three").unwrap().item_type_name(), "char*");
+    assert_eq!(tree.branch("one").unwrap().interpretation(), "i32");
+    assert_eq!(tree.branch("two").unwrap().interpretation(), "f32");
+    assert_eq!(tree.branch("three").unwrap().interpretation(), "String");
 
     let one = tree
         .branch("one")
@@ -74,6 +84,9 @@ fn open_tree_with_string() -> Result<()> {
     assert_eq!(tree.branch("Beg").unwrap().item_type_name(), "TString");
     assert_eq!(tree.branch("End").unwrap().item_type_name(), "TString");
 
+    assert_eq!(tree.branch("Beg").unwrap().interpretation(), "TString");
+    assert_eq!(tree.branch("End").unwrap().interpretation(), "TString");
+
     tree.branch("Beg")
         .unwrap()
         .as_iter::<String>()
@@ -103,6 +116,7 @@ fn open_tree_with_stl_string() -> Result<()> {
     let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("StdStr").unwrap().item_type_name(), "string");
+    assert_eq!(tree.branch("StdStr").unwrap().interpretation(), "String");
 
     tree.branch("StdStr")
         .unwrap()
@@ -133,6 +147,10 @@ fn open_tree_with_struct_p3() -> Result<()> {
     assert_eq!(tree.branch("P3.Px").unwrap().item_type_name(), "int32_t");
     assert_eq!(tree.branch("P3.Py").unwrap().item_type_name(), "double");
     assert_eq!(tree.branch("P3.Pz").unwrap().item_type_name(), "int32_t");
+    assert_eq!(tree.branch("P3").unwrap().interpretation(), "P3");
+    assert_eq!(tree.branch("P3.Px").unwrap().interpretation(), "i32");
+    assert_eq!(tree.branch("P3.Py").unwrap().interpretation(), "f64");
+    assert_eq!(tree.branch("P3.Pz").unwrap().interpretation(), "i32");
 
     tree.branch("P3")
         .unwrap()
@@ -202,6 +220,12 @@ fn open_tree_with_vector_into() -> Result<()> {
     let mut f = RootFile::open(s)?;
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
     let tree = f.get_tree("t1")?;
+
+    assert_eq!(
+        tree.branch("int32_array").unwrap().interpretation(),
+        "Vec<i32>"
+    );
+
     tree.branch("int32_array")
         .unwrap()
         .as_iter::<Vec<i32>>()
@@ -258,6 +282,41 @@ fn open_tree_with_slice_i16() -> Result<()> {
     assert_eq!(
         tree.branch("SliceF64").unwrap().item_type_name(),
         "double[]"
+    );
+
+    assert_eq!(
+        tree.branch("SliceI16").unwrap().interpretation(),
+        "Slice<i16>"
+    );
+    assert_eq!(
+        tree.branch("SliceI32").unwrap().interpretation(),
+        "Slice<i32>"
+    );
+    assert_eq!(
+        tree.branch("SliceI64").unwrap().interpretation(),
+        "Slice<i64>"
+    );
+
+    assert_eq!(
+        tree.branch("SliceU16").unwrap().interpretation(),
+        "Slice<u16>"
+    );
+    assert_eq!(
+        tree.branch("SliceU32").unwrap().interpretation(),
+        "Slice<u32>"
+    );
+    assert_eq!(
+        tree.branch("SliceU64").unwrap().interpretation(),
+        "Slice<u64>"
+    );
+
+    assert_eq!(
+        tree.branch("SliceF32").unwrap().interpretation(),
+        "Slice<f32>"
+    );
+    assert_eq!(
+        tree.branch("SliceF64").unwrap().interpretation(),
+        "Slice<f64>"
     );
 
     tree.branch("SliceI16")
@@ -417,6 +476,10 @@ fn open_tree_with_vector_of_string() -> Result<()> {
         tree.branch("StlVecStr").unwrap().item_type_name(),
         "vector<string>"
     );
+    assert_eq!(
+        tree.branch("StlVecStr").unwrap().interpretation(),
+        "Vec<String>"
+    );
 
     tree.branch("StlVecStr")
         .unwrap()
@@ -449,6 +512,10 @@ fn tree_with_array() -> Result<()> {
     assert_eq!(
         tree.branch("ArrayI16[10]").unwrap().item_type_name(),
         "int16_t[10]"
+    );
+    assert_eq!(
+        tree.branch("ArrayI16[10]").unwrap().interpretation(),
+        "[i16;10]"
     );
 
     tree.branch("ArrayI16[10]")

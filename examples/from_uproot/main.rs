@@ -32,8 +32,6 @@ fn open_HZZ_root() -> Result<()> {
 
     tree.show();
 
-    panic!("plop");
-
     println!("entries = {}", tree.entries());
 
     let mut Jet_Px = tree.branch("Jet_Px").unwrap().as_iter::<f32>();
@@ -67,6 +65,8 @@ fn open_simple_root() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
+
+    tree.show();
 
     for b in tree.branches() {
         println!(
@@ -287,6 +287,7 @@ fn tree_with_stl_containers() -> Result<()> {
     f.keys().map(|k| println!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
+    tree.show();
 
     for b in tree.branches() {
         println!(
@@ -1360,10 +1361,10 @@ fn main() {
     println!("example of opening file");
 
     // open_HZZ_root().expect("NOOOO");
-    // open_simple_root().expect("NOOOO");
+    open_simple_root().expect("NOOOO");
     // open_small_evnt_tree_fullsplit_root().expect("NOOOO");
     // tree_with_jagged_array().expect("NOOOO");
     // tree_with_stl_containers().expect("NOOOO");
     // huge().expect("NOOOO");
-    tree_with_stl_containers_tmp().expect("NOOOO");
+    // tree_with_stl_containers_tmp().expect("NOOOO");
 }

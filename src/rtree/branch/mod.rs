@@ -11,6 +11,7 @@ use crate::rbytes::UnmarshalerInto;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
 
+use crate::rtree::streamer_type::type_name_cpp_to_rust;
 use crate::rtypes::FactoryItem;
 use log::trace;
 use std::marker::PhantomData;
@@ -63,6 +64,7 @@ impl Branch {
         b.class()
     }
 
+    /// C++ type contained in this branch.
     pub fn item_type_name(&self) -> String {
         match self {
             Branch::Base(bb) => bb.item_type_name(),
@@ -70,11 +72,18 @@ impl Branch {
         }
     }
 
+    /// Rust equivalent of C++ type returned by [`item_type_name`](crate::Branch::item_type_name)
+    pub fn interpretation(&self) -> String {
+        type_name_cpp_to_rust(self.item_type_name().as_str())
+    }
+
+    /// Number of entries
     pub fn entries(&self) -> i64 {
         let b: &TBranch = self.into();
         b.entries()
     }
 
+    /// Get iterator over top-level branches
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
         match self {
             Branch::Base(bb) => bb.branches().iter(),
@@ -82,6 +91,7 @@ impl Branch {
         }
     }
 
+    /// Get all (recursively) branches in this Branch
     pub fn branches_r(&self) -> Vec<&Branch> {
         let mut v = Vec::new();
 
@@ -202,7 +212,7 @@ impl Branch {
         self.get_basket(|r| r.read_object_into::<T>().unwrap())
     }
 
-    pub fn streamer_type(&self) -> Option<i32> {
+    pub(crate) fn streamer_type(&self) -> Option<i32> {
         match self {
             Branch::Base(_bb) => None,
             Branch::Element(be) => Some(be.streamer_type()),

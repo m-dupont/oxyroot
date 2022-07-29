@@ -16,6 +16,7 @@ fn tree_with_stl_containers__string() -> Result<()> {
     let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("string").unwrap().item_type_name(), "string");
+    assert_eq!(tree.branch("string").unwrap().interpretation(), "String");
 
     let v = tree
         .branch("string")
@@ -42,6 +43,7 @@ fn tree_with_stl_containers__tstring() -> Result<()> {
     let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("tstring").unwrap().item_type_name(), "TString");
+    assert_eq!(tree.branch("tstring").unwrap().interpretation(), "TString");
 
     let v = tree
         .branch("tstring")
@@ -70,6 +72,11 @@ fn tree_with_stl_containers__vector_int32() -> Result<()> {
     assert_eq!(
         tree.branch("vector_int32").unwrap().item_type_name(),
         "vector<int32_t>"
+    );
+
+    assert_eq!(
+        tree.branch("vector_int32").unwrap().interpretation(),
+        "Vec<i32>"
     );
 
     let v = tree
@@ -109,6 +116,10 @@ fn tree_with_stl_containers__vector_string() -> Result<()> {
         tree.branch("vector_string").unwrap().item_type_name(),
         "vector<string>"
     );
+    assert_eq!(
+        tree.branch("vector_string").unwrap().interpretation(),
+        "Vec<String>"
+    );
 
     let v = tree
         .branch("vector_string")
@@ -147,6 +158,10 @@ fn tree_with_stl_containers__vector_tstring() -> Result<()> {
         tree.branch("vector_tstring").unwrap().item_type_name(),
         "vector<TString>"
     );
+    assert_eq!(
+        tree.branch("vector_tstring").unwrap().interpretation(),
+        "Vec<TString>"
+    );
 
     let v = tree
         .branch("vector_tstring")
@@ -184,6 +199,10 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
     assert_eq!(
         tree.branch("vector_vector_int32").unwrap().item_type_name(),
         "vector<vector<int32_t>>"
+    );
+    assert_eq!(
+        tree.branch("vector_vector_int32").unwrap().interpretation(),
+        "Vec<Vec<i32>>"
     );
 
     let v = tree
@@ -233,6 +252,12 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "vector<vector<string>>"
+    );
+    assert_eq!(
+        tree.branch("vector_vector_string")
+            .unwrap()
+            .interpretation(),
+        "Vec<Vec<String>>"
     );
 
     let v = tree
@@ -289,6 +314,13 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
         "vector<vector<TString>>"
     );
 
+    assert_eq!(
+        tree.branch("vector_vector_tstring")
+            .unwrap()
+            .interpretation(),
+        "Vec<Vec<TString>>"
+    );
+
     let v = tree
         .branch("vector_vector_tstring")
         .expect("No branch vector_vector_tstring")
@@ -340,6 +372,10 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
         tree.branch("vector_set_int32").unwrap().item_type_name(),
         "vector<set<int32_t>>"
     );
+    assert_eq!(
+        tree.branch("vector_set_int32").unwrap().interpretation(),
+        "Vec<HashSet<i32>>"
+    );
 
     let v = tree
         .branch("vector_set_int32")
@@ -386,6 +422,10 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
     assert_eq!(
         tree.branch("vector_set_string").unwrap().item_type_name(),
         "vector<set<string>>"
+    );
+    assert_eq!(
+        tree.branch("vector_set_string").unwrap().interpretation(),
+        "Vec<HashSet<String>>"
     );
 
     let v = tree
@@ -454,6 +494,10 @@ fn tree_with_stl_containers__set_int32() -> Result<()> {
         tree.branch("set_int32").unwrap().item_type_name(),
         "set<int32_t>"
     );
+    assert_eq!(
+        tree.branch("set_int32").unwrap().interpretation(),
+        "HashSet<i32>"
+    );
 
     let v = tree
         .branch("set_int32")
@@ -491,6 +535,10 @@ fn tree_with_stl_containers__set_string() -> Result<()> {
     assert_eq!(
         tree.branch("set_string").unwrap().item_type_name(),
         "set<string>"
+    );
+    assert_eq!(
+        tree.branch("set_string").unwrap().interpretation(),
+        "HashSet<String>"
     );
 
     let v = tree
@@ -530,6 +578,10 @@ fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
         tree.branch("map_int32_int16").unwrap().item_type_name(),
         "map<int32_t,int16_t>"
     );
+    assert_eq!(
+        tree.branch("map_int32_int16").unwrap().interpretation(),
+        "HashMap<i32,i16>"
+    );
 
     let v = tree
         .branch("map_int32_int16")
@@ -568,6 +620,12 @@ fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<int32_t,vector<int16_t>>"
+    );
+    assert_eq!(
+        tree.branch("map_int32_vector_int16")
+            .unwrap()
+            .interpretation(),
+        "HashMap<i32,Vec<i16>>"
     );
 
     let v = tree
@@ -618,6 +676,12 @@ fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<int32_t,vector<string>>"
+    );
+    assert_eq!(
+        tree.branch("map_int32_vector_string")
+            .unwrap()
+            .interpretation(),
+        "HashMap<i32,Vec<String>>"
     );
 
     let v = tree
@@ -708,6 +772,10 @@ fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
         tree.branch("map_int32_set_int16").unwrap().item_type_name(),
         "map<int32_t,set<int16_t>>"
     );
+    assert_eq!(
+        tree.branch("map_int32_set_int16").unwrap().interpretation(),
+        "HashMap<i32,HashSet<i16>>"
+    );
 
     let v = tree
         .branch("map_int32_set_int16")
@@ -761,6 +829,12 @@ fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<int32_t,set<string>>"
+    );
+    assert_eq!(
+        tree.branch("map_int32_set_string")
+            .unwrap()
+            .interpretation(),
+        "HashMap<i32,HashSet<String>>"
     );
 
     let v = tree
@@ -851,6 +925,10 @@ fn tree_with_stl_containers__map_string_int16() -> Result<()> {
         tree.branch("map_string_int16").unwrap().item_type_name(),
         "map<string,int16_t>"
     );
+    assert_eq!(
+        tree.branch("map_string_int16").unwrap().interpretation(),
+        "HashMap<String,i16>"
+    );
 
     let v = tree
         .branch("map_string_int16")
@@ -904,6 +982,12 @@ fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<string,vector<int16_t>>"
+    );
+    assert_eq!(
+        tree.branch("map_string_vector_int16")
+            .unwrap()
+            .interpretation(),
+        "HashMap<String,Vec<i16>>"
     );
 
     let v = tree
@@ -961,6 +1045,12 @@ fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<string,vector<string>>"
+    );
+    assert_eq!(
+        tree.branch("map_string_vector_string")
+            .unwrap()
+            .interpretation(),
+        "HashMap<String,Vec<String>>"
     );
 
     let v = tree
@@ -1065,6 +1155,12 @@ fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
             .item_type_name(),
         "map<string,set<int16_t>>"
     );
+    assert_eq!(
+        tree.branch("map_string_set_int16")
+            .unwrap()
+            .interpretation(),
+        "HashMap<String,HashSet<i16>>"
+    );
 
     let v = tree
         .branch("map_string_set_int16")
@@ -1121,6 +1217,12 @@ fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<string,set<string>>"
+    );
+    assert_eq!(
+        tree.branch("map_string_set_string")
+            .unwrap()
+            .interpretation(),
+        "HashMap<String,HashSet<String>>"
     );
 
     let v = tree
@@ -1223,6 +1325,10 @@ fn tree_with_stl_containers__map_string_string() -> Result<()> {
         tree.branch("map_string_string").unwrap().item_type_name(),
         "map<string,string>"
     );
+    assert_eq!(
+        tree.branch("map_string_string").unwrap().interpretation(),
+        "HashMap<String,String>"
+    );
 
     let v = tree
         .branch("map_string_string")
@@ -1277,6 +1383,10 @@ fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
     assert_eq!(
         tree.branch("map_string_tstring").unwrap().item_type_name(),
         "map<string,TString>"
+    );
+    assert_eq!(
+        tree.branch("map_string_tstring").unwrap().interpretation(),
+        "HashMap<String,TString>"
     );
 
     let v = tree
@@ -1334,6 +1444,12 @@ fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<int32_t,vector<vector<int16_t>>>"
+    );
+    assert_eq!(
+        tree.branch("map_int32_vector_vector_int16")
+            .unwrap()
+            .interpretation(),
+        "HashMap<i32,Vec<Vec<i16>>>"
     );
 
     let v = tree
@@ -1403,6 +1519,12 @@ fn tree_with_stl_containers__map_int32_vector_set_int16() -> Result<()> {
             .unwrap()
             .item_type_name(),
         "map<int32_t,vector<set<int16_t>>>"
+    );
+    assert_eq!(
+        tree.branch("map_int32_vector_set_int16")
+            .unwrap()
+            .interpretation(),
+        "HashMap<i32,Vec<HashSet<i16>>>"
     );
 
     let v = tree
