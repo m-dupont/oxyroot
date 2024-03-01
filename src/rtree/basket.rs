@@ -32,12 +32,6 @@ impl Basket {
         if self.border() != self.uncompressed_bytes() {
             let (data, byte_offsets) = ret.split_at(self.border() as usize);
 
-            // let mut byte_offsets: Vec<_> = byte_offsets
-            //     .chunks(4)
-            //     .map(|x| i32::from_be_bytes(x.try_into().unwrap()) - self.key.key_len())
-            //     .skip(1)
-            //     .collect();
-
             let mut bb: Vec<i32> = Vec::with_capacity(byte_offsets.len() / 4);
 
             byte_offsets

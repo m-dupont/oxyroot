@@ -3,10 +3,6 @@ mod common;
 use anyhow::Result;
 use common::TemplateWriter;
 use oxyroot::RBuffer;
-use paste::paste;
-use std::path::PathBuf;
-use std::process::Command;
-use std::{fs, path};
 
 fn read_i32_branch() -> Result<()> {
     let temp = TemplateWriter::default()

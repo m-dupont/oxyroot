@@ -1,7 +1,5 @@
 use anyhow::Result;
-use downcast::Any;
 use oxyroot::{RootFile, UnmarshalerInto};
-use regex::internal::Input;
 use std::fmt::Debug;
 
 #[test]

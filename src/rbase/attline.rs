@@ -11,8 +11,7 @@ use crate::rcolors::Color;
 pub(crate) struct AttLine {
     color: Color,
     style: i16,
-    width: i16, // rvers: i16,
-                // named: rbase::NAMED,
+    width: i16,
 }
 
 impl Unmarshaler for AttLine {

@@ -210,15 +210,7 @@ impl Key {
             todo!();
         }
 
-        // todo!();
-
-        // let vv: Box<dyn Unmarshaler> = v.downcast();
-
-        // if let Some(fct) = rtypes::FACTORY.get(&self.class);
-
         Ok(obj)
-
-        // Err(anyhow!("euh"))
     }
     pub(crate) fn key_len(&self) -> i32 {
         self.key_len
@@ -226,9 +218,7 @@ impl Key {
     pub(crate) fn set_class(&mut self, class: &str) {
         self.class = class.to_string();
     }
-    // pub(crate) fn n_bytes(&self) -> i32 {
-    //     self.n_bytes
-    // }
+
     pub(crate) fn cycle(&self) -> i32 {
         self.cycle as i32
     }

@@ -22,8 +22,6 @@ impl Enum {
             Ok(ii) => Self::Named(ii),
             Err(_) => Enum::Int(i),
         }
-
-        // .ok_or(anyhow!("Cant make enum from {i}"))
     }
 
     pub fn to_i32(&self) -> i32 {
