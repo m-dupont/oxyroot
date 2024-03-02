@@ -9,7 +9,7 @@ pub struct FreeSegments {
 }
 
 impl Unmarshaler for FreeSegments {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let vers = r.read_i16()?;
 
         let is_big_file = vers > 1000;

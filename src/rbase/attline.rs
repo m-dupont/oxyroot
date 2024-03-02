@@ -3,7 +3,6 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
 use crate::rvers;
-use anyhow::ensure;
 
 use crate::rcolors::Color;
 
@@ -15,16 +14,16 @@ pub(crate) struct AttLine {
 }
 
 impl Unmarshaler for AttLine {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        ensure!(
-            hdr.vers <= rvers::ATT_LINE,
-            "rbase: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::ATT_LINE
-        );
+        if hdr.vers > rvers::ATT_LINE {
+            return Err(crate::rbytes::Error::VersionTooHigh {
+                class: self.class().into(),
+                version_read: hdr.vers,
+                max_expected: rvers::ATT_LINE,
+            });
+        }
 
         self.color = Color::from_i16(r.read_i16()?);
 

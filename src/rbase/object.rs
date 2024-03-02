@@ -24,7 +24,7 @@ impl Default for Object {
 }
 
 impl Unmarshaler for Object {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         r.skip_version("")?;
         self.id = r.read_u32()?;
         self.bits = r.read_u32()?;

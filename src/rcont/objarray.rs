@@ -1,10 +1,10 @@
 use crate::rbase;
+use crate::rbytes::ensure_maximum_supported_version;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
-use anyhow::ensure;
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -60,15 +60,18 @@ impl traits::Named for ObjArray {
 }
 
 impl Unmarshaler for ObjArray {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        ensure!(
-            hdr.vers <= rvers::OBJ_ARRAY,
-            "rcont: invalid TObjArray version={} > {}",
-            hdr.vers,
-            rvers::OBJ_ARRAY
-        );
+        if hdr.vers > rvers::OBJ_ARRAY {
+            return Err(crate::rbytes::Error::VersionTooHigh {
+                class: self.class().into(),
+                version_read: hdr.vers,
+                max_expected: rvers::OBJ_ARRAY,
+            });
+        }
+
+        ensure_maximum_supported_version(hdr.vers, rvers::OBJ_ARRAY, self.class())?;
 
         if hdr.vers > 2 {
             r.read_object(&mut self.obj)?;

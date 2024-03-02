@@ -12,7 +12,8 @@ use trait_set::trait_set;
 
 use downcast::{downcast, Any};
 
-use anyhow::{bail, Result};
+use crate::rtypes::Error;
+use crate::rtypes::Result;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
 pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItem>;
@@ -95,14 +96,16 @@ impl<'a> Factory<'a> {
         }
     }
 
-    pub fn get(&self, s: &'a str) -> Option<&FactoryBuilderValue> {
-        self.map.get(s)
+    pub fn get(&self, s: &'a str) -> Result<&FactoryBuilderValue> {
+        self.map
+            .get(s)
+            .ok_or_else(|| Error::ClassNameNotRegisteredInFactory(s.into()))
     }
 
     #[allow(dead_code)] // used in tests
     pub fn get_as_box(&self, s: &'a str) -> Option<Box<dyn FactoryItem>> {
         let s = self.get(s);
-        if let Some(fct) = s {
+        if let Ok(fct) = s {
             let v = fct();
             let vec: Box<dyn FactoryItem> = v;
             return Some(vec);
@@ -121,7 +124,7 @@ impl<'a> Factory<'a> {
             }
         }
 
-        bail!("plop")
+        unimplemented!("should not happen")
     }
 
     #[allow(dead_code)] // used in tests
@@ -199,9 +202,9 @@ mod tests {
         factory.add("VEC", f);
 
         let fct = factory.get("VE");
-        assert!(fct.is_none());
+        assert!(fct.is_err());
         let fct = factory.get("VEC");
-        assert!(fct.is_some());
+        assert!(fct.is_ok());
 
         assert_eq!(factory.len(), 1);
 
@@ -234,7 +237,7 @@ mod tests {
     #[test]
     fn factory_get_typed() {
         // assert_eq!(FACTORY.len(), 1);
-        assert!(FACTORY.get("TList").is_some());
+        assert!(FACTORY.get("TList").is_ok());
         assert!(FACTORY.get_as_box("TList").is_some());
 
         assert!(FACTORY.get_as_boxtyped::<List>("TList").is_ok());
@@ -249,7 +252,7 @@ mod tests {
 
     #[test]
     fn factory_static() {
-        assert!(FACTORY.get("TList").is_some());
+        assert!(FACTORY.get("TList").is_ok());
         assert!(FACTORY.get_as_box("TList").is_some());
 
         // let b: Box<dyn traits::NAMED> = FACTORY.get_as_box("TList").unwrap();

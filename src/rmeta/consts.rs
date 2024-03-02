@@ -1,8 +1,17 @@
-use anyhow::{anyhow, Result};
 use num;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
 use std::cmp::Ordering;
+
+#[derive(Debug)]
+pub enum Error {
+    CantMakeEnumNamedFromInteger(i32),
+    CantMakeIntegerFromEnumNamed(EnumNamed),
+    CantMakeESTLTypeFromInteger(i32),
+    CantMakeEReadWriteFromInteger(i32),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Enum {
@@ -34,7 +43,7 @@ impl Enum {
     }
 }
 
-#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Default, Debug, Copy, Clone)]
 pub enum EnumNamed {
     #[default]
     Base = 0,
@@ -114,11 +123,12 @@ pub enum EnumNamed {
 
 impl EnumNamed {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
+        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeEnumNamedFromInteger(i))
     }
 
     pub fn to_i32(&self) -> Result<i32> {
-        num::ToPrimitive::to_i32(self).ok_or_else(|| anyhow!("Cant make a i32 from {:?}", self))
+        num::ToPrimitive::to_i32(self)
+            .ok_or_else(|| Error::CantMakeIntegerFromEnumNamed(self.clone()))
     }
 }
 
@@ -151,7 +161,7 @@ pub enum ESTLType {
 
 impl ESTLType {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
+        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeESTLTypeFromInteger(i))
     }
 
     // pub fn to_i32(&self) -> Result<i32> {
@@ -217,7 +227,7 @@ pub enum EReadWrite {
 
 impl EReadWrite {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
+        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeEReadWriteFromInteger(i))
     }
 
     pub fn to_i32(&self) -> i32 {

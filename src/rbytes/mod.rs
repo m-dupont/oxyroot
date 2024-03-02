@@ -1,12 +1,15 @@
 use crate::rdict::StreamerInfo;
 use crate::root;
-use anyhow::Result;
 use rbuffer::RBuffer;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 
+pub use error::Error;
+pub use error::Result;
+
 pub mod consts;
+mod error;
 pub mod rbuffer;
 
 use paste::paste;
@@ -201,4 +204,34 @@ where
         Unmarshaler::unmarshal(&mut a, r)?;
         Ok(a)
     }
+}
+
+pub fn ensure_maximum_supported_version(
+    read_version: i16,
+    max_supported_version: i16,
+    class_involved: &str,
+) -> Result<()> {
+    if read_version > max_supported_version {
+        return Err(Error::VersionTooHigh {
+            class: class_involved.into(),
+            version_read: read_version,
+            max_expected: max_supported_version,
+        });
+    }
+    Ok(())
+}
+
+pub fn ensure_minimum_supported_version(
+    read_version: i16,
+    min_supported_version: i16,
+    class_involved: &str,
+) -> Result<()> {
+    if read_version <= min_supported_version {
+        return Err(Error::VersionTooLow {
+            class: class_involved.into(),
+            version_read: read_version,
+            min_expected: min_supported_version,
+        });
+    }
+    Ok(())
 }

@@ -1,6 +1,5 @@
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::RBuffer;
-use anyhow::Result;
 use std::fmt::Debug;
 
 /// Represent a array of `T*` in C++
@@ -50,7 +49,7 @@ impl<T> Unmarshaler for Slice<T>
 where
     T: UnmarshalerInto<Item = T> + Debug,
 {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         r.do_skip_header()?;
         // r.skip(1)?;
 

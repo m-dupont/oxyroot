@@ -7,7 +7,8 @@ use crate::riofs::key::Key;
 use crate::riofs::utils::decode_name_cycle;
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use anyhow::{anyhow, bail, Result};
+
+use crate::riofs::{Error, Result};
 use chrono::NaiveDateTime;
 use log::trace;
 use uuid::Uuid;
@@ -57,7 +58,7 @@ impl Default for TDirectoryFile {
 impl TDirectoryFile {
     pub fn read_keys(&mut self, file: &mut RootFile) -> Result<()> {
         if self.seek_keys <= 0 {
-            bail!("SeekKeys <= 0");
+            return Err(Error::DirectoryNegativeSeekKeys(self.seek_keys));
         }
 
         let data = file.read_at(self.seek_keys as u64, self.n_bytes_keys as u64)?;
@@ -107,7 +108,7 @@ impl TDirectoryFile {
         );
 
         if (nbytes + begin) > (file.end() as u64) {
-            return Err(anyhow!("file has an incorrect header length"));
+            return Err(crate::riofs::error::Error::FileHasAnIncorrectHeaderLength);
         }
 
         let data = file.read_at(begin, nbytes)?;
@@ -140,7 +141,11 @@ impl TDirectoryFile {
         dir.dir.named.title = r.read_string()?.to_string();
 
         if dir.n_bytes_name < 10 || dir.n_bytes_name > 1000 {
-            return Err(anyhow!("riofs: can't read directory info"));
+            return Err(crate::riofs::error::Error::CantReadDirectoryInfo {
+                n_bytes_name_read: dir.n_bytes_name,
+                n_bytes_name_min_allowed: 10,
+                n_bytes_name_max_allowed: 1000,
+            });
         }
 
         Ok(dir)
@@ -175,7 +180,10 @@ impl TDirectoryFile {
 
         let key = match keys.len() {
             0 => {
-                bail!("No key {} in file '{}'", name, file);
+                return Err(Error::KeyNotInFile {
+                    key: name.to_string(),
+                    file: file.to_string(),
+                })
             }
             1 => keys.remove(0),
             _ => {
@@ -190,7 +198,7 @@ impl TDirectoryFile {
 
         match obj {
             None => {
-                bail!("no object named = {}", namecycle);
+                return Err(Error::ObjectNotInDirectory(namecycle.to_string()));
             }
             Some(o) => Ok(o),
         }
@@ -228,7 +236,7 @@ impl TDirectoryFile {
 }
 
 impl Unmarshaler for TDirectoryFile {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let version = r.read_i16()?;
         trace!("version: {}", version);
 

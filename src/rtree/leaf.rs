@@ -1,11 +1,10 @@
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{ensure_maximum_supported_version, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtypes::FactoryItem;
 use crate::{factory_all_for_register_impl, rbase};
 use crate::{factory_fn_register_impl, rvers};
-use anyhow::ensure;
 
 #[derive(Debug)]
 pub enum Leaf {
@@ -153,15 +152,10 @@ pub fn leaf_dim(_s: &str) -> Option<Vec<i32>> {
 }
 
 impl Unmarshaler for TLeaf {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::Leaf,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::Leaf
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::Leaf, self.class())?;
 
         r.read_object(&mut self.named)?;
 
@@ -244,15 +238,10 @@ pub struct LeafC {
 }
 
 impl Unmarshaler for LeafC {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::LEAF_C,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::LEAF_C
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::LEAF_C, self.class())?;
 
         self.rvers = hdr.vers;
 
@@ -285,15 +274,10 @@ macro_rules! make_tleaf_variant {
         factory_all_for_register_impl!($struct_name, $root_name);
 
         impl Unmarshaler for $struct_name {
-            fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+            fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
                 let hdr = r.read_header(self.class())?;
-                ensure!(
-                    hdr.vers <= rvers::$struct_name,
-                    "rtree: invalid {} version={} > {}",
-                    self.class(),
-                    hdr.vers,
-                    rvers::$struct_name
-                );
+
+                ensure_maximum_supported_version(hdr.vers, rvers::$struct_name, self.class())?;
 
                 self.rvers = hdr.vers;
 
@@ -334,15 +318,10 @@ pub struct LeafElement {
 }
 
 impl Unmarshaler for LeafElement {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::LeafElement,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::LeafElement
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::LeafElement, self.class())?;
 
         self.rvers = hdr.vers;
 

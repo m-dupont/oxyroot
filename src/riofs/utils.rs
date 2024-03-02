@@ -1,6 +1,6 @@
-use anyhow::{bail, Result};
+use crate::riofs::Error;
 
-pub fn decode_name_cycle(namecycle: &str) -> Result<(&str, u16)> {
+pub fn decode_name_cycle(namecycle: &str) -> Result<(&str, u16), Error> {
     let toks: Vec<_> = namecycle.split(';').collect();
 
     match toks.len() {
@@ -9,8 +9,6 @@ pub fn decode_name_cycle(namecycle: &str) -> Result<(&str, u16)> {
             unimplemented!()
         }
 
-        _ => {
-            bail!("Invalid namecycle")
-        }
+        _ => Err(Error::CantDecodeNameCycle(namecycle.to_string())),
     }
 }

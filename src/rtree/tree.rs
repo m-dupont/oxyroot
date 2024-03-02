@@ -1,14 +1,15 @@
 use crate::factory_all_for_register_impl;
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{
+    ensure_maximum_supported_version, ensure_minimum_supported_version, Unmarshaler,
+};
 use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
 use crate::rvers;
-use anyhow::{bail, ensure};
 use log::trace;
 
 #[derive(Default)]
@@ -25,15 +26,10 @@ pub struct Clusters {
 pub struct TioFeatures(u8);
 
 impl Unmarshaler for TioFeatures {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::ROOT_IOFEATURES,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::ROOT_IOFEATURES
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::ROOT_IOFEATURES, self.class())?;
 
         let mut buf = [0_u8; 4];
         r.read_array_u8(&mut buf[..1])?;
@@ -214,15 +210,10 @@ impl Tree {
 }
 
 impl Unmarshaler for Tree {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::TREE,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::TREE
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::TREE, self.class())?;
 
         self.rvers = hdr.vers;
         r.read_object(&mut self.named)?;
@@ -230,13 +221,7 @@ impl Unmarshaler for Tree {
         r.read_object(&mut self.attfill)?;
         r.read_object(&mut self.attmarker)?;
 
-        if hdr.vers <= 4 {
-            bail!(
-                "rtree: tree {} with version {} is not supported (too old)",
-                self.name(),
-                hdr.vers,
-            )
-        }
+        ensure_minimum_supported_version(hdr.vers, 4, self.class())?;
 
         if hdr.vers > 5 {
             self.entries = r.read_i64()?;

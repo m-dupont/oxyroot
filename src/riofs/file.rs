@@ -11,10 +11,10 @@ use crate::rdict::StreamerInfo;
 use crate::riofs::blocks::{FreeList, FreeSegments};
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::key::Key;
+use crate::riofs::{Error, Result};
 use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
 use crate::rtypes::FactoryItem;
-use anyhow::{anyhow, Result};
 use log::{debug, trace};
 use uuid::Uuid;
 
@@ -221,11 +221,10 @@ impl RootFile {
             self.inner.header.n_bytes_free as u64,
         )?;
         if buf.len() != self.inner.header.n_bytes_free as usize {
-            return Err(anyhow!(
-                "riofs: requested {} bytes, read {} bytes from file",
-                self.inner.header.n_bytes_free,
-                buf.len()
-            ));
+            return Err(Error::CantReadAmountOfBytesFromFile {
+                requested: self.inner.header.n_bytes_free as usize,
+                read: buf.len(),
+            });
         }
 
         let mut r = RBuffer::new(&buf, 0);
@@ -249,11 +248,11 @@ impl RootFile {
 
     fn read_streamer_info(&mut self) -> Result<()> {
         if self.inner.header.seek_info <= 0 || self.inner.header.seek_info >= self.end() {
-            return Err(anyhow!(
-                "riofs: invalid pointer to STREAMER_INFO (pos={} end={})",
-                self.inner.header.seek_info,
-                self.end()
-            ));
+            return Err(Error::InvalidPointerToStreamerInfo {
+                seek: self.inner.header.seek_info,
+                min_allowed: 0,
+                max_allowed: self.end(),
+            });
         }
 
         let buf = self.read_at(
@@ -262,11 +261,10 @@ impl RootFile {
         )?;
 
         if buf.len() != self.inner.header.n_bytes_info as usize {
-            return Err(anyhow!(
-                "riofs: requested {} bytes, read {} bytes from file",
-                self.inner.header.n_bytes_info,
-                buf.len()
-            ));
+            return Err(Error::CantReadAmountOfBytesFromFile {
+                requested: self.inner.header.n_bytes_info as usize,
+                read: buf.len(),
+            });
         }
 
         let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;

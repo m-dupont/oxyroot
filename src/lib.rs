@@ -128,6 +128,7 @@ for i in -10..10 {
 // #![deny(unused_imports)]
 extern crate core;
 
+mod error;
 mod gen_factory;
 mod rbase;
 mod rbytes;

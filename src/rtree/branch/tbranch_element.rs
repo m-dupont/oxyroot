@@ -1,3 +1,4 @@
+use crate::rbytes::ensure_maximum_supported_version;
 use crate::rdict::Streamer;
 use crate::rmeta::EReadWrite;
 use crate::root::traits::Named;
@@ -9,7 +10,6 @@ use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::streamer_type::{_from_leaftype_to_str, clean_type_name};
 use crate::{factory_fn_register_impl, RBuffer, Unmarshaler};
-use anyhow::ensure;
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
@@ -326,15 +326,10 @@ impl TBranchElement {
 }
 
 impl Unmarshaler for TBranchElement {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= crate::rvers::BRANCH_ELEMENT,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            crate::rvers::BRANCH_ELEMENT
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::BRANCH_ELEMENT, self.class())?;
 
         r.read_object(&mut self.branch)?;
 

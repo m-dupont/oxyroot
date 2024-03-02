@@ -1,7 +1,12 @@
-use anyhow::anyhow;
-use anyhow::Result;
 use num_derive::FromPrimitive;
 use num_derive::ToPrimitive;
+
+#[derive(Debug)]
+pub enum Error {
+    CantMakeColorNamedFromInteger(i16),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Color {
@@ -53,7 +58,7 @@ pub enum ColorNamed {
 
 impl ColorNamed {
     pub fn from_i16(i: i16) -> Result<Self> {
-        num::FromPrimitive::from_i16(i).ok_or_else(|| anyhow!("Cant make enum from {i}"))
+        num::FromPrimitive::from_i16(i).ok_or_else(|| Error::CantMakeColorNamedFromInteger(i))
     }
 
     // pub fn to_i16(&self) -> Result<i16> {

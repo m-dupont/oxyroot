@@ -1,10 +1,11 @@
 use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag, kNullTag};
 use crate::rbytes::rbuffer::RBufferRefsItem::Func;
+use crate::rbytes::Error::MiscError;
+use crate::rbytes::Result;
 use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
-use anyhow::{anyhow, bail, ensure, Result};
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -297,7 +298,9 @@ impl<'a> RBuffer<'a> {
             }
 
             if tag == 1 {
-                bail!("rbytes: tag == 1 means 'self'; not implemented yet");
+                return Err(MiscError(
+                    "rbytes: tag == 1 means 'self'; not implemented yet".to_string(),
+                ));
             }
 
             // warn!("Sadly return None");
@@ -312,9 +315,7 @@ impl<'a> RBuffer<'a> {
             let cname = self.read_cstring(80)?;
 
             // trace!("cname = {}", cname);
-            let fct = rtypes::FACTORY
-                .get(cname)
-                .ok_or_else(|| anyhow!("rbufer: no registered factory for class {}", cname,))?;
+            let fct = rtypes::FACTORY.get(cname)?;
 
             if vers > 0 {
                 self.refs.insert(start + kMapOffset, Func(fct));
@@ -393,7 +394,7 @@ impl<'a> RBuffer<'a> {
         Ok("")
     }
 
-    pub(crate) fn read_header(&mut self, class: &str) -> Result<Header> {
+    pub(crate) fn read_header(&mut self, class: &str) -> crate::rbytes::Result<Header> {
         let mut hdr = Header {
             _name: String::from(class),
             pos: self.pos(),
@@ -412,22 +413,6 @@ impl<'a> RBuffer<'a> {
             hdr.vers = self.read_u16()? as i16;
         }
 
-        if hdr.vers <= 0 {
-            // self.sictx.unwrap().streamer_info(&hdr.name, -1);
-            // if !hdr.name.is_empty()
-            //     && self.sictx.is_some()
-            //     && self.sictx.unwrap().streamer_info(&hdr.name, -1).is_some()
-            // {
-            //     {
-            //         todo!()
-            //     }
-            // }
-        }
-
-        // trace!("hdr = {:?}", hdr);
-        //
-        // trace!("<<read_header, pos = {}", self.pos());
-
         Ok(hdr)
     }
 
@@ -443,9 +428,13 @@ impl<'a> RBuffer<'a> {
             self.read_u16()?;
         }
 
-        ensure!(class.is_empty() || version > 1, "not implemented");
+        // ensure!(class.is_empty() || version > 1, "not implemented");
 
-        Ok(())
+        if version > 1 || class.is_empty() {
+            return Ok(());
+        }
+
+        unimplemented!("version <= 1 && !class.is_empty()");
     }
     pub fn set_skip_header(&mut self, skip_header: Option<i32>) {
         self.skip_header = skip_header;

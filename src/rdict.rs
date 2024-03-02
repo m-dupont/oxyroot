@@ -1,11 +1,11 @@
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::{RVersioner, Unmarshaler};
+use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
 use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase};
-use anyhow::ensure;
 
 use crate::rbytes;
+use crate::rbytes::Error::MiscError;
 use crate::rcont;
 use crate::rmeta;
 use crate::rmeta::{ESTLType, Enum, EnumNamed};
@@ -30,9 +30,10 @@ pub enum Streamer {
 }
 
 impl TryFrom<Box<dyn FactoryItem>> for Streamer {
-    type Error = anyhow::Error;
+    // TODO: change to rdict specific error
+    type Error = crate::rbytes::Error;
 
-    fn try_from(value: Box<dyn FactoryItem>) -> anyhow::Result<Self> {
+    fn try_from(value: Box<dyn FactoryItem>) -> Result<Self, Self::Error> {
         let ret = match value.class() {
             "TStreamerBasicType" => {
                 Streamer::BasicType(*value.downcast::<StreamerBasicType>().unwrap())
@@ -53,7 +54,12 @@ impl TryFrom<Box<dyn FactoryItem>> for Streamer {
             "TStreamerObjectAny" => {
                 Streamer::ObjectAny(*value.downcast::<StreamerObjectAny>().unwrap())
             }
-            _ => anyhow::bail!("Unknow type or write code for {}", value.class()),
+            _ => {
+                return Err(MiscError(format!(
+                    "Unknow type or write code for {}",
+                    value.class()
+                )))
+            }
         };
         Ok(ret)
     }
@@ -91,18 +97,6 @@ impl Streamer {
     pub fn item_type_name(&self) -> &str {
         self.element().ename.as_str()
     }
-    //     match self {
-    //         Streamer::String(_) => {}
-    //         Streamer::STLstring(_) => {}
-    //         Streamer::BasicType(_) => {}
-    //         Streamer::BasicPointer(_) => {}
-    //         Streamer::ObjectAny(_) => {}
-    //         Streamer::Stl(_) => {}
-    //         Streamer::Base(_) => {}
-    //         Streamer::Object(_) => {}
-    //         Streamer::ObjectPointer(_) => {}
-    //     }
-    // }
 }
 
 #[derive(Default)]
@@ -153,16 +147,16 @@ impl rbytes::RVersioner for StreamerInfo {
 }
 
 impl Unmarshaler for StreamerInfo {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        ensure!(
-            hdr.vers <= rvers::STREAMER_INFO,
-            "rdict: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::LIST
-        );
+        if hdr.vers > rvers::STREAMER_INFO {
+            return Err(crate::rbytes::Error::VersionTooHigh {
+                class: self.class().into(),
+                version_read: hdr.vers,
+                max_expected: rvers::STREAMER_INFO,
+            });
+        }
 
         r.read_object(&mut self.named)?;
 
@@ -275,16 +269,16 @@ fn get_range(s: &str) -> (f64, f64, f64) {
 }
 
 impl Unmarshaler for StreamerElement {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        ensure!(
-            hdr.vers <= rvers::STREAMER_ELEMENT,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_ELEMENT
-        );
+        if hdr.vers > rvers::STREAMER_ELEMENT {
+            return Err(crate::rbytes::Error::VersionTooHigh {
+                class: self.class().into(),
+                version_read: hdr.vers,
+                max_expected: rvers::STREAMER_ELEMENT,
+            });
+        }
 
         r.read_object(&mut self.named)?;
 
@@ -337,15 +331,16 @@ pub struct StreamerBase {
 }
 
 impl Unmarshaler for StreamerBase {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_BASE,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_BASE
-        );
+
+        if hdr.vers > rvers::STREAMER_BASE {
+            return Err(crate::rbytes::Error::VersionTooHigh {
+                class: self.class().into(),
+                version_read: hdr.vers,
+                max_expected: rvers::STREAMER_BASE,
+            });
+        }
 
         r.read_object(&mut self.element)?;
 
@@ -373,15 +368,10 @@ impl StreamerString {
 }
 
 impl Unmarshaler for StreamerString {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_STRING,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_STRING
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_STRING, self.class())?;
 
         r.read_object(&mut self.element)?;
         r.check_header(&hdr)?;
@@ -398,15 +388,10 @@ pub struct StreamerBasicType {
 }
 
 impl Unmarshaler for StreamerBasicType {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_BASIC_TYPE,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_BASIC_TYPE
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_BASIC_TYPE, self.class())?;
 
         r.read_object(&mut self.element)?;
 
@@ -470,15 +455,10 @@ pub struct StreamerObject {
 }
 
 impl Unmarshaler for StreamerObject {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_OBJECT,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_OBJECT
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_OBJECT, self.class())?;
 
         r.read_object(&mut self.element)?;
         r.check_header(&hdr)?;
@@ -494,15 +474,10 @@ pub struct StreamerObjectPointer {
 }
 
 impl Unmarshaler for StreamerObjectPointer {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_OBJECT_POINTER,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_OBJECT_POINTER
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_OBJECT_POINTER, self.class())?;
 
         r.read_object(&mut self.element)?;
         r.check_header(&hdr)?;
@@ -518,15 +493,10 @@ pub struct StreamerObjectAny {
 }
 
 impl Unmarshaler for StreamerObjectAny {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_OBJECT_ANY,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_OBJECT_ANY
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_OBJECT_ANY, self.class())?;
 
         r.read_object(&mut self.element)?;
         r.check_header(&hdr)?;
@@ -550,15 +520,10 @@ pub struct StreamerBasicPointer {
 factory_all_for_register_impl!(StreamerBasicPointer, "TStreamerBasicPointer");
 
 impl Unmarshaler for StreamerBasicPointer {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_BASIC_POINTER,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_BASIC_POINTER
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_BASIC_POINTER, self.class())?;
 
         r.read_object(&mut self.element)?;
 
@@ -589,15 +554,10 @@ impl RVersioner for StreamerSTL {
 }
 
 impl Unmarshaler for StreamerSTL {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_STL,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            StreamerSTL::rversion()
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_STL, self.class())?;
 
         r.read_object(&mut self.element)?;
 
@@ -634,15 +594,10 @@ pub struct StreamerSTLstring {
 factory_all_for_register_impl!(StreamerSTLstring, "TStreamerSTLstring");
 
 impl Unmarshaler for StreamerSTLstring {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= rvers::STREAMER_STLSTRING,
-            "rcont: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            rvers::STREAMER_STLSTRING
-        );
+
+        ensure_maximum_supported_version(hdr.vers, rvers::STREAMER_STLSTRING, self.class())?;
 
         r.read_object(&mut self.streamer_stl)?;
         r.check_header(&hdr)?;

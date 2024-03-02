@@ -1,8 +1,20 @@
-use anyhow::Result;
 use flate2::read::ZlibDecoder;
 use lz4::block::decompress_to_buffer as LZ4_decompress_to_buffer;
 use std::io::Read;
 use xz2::read::XzDecoder;
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug)]
+pub enum Error {
+    Io(std::io::Error),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e)
+    }
+}
 
 // Note: this contains ZL[src][dst] where src and dst are 3 bytes each.
 const HEADER_SIZE: usize = 9;

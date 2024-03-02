@@ -1,10 +1,12 @@
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::Error::MiscError;
+use crate::rbytes::{
+    ensure_maximum_supported_version, ensure_minimum_supported_version, Unmarshaler,
+};
 use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
-use anyhow::ensure;
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -42,22 +44,12 @@ impl traits::Object for List {
 }
 
 impl Unmarshaler for List {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
-        ensure!(
-            hdr.vers <= rvers::LIST,
-            "rcont: invalid TList version={} > {}",
-            hdr.vers,
-            rvers::LIST
-        );
+        ensure_maximum_supported_version(hdr.vers, rvers::LIST, self.class())?;
 
-        ensure!(
-            hdr.vers > 3,
-            "rcont: invalid TList version, too old= ({} < {})",
-            hdr.vers,
-            3
-        );
+        ensure_minimum_supported_version(hdr.vers, 3, self.class())?;
 
         r.read_object(&mut self.obj)?;
 

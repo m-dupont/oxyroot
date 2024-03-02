@@ -1,13 +1,13 @@
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{StreamerInfoContext, Unmarshaler};
-use crate::rcompress;
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::file::RootFileReader;
+use crate::riofs::Result;
 use crate::root::traits::Named;
 use crate::root::{objects, traits};
 use crate::rtypes;
 use crate::rtypes::FactoryItem;
-use anyhow::{anyhow, Result};
+use crate::{rcompress, riofs};
 use chrono::NaiveDateTime;
 use std::fmt;
 use std::fmt::Debug;
@@ -69,7 +69,7 @@ impl Default for Key {
 }
 
 impl Unmarshaler for Key {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let n_bytes = r.read_i32()?;
 
         if n_bytes < 0 {
@@ -168,24 +168,16 @@ impl Key {
         &self,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,
-    ) -> Result<Option<Box<dyn FactoryItem>>> {
+    ) -> riofs::Result<Option<Box<dyn FactoryItem>>> {
         // return &self.obj;
 
         // if let Some(ref obj) = self.obj {
         //     return Ok(Some(obj));
         // }
 
-        let buf = self
-            .bytes(file, None)
-            .map_err(|e| anyhow!("riofs: could not load key payload: {}", e))?;
+        let buf = self.bytes(file, None)?;
 
-        let fct = rtypes::FACTORY.get(&self.class).ok_or_else(|| {
-            anyhow!(
-                "riofs: no registered factory for class {} (key={})",
-                self.class,
-                self.name
-            )
-        })?;
+        let fct = rtypes::FACTORY.get(&self.class)?;
 
         let v = fct();
         //obj, ok := v.Interface().(root.OBJECT)

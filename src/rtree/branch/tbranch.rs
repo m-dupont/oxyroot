@@ -1,3 +1,4 @@
+use crate::rbytes::ensure_maximum_supported_version;
 use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
@@ -9,7 +10,6 @@ use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::TioFeatures;
 use crate::rtypes::FactoryItem;
 use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
-use anyhow::ensure;
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
@@ -286,15 +286,10 @@ impl Named for TBranch {
 }
 
 impl Unmarshaler for TBranch {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
-        ensure!(
-            hdr.vers <= crate::rvers::BRANCH,
-            "rtree: invalid {} version={} > {}",
-            self.class(),
-            hdr.vers,
-            crate::rvers::BRANCH
-        );
+
+        ensure_maximum_supported_version(hdr.vers, crate::rvers::BRANCH, self.class())?;
 
         if hdr.vers >= 10 {
             r.read_object(&mut self.named)?;

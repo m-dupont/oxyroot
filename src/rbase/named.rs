@@ -33,7 +33,7 @@ impl root::traits::Named for Named {
 }
 
 impl Unmarshaler for Named {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
         {
