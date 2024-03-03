@@ -29,12 +29,16 @@ test_rust-nightly:
     - cargo test --verbose --test 3_stl_containers --test 2_from_uproot --test 4_huge
   allow_failure: true
 
-test_full_rust-latest:
+test_full:
   stage: test_full
-  image: rust:latest
+  image: ${IMAGE}
+  parallel:
+    matrix:
+      - ROOT_VERSION: ["6.30.04", "6.28.12"]
+        IMAGE: ["rust:latest", "rustlang/rust:nightly"]
   script:
     - apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
-    - wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
+    - wget  https://root.cern/download/root_v$ROOT_VERSION.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
     - tar -xzf /tmp/root.tar.gz -C /opt
     - source /opt/root/bin/thisroot.sh
     - root --version
