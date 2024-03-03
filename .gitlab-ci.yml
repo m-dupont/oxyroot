@@ -42,7 +42,7 @@ test_full:
         IMAGE: ["rust:latest", "rustlang/rust:nightly"]
   script:
     - apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
-    - wget  https://root.cern/download/root_v$ROOT_VERSION.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
+    - wget  $ROOT_VERSION -O /tmp/root.tar.gz
     - tar -xzf /tmp/root.tar.gz -C /opt
     - source /opt/root/bin/thisroot.sh
     - root --version
