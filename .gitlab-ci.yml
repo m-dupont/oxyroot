@@ -1,4 +1,5 @@
 stages:
+  - test_full
   - build
   - test
 
@@ -27,3 +28,13 @@ test_rust-nightly:
   script:
     - cargo test --verbose --test 3_stl_containers --test 2_from_uproot --test 4_huge
   allow_failure: true
+
+test_full_rust-latest:
+  stage: test_full
+  image: rust:latest
+  script:
+    - wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
+    - tar -xzf /tmp/root.tar.gz -C /opt
+    - source /opt/root/bin/thisroot.sh
+    - root --version
+    - cargo test 
