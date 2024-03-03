@@ -156,11 +156,15 @@ impl<'a> RBuffer<'a> {
         Ok(u8::from_be_bytes(buf.try_into()?))
     }
 
-    pub fn read_array_u8(&mut self, arr: &mut [u8]) -> Result<()> {
+    pub fn read_array_u8_into(&mut self, arr: &mut [u8]) -> Result<()> {
         for item in arr {
             *item = self.read_u8()?;
         }
         Ok(())
+    }
+
+    pub fn read_array_u8(&mut self, n: usize) -> Result<&'_ [u8]> {
+        self.r.extract_n(n)
     }
 
     pub fn read_i8(&mut self) -> Result<i8> {
@@ -185,7 +189,7 @@ impl<'a> RBuffer<'a> {
         Ok(i16::from_be_bytes(buf))
     }
 
-    pub fn read_array_i16(&mut self, arr: &mut [i16]) -> Result<()> {
+    pub fn read_array_i16_into(&mut self, arr: &mut [i16]) -> Result<()> {
         for item in arr {
             *item = self.read_i16()?;
         }
@@ -451,7 +455,7 @@ impl<'a> RBuffer<'a> {
 
             if self.len() > 1 && s > 1 {
                 let mut hdr = [0; 1];
-                self.read_array_u8(&mut hdr)?;
+                self.read_array_u8_into(&mut hdr)?;
                 self.rewind(1)?;
 
                 if hdr != [64] {
@@ -523,6 +527,44 @@ mod tests {
             let i = buffer.read_i32()?;
             assert_eq!(i, r);
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_array_u8_into() -> Result<()> {
+        let refs: Vec<u8> = vec![0, 32, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let mut buffer = RBuffer::new(&refs, 0);
+        let mut arr = [0; 13];
+
+        buffer.read_array_u8_into(&mut arr)?;
+
+        assert_eq!(refs.as_slice(), arr);
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_array_u8() -> Result<()> {
+        let refs: Vec<u8> = vec![0, 32, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let mut buffer = RBuffer::new(&refs, 0);
+
+        let arr = buffer.read_array_u8(refs.len())?;
+
+        assert_eq!(refs.as_slice(), arr);
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_array_i16() -> Result<()> {
+        let refs: Vec<i16> = vec![0, 32, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let u8_refs: Vec<u8> = refs.iter().flat_map(|i| i.to_be_bytes().to_vec()).collect();
+        let mut buffer = RBuffer::new(&u8_refs, 0);
+        let mut arr = [0; 13];
+        buffer.read_array_i16_into(&mut arr)?;
+
+        assert_eq!(refs.as_slice(), arr.as_slice());
 
         Ok(())
     }

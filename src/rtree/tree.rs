@@ -32,10 +32,10 @@ impl Unmarshaler for TioFeatures {
         ensure_maximum_supported_version(hdr.vers, crate::rvers::ROOT_IOFEATURES, self.class())?;
 
         let mut buf = [0_u8; 4];
-        r.read_array_u8(&mut buf[..1])?;
+        r.read_array_u8_into(&mut buf[..1])?;
 
         self.0 = if buf[0] != 0 {
-            r.read_array_u8(&mut buf[1..])?;
+            r.read_array_u8_into(&mut buf[1..])?;
             r.read_u8()?
         } else {
             0

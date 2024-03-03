@@ -520,7 +520,7 @@ fn tree_with_array() -> Result<()> {
         .unwrap()
         .get_basket(|r| {
             let mut buf = [0 as i16; 10];
-            r.read_array_i16(&mut buf).unwrap();
+            r.read_array_i16_into(&mut buf).unwrap();
             buf
         })
         .enumerate()

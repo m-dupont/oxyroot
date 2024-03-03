@@ -147,8 +147,8 @@ impl RootFile {
         trace!("start to read header");
         let buf = self.read_at(0, HEADER_LEN + HEADER_EXTRA_LEN)?;
         let mut r = RBuffer::new(&buf, 0);
-        let mut magic: [u8; 4] = [0; 4];
-        r.read_array_u8(&mut magic)?;
+        // let mut magic: [u8; 4] = [0; 4];
+        let magic = r.read_array_u8(4)?;
 
         trace!("magic = {:?}", magic);
 
@@ -190,9 +190,10 @@ impl RootFile {
         trace!("version = {}", version);
 
         let _ = r.read_u16()?;
-        let mut uuid: [u8; 16] = [0; 16];
-        r.read_array_u8(&mut uuid)?;
-        self.inner.header.uuid = Uuid::from_bytes(uuid);
+        // let mut uuid: [u8; 16] = [0; 16];
+        let uuid = r.read_array_u8(16)?;
+        let uuid = <&[u8; 16]>::try_from(uuid)?;
+        self.inner.header.uuid = Uuid::from_bytes(*uuid);
 
         trace!("uuid = {}", self.inner.header.uuid);
 

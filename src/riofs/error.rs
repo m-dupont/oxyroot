@@ -2,6 +2,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
+    TryFromSliceError,
+    Io(std::io::Error),
     FileHasAnIncorrectHeaderLength,
     CantReadDirectoryInfo {
         n_bytes_name_read: i32,
@@ -16,7 +18,7 @@ pub enum Error {
     },
     CantLoadKeyPayload(String),
     ObjectNotInDirectory(String),
-    Io(std::io::Error),
+
     DirectoryNegativeSeekKeys(i64),
     CantReadAmountOfBytesFromFile {
         requested: usize,
@@ -60,5 +62,11 @@ impl From<crate::rcompress::Error> for Error {
 impl From<crate::rtypes::Error> for Error {
     fn from(e: crate::rtypes::Error) -> Self {
         Error::RTypes(e)
+    }
+}
+
+impl From<std::array::TryFromSliceError> for Error {
+    fn from(_: std::array::TryFromSliceError) -> Self {
+        Error::TryFromSliceError
     }
 }

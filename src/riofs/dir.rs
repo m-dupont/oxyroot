@@ -271,7 +271,7 @@ impl Unmarshaler for TDirectoryFile {
         let _ = r.read_u16()?;
         let mut uuid: [u8; 16] = [0; 16];
         // r.read(&mut uuid)?;
-        r.read_array_u8(&mut uuid)?;
+        r.read_array_u8_into(&mut uuid)?;
         let uuid = Uuid::from_bytes(uuid);
 
         self.ctime = ctime;
