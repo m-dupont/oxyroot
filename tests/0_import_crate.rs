@@ -4,6 +4,7 @@ use anyhow::Result;
 use common::TemplateWriter;
 use oxyroot::RBuffer;
 
+#[test]
 fn read_i32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/int")?
@@ -28,6 +29,7 @@ fn read_i32_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_u32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/u32")?
@@ -52,6 +54,7 @@ fn read_u32_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_i16_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/i16")?
@@ -76,6 +79,7 @@ fn read_i16_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_u16_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/u16")?
@@ -100,6 +104,7 @@ fn read_u16_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_i8_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/i8")?
@@ -124,6 +129,7 @@ fn read_i8_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_i64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/i64")?
@@ -148,6 +154,7 @@ fn read_i64_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_f32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/float")?
@@ -172,6 +179,7 @@ fn read_f32_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn read_f64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/f64")?
@@ -196,45 +204,44 @@ fn read_f64_branch() -> Result<()> {
     Ok(())
 }
 
-#[test]
-fn read_tree_i32() {
-    read_i32_branch().expect("nooo");
-}
+// fn read_tree_i32() {
+//     read_i32_branch().expect("nooo");
+// }
 
-#[test]
-fn read_tree_u32() {
-    read_u32_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_i16() {
-    read_i16_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_u16() {
-    read_u16_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_i8() {
-    read_i8_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_i64() {
-    read_i64_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_f32() {
-    read_f32_branch().expect("nooo");
-}
-
-#[test]
-fn read_tree_f64() {
-    read_f64_branch().expect("nooo");
-}
+// #[test]
+// fn read_tree_u32() {
+//     read_u32_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_i16() {
+//     read_i16_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_u16() {
+//     read_u16_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_i8() {
+//     read_i8_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_i64() {
+//     read_i64_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_f32() {
+//     read_f32_branch().expect("nooo");
+// }
+//
+// #[test]
+// fn read_tree_f64() {
+//     read_f64_branch().expect("nooo");
+// }
 
 macro_rules! read_primitive_branch {
     ($ftype:ty, $root_type:literal) => {{
@@ -272,19 +279,21 @@ macro_rules! read_primitive_branch {
             Ok(())
         }
 
-        impl_read_primitive_branch().expect("nooo");
+        impl_read_primitive_branch()?;
     }};
 }
 
 #[test]
-fn read_tree_into_i32() {
+fn read_tree_into_i32() -> Result<()> {
     read_primitive_branch!(i32, "Int_t");
     read_primitive_branch!(i32, "int");
+    Ok(())
 }
 
 #[test]
-fn read_tree_into_u32() {
+fn read_tree_into_u32() -> Result<()> {
     read_primitive_branch!(u32, "UInt_t");
+    Ok(())
 }
 
 // #[test]
@@ -296,11 +305,13 @@ fn read_tree_into_u32() {
 //     read_primitive_branch!(u64, "ULong_t");
 // }
 #[test]
-fn read_tree_into_f32() {
+fn read_tree_into_f32() -> Result<()> {
     read_primitive_branch!(f32, "Float_t");
+    Ok(())
 }
 
 #[test]
-fn read_tree_into_f64() {
+fn read_tree_into_f64() -> Result<()> {
     read_primitive_branch!(f64, "Double_t");
+    Ok(())
 }
