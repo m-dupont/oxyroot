@@ -34,7 +34,11 @@ test_full:
   image: ${IMAGE}
   parallel:
     matrix:
-      - ROOT_VERSION: ["6.30.04", "6.28.12"]
+      - ROOT_VERSION: 
+          - "https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz"
+          - "https://root.cern/download/root_v6.28.12.Linux-ubuntu22-x86_64-gcc11.4.tar.gz"
+          - "https://root.cern/download/root_v6.26.14.Linux-ubuntu22-x86_64-gcc11.4.tar.gz"
+          - "https://root.cern/download/root_v6.24.08.Linux-ubuntu20-x86_64-gcc9.4.tar.gz"
         IMAGE: ["rust:latest", "rustlang/rust:nightly"]
   script:
     - apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
