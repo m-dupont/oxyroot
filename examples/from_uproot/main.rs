@@ -17,7 +17,9 @@ fn open_HZZ_root() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("events")?;
 
@@ -62,7 +64,9 @@ fn open_simple_root() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -116,7 +120,9 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -231,7 +237,9 @@ fn tree_with_jagged_array() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("t1")?;
 
@@ -284,7 +292,9 @@ fn tree_with_stl_containers() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
     tree.show();
@@ -1237,7 +1247,9 @@ fn tree_open_huge() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1262,7 +1274,9 @@ fn huge() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1302,7 +1316,9 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 

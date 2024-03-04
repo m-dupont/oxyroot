@@ -7,7 +7,7 @@ use std::io::Write;
 
 fn main() {
     let _stylish_logger = Builder::new()
-        .filter(None, LevelFilter::Trace)
+        .filter(None, LevelFilter::Info)
         .write_style(WriteStyle::Always)
         .format(|buf, record| {
             let level = record.metadata().level().as_str().to_ascii_uppercase();
@@ -42,9 +42,15 @@ fn main() {
 
     let _s = "/home/mdupont/Documents/DocumentsSync/soft/oxyroot/tests_data/1/cernstaff.root";
     let s = "/tmp/rust/struct/read_int_struct_split=0/o.root";
+    let s = "examples/from_root_tutorials/a.root";
+    let s = "/home/mdupont/Téléchargements/2024-03-01_09h_13min_36sec_0.01586100086569786MeV_10000evts_G4_CADMIUM_TELLURIDE_dz1.0mm_dx3.0mm_dy3.0mm_G4EmLivermore/TrackingOutput.root";
 
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s).unwrap();
+
+    let keys = f.keys_name().collect::<Vec<_>>();
+
+    println!("keys = {:?}", keys);
 
     // f.get_object("Spectrum").unwrap();
     // f.get_object("T").unwrap();

@@ -154,3 +154,6 @@ pub use rbytes::Unmarshaler;
 pub use rbytes::UnmarshalerInto;
 
 pub use rusty::Slice;
+
+pub use root::traits::Named;
+pub use root::traits::Object;

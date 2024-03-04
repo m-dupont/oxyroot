@@ -23,8 +23,8 @@ impl fmt::Debug for objects::Object {
     }
 }
 
-#[derive(Debug)]
-pub(crate) struct Key {
+#[derive(Debug, Clone)]
+pub struct Key {
     rvers: i16,
     // version of the Key struct
     n_bytes: i32,

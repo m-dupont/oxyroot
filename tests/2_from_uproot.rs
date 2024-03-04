@@ -32,7 +32,9 @@ fn open_simple_root() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -176,7 +178,9 @@ fn open_tree_with_vector_parse() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("t1")?;
 
@@ -216,7 +220,9 @@ fn open_tree_with_vector_into() -> Result<()> {
     let s = "examples/from_uproot/data/tree_with_jagged_array.root";
 
     let mut f = RootFile::open(s)?;
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
     let tree = f.get_tree("t1")?;
 
     assert_eq!(
@@ -246,7 +252,9 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -341,7 +349,9 @@ fn open_tree_with_slice_i16_into_vec() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -466,7 +476,9 @@ fn open_tree_with_vector_of_string() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -503,7 +515,9 @@ fn tree_with_array() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -549,7 +563,9 @@ where
     let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
 
     let mut f = RootFile::open(s)?;
-    f.keys().map(|k| println!("key = {}", k)).for_each(drop);
+    f.keys_name()
+        .map(|k| println!("key = {}", k))
+        .for_each(drop);
     let tree = f.get_tree("tree")?;
     tree.branch(name_branch)
         .unwrap()
