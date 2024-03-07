@@ -14,8 +14,10 @@ use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
+use std::iter::Map;
+use std::slice::Iter;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct TBranch {
     named: rbase::Named,
     attfill: rbase::AttFill,
@@ -49,7 +51,7 @@ pub struct TBranch {
 
     branches: Vec<Branch>,
     pub(crate) leaves: Vec<Leaf>,
-    pub(crate) baskets: Vec<Box<dyn FactoryItem>>,
+    pub(crate) baskets: Vec<Basket>,
 
     /// length of baskets on file
     pub(crate) basket_bytes: Vec<i32>,
@@ -166,19 +168,43 @@ impl TBranch {
             self.leaves.len()
         );
 
-        Box::new(
+        let embedded_basket = if !self.baskets.is_empty() {
+            assert_eq!(self.baskets.len(), 1);
+
+            Some(self.baskets.iter().map(|b| {
+                let key_lenght = b.key().key_len() as usize;
+                let buf = b
+                    .key()
+                    .buffer()
+                    .iter()
+                    .skip(key_lenght)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                let n = b.nev_buf();
+                let chunk_size = 1;
+
+                BranchChunks::RegularSized((n, chunk_size, buf))
+            }))
+        } else {
+            None
+        };
+
+        let ret =
             izip!(
                 &self.basket_seek,
                 &self.basket_bytes,
                 size_leaves,
                 leaves
-            )
+            ).filter(|(start, len, mut chunk_size, leave)| {
+                **len > 0
+            })
                 .map(|(start, len, mut chunk_size, leave)| {
                     trace!(
                     "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
                     *start as i64 + *len as i64,
                     chunk_size, leave
                 );
+                    assert_ne!(*len, 0);
                     let mut reader = self.reader.as_ref().unwrap().clone();
                     let buf = reader.read_at(*start as u64, *len as u64).unwrap();
                     let mut r = RBuffer::new(&buf, 0);
@@ -213,12 +239,15 @@ impl TBranch {
                             _ => {
                                 let n = buf.len() / chunk_size as usize;
                                 trace!("send ({n},{chunk_size},{:?})", buf);
-                                BranchChunks::RegularSized((n as u32, chunk_size, buf))
+                                BranchChunks::RegularSized((n as i32, chunk_size, buf))
                             }
                         },
                     }
-                }),
-        )
+                });
+        match embedded_basket {
+            None => Box::new(ret),
+            Some(before) => Box::new(before.chain(ret)),
+        }
     }
 
     pub fn entries(&self) -> i64 {
@@ -287,6 +316,8 @@ impl Named for TBranch {
 
 impl Unmarshaler for TBranch {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let _beg = r.pos();
+        trace!(";tBranch.unmarshal.{}.beg: {}", _beg, _beg);
         let hdr = r.read_header(self.class())?;
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::BRANCH, self.class())?;
@@ -339,7 +370,11 @@ impl Unmarshaler for TBranch {
             {
                 let mut baskets = r.read_object_into::<ObjArray>()?;
                 if !baskets.objs.is_empty() {
-                    self.baskets = baskets.take_objs();
+                    self.baskets = baskets
+                        .take_objs()
+                        .into_iter()
+                        .map(|obj| obj.into())
+                        .collect();
                 }
             }
 
@@ -372,11 +407,174 @@ impl Unmarshaler for TBranch {
 
             self.fname = r.read_string()?.to_string();
         } else if hdr.vers >= 6 {
-            todo!();
+            r.read_object(&mut self.named)?;
+            if hdr.vers > 7 {
+                r.read_object(&mut self.attfill)?;
+            }
+
+            self.compress = r.read_i32()?;
+            self.basket_size = r.read_i32()?;
+            self.entry_offset_len = r.read_i32()?;
+            self.write_basket = r.read_i32()?;
+            self.entry_number = r.read_i32()? as i64;
+            self.offset = r.read_i32()?;
+            self.max_baskets = r.read_i32()?;
+
+            if hdr.vers > 6 {
+                self.split_level = r.read_i32()?;
+            }
+
+            self.entries = r.read_f64()? as i64;
+            self.tot_bytes = r.read_f64()? as i64;
+            self.zip_bytes = r.read_f64()? as i64;
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos_read_branches: {}",
+                _beg,
+                r.pos()
+            );
+
+            {
+                let mut branches = r.read_object_into::<ObjArray>()?;
+                self.branches = branches
+                    .take_objs()
+                    .into_iter()
+                    .map(|obj| obj.into())
+                    .collect();
+            }
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos_read_leaves: {}",
+                _beg,
+                r.pos()
+            );
+
+            {
+                let mut leaves = r.read_object_into::<ObjArray>()?;
+                if !leaves.objs.is_empty() {
+                    self.leaves = leaves
+                        .take_objs()
+                        .into_iter()
+                        .map(|obj| obj.into())
+                        .collect();
+                }
+            }
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.before_read_baskets: {}",
+                _beg,
+                r.pos()
+            );
+
+            {
+                let mut baskets = r.read_object_into::<ObjArray>()?;
+                if !baskets.objs.is_empty() {
+                    self.baskets = baskets
+                        .take_objs()
+                        .into_iter()
+                        .map(|obj| obj.into())
+                        .collect();
+                }
+            }
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.after_read_baskets: {}",
+                _beg,
+                r.pos()
+            );
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.baskets.len: {}",
+                _beg,
+                self.baskets.len()
+            );
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.basket_bytes: {}",
+                _beg,
+                r.pos()
+            );
+            {
+                let _ = r.read_i8()?;
+                let mut b = vec![0; self.max_baskets as usize];
+                r.read_array_i32(b.as_mut_slice())?;
+
+                self.basket_bytes.extend_from_slice(&b.as_slice());
+
+                trace!(
+                    ";tBranch.unmarshal.{}..vers>6.basket_bytes.max_baskets: {}",
+                    _beg,
+                    self.max_baskets
+                );
+                trace!(
+                    ";tBranch.unmarshal.{}..vers>6.basket_bytes.write_basket: {}",
+                    _beg,
+                    self.write_basket
+                );
+                trace!(
+                    ";tBranch.unmarshal.{}..vers>6.basket_bytes.size: {}",
+                    _beg,
+                    self.basket_bytes.len()
+                );
+            }
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.basket_entry: {}",
+                _beg,
+                r.pos()
+            );
+            {
+                let _ = r.read_i8()?;
+                let mut b = vec![0_i32; self.max_baskets as usize];
+                r.read_array_i32(b.as_mut_slice())?;
+                self.basket_entry.reserve(b.len());
+
+                for v in b {
+                    self.basket_entry.push(v as i64);
+                }
+
+                // self.basket_entry
+                //     .extend_from_slice(&b.as_slice()[..(self.write_basket + 1) as usize]);
+            }
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.basket_seek: {}",
+                _beg,
+                r.pos()
+            );
+            {
+                match r.read_i8()? {
+                    2 => {
+                        let mut b = vec![0_i64; self.max_baskets as usize];
+                        r.read_array_i64(b.as_mut_slice())?;
+
+                        self.basket_seek
+                            .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
+                    }
+                    _ => {
+                        let mut b = vec![0_i32; self.max_baskets as usize];
+                        r.read_array_i32(b.as_mut_slice())?;
+                        self.basket_seek.reserve(b.len());
+
+                        for v in b {
+                            self.basket_seek.push(v as i64);
+                        }
+                    }
+                }
+            }
+
+            trace!(
+                ";tBranch.unmarshal.{}..vers>6.pos.after_basket_seek: {}",
+                _beg,
+                r.pos()
+            );
+
+            self.fname = r.read_string()?.to_string();
+
+            trace!(";tBranch.unmarshal.{}..vers>6.fname: {}", _beg, self.fname);
+
+            trace!("self = {:?}", self);
+
+            // todo!();
             // r.read_object(&mut self.named)?;
-            // if hdr.vers > 7 {
-            //     r.read_object(&mut self.attfill)?;
-            // }
         } else {
             unimplemented!()
         }

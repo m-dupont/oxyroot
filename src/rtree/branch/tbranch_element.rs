@@ -316,7 +316,7 @@ impl TBranchElement {
                         _ => {
                             let n = buf.len() / chunk_size as usize;
                             trace!("send ({n},{chunk_size},{:?})", buf);
-                            BranchChunks::RegularSized((n as u32, chunk_size, buf))
+                            BranchChunks::RegularSized((n as i32, chunk_size, buf))
                         }
                     },
                 }

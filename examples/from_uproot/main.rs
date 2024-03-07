@@ -99,7 +99,7 @@ fn open_simple_root() -> Result<()> {
 
     // let f = |r: &mut RBuffer| {
     //     let val = r.read_string().unwrap().to_string();
-    //     println!("val = {:?}", val);
+    //     trace!("val = {:?}", val);
     //     val
     // };
 
@@ -183,7 +183,7 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
         })
         .enumerate()
         .for_each(|(i, (x, y, z))| {
-            // println!("x = {x} y = {y}");
+            // trace!("x = {x} y = {y}");
             let i = i as i32;
             assert_eq!(x, i - 1);
             assert_eq!(x, z);
@@ -200,7 +200,7 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
         })
         .enumerate()
         .for_each(|(i, buf)| {
-            // println!("buf = {:?}", buf);
+            // trace!("buf = {:?}", buf);
             buf.map(|v| assert_eq!(v, i as i16));
         });
 
@@ -1261,7 +1261,7 @@ fn tree_open_huge() -> Result<()> {
 
     // assert_eq!(v, good);
 
-    // println!("v = {:?}", v);
+    // trace!("v = {:?}", v);
     println!("len(v) = {}", v.len());
     Ok(())
 }
@@ -1302,7 +1302,7 @@ fn huge() -> Result<()> {
 
     // assert_eq!(v, good);
 
-    // println!("v = {:?}", v);
+    // trace!("v = {:?}", v);
     println!("len(v) = {}", v.len());
 
     Ok(())

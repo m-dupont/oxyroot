@@ -136,6 +136,8 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
 pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
     // trace!("leaftype = {}", leaftype);
 
+    trace!(";_from_leaftype_to_str.leaftype:{}", leaftype);
+
     if leaftype < 0 {
         return None;
     }
@@ -155,7 +157,7 @@ pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
         leaftype
     };
 
-    assert!(leaftype > 0);
+    // assert!(leaftype > 0);
 
     // trace!("leaftype = {}", leaftype);
 
@@ -239,21 +241,21 @@ pub(crate) fn type_name_cpp_to_rust(ty: &str) -> String {
 
         let start = &format!("{}[", rust);
         let end = "]";
-        // println!("ty = {} -> ret = {}", ty, ret);
+        // trace!("ty = {} -> ret = {}", ty, ret);
         if let Some(start) = ret.find(start) {
             let start = start + rust.len() + 1;
-            // println!("\tstart = {}", start);
+            // trace!("\tstart = {}", start);
 
             let right = ret.get(start..).unwrap();
-            // println!("\tright = {}", right);
+            // trace!("\tright = {}", right);
             if !right.starts_with(']') {
                 let end = right.find(end).unwrap();
-                // println!("\t\tend = {}", end);
+                // trace!("\t\tend = {}", end);
                 let inner = ret.get(start..(end + start)).unwrap();
-                // println!("\t\tinner = {}", inner);
+                // trace!("\t\tinner = {}", inner);
                 let rust_s = format!("{}[{}]", rust, inner);
                 let rust_o = format!("[{};{}]", rust, inner);
-                // println!("\t\trust_s = {}", rust_s);
+                // trace!("\t\trust_s = {}", rust_s);
                 ret = ret.replace(rust_s.as_str(), rust_o.as_str());
             }
         }

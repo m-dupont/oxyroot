@@ -48,6 +48,8 @@ pub struct Key {
     name: String,
     // name of the object
     title: String, // title of the object
+
+    buffer: Vec<u8>, // buffer of the Key's value
 }
 
 impl Default for Key {
@@ -64,6 +66,7 @@ impl Default for Key {
             class: String::new(),
             name: String::new(),
             title: String::new(),
+            buffer: Vec::new(),
         }
     }
 }
@@ -135,6 +138,11 @@ impl Named for Key {
 }
 
 impl Key {
+    pub(crate) fn set_buffer(&mut self, buffer: Vec<u8>) {
+        self.buffer = buffer;
+        self.obj_len = self.buffer.len() as i32;
+    }
+
     pub(crate) fn obj_len(&self) -> i32 {
         self.obj_len
     }
@@ -213,5 +221,14 @@ impl Key {
 
     pub(crate) fn cycle(&self) -> i32 {
         self.cycle as i32
+    }
+    pub fn n_bytes(&self) -> i32 {
+        self.n_bytes
+    }
+    pub fn seek_key(&self) -> i64 {
+        self.seek_key
+    }
+    pub fn buffer(&self) -> &Vec<u8> {
+        &self.buffer
     }
 }

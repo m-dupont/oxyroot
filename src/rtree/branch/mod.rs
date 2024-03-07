@@ -17,8 +17,8 @@ use log::trace;
 use std::marker::PhantomData;
 
 pub(crate) enum BranchChunks {
-    RegularSized((u32, i32, Vec<u8>)),
-    IrregularSized((u32, Vec<Vec<u8>>, i32)), // _,_, header_bytes
+    RegularSized((i32, i32, Vec<u8>)),
+    IrregularSized((i32, Vec<Vec<u8>>, i32)), // _,_, header_bytes
 }
 
 /// Rust equivalent of [`TBranch`](https://root.cern/doc/master/classTBranch.html)
@@ -249,7 +249,7 @@ pub struct ZiperBranches<'a, T> {
     // output_buffers: Option<ZiperBranchInnerO<'a, T>>,
     output_buffers: Vec<Option<BranchChunks>>,
     current_size: Vec<usize>,
-    nb_entries: Vec<u32>,
+    nb_entries: Vec<i32>,
 }
 
 impl<'a, T> ZiperBranches<'a, T> {

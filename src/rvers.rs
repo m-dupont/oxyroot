@@ -136,7 +136,7 @@ pub const STREAMER_STLSTRING: i16 = 2;
 /// ROOT version for ROOT::TIOFeatures
 pub const ROOT_IOFEATURES: i16 = 1;
 /// ROOT version for TBasket
-// pub const BASKET: i16 = 3;
+pub const BASKET: i16 = 3;
 /// ROOT version for TBranch
 pub const BRANCH: i16 = 13;
 /// ROOT version for TBranchElement

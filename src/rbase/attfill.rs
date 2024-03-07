@@ -6,7 +6,7 @@ use crate::RBuffer;
 
 use crate::rcolors::Color;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct AttFill {
     color: Color,
     style: i16,

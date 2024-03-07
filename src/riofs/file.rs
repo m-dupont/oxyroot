@@ -39,7 +39,7 @@ struct RootFileHeader {
     uuid: Uuid,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct RootFileReader {
     path: PathBuf,
     reader: Option<BufReader<File>>,
@@ -325,7 +325,7 @@ impl RootFile {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub(crate) struct RootFileStreamerInfoContext {
     list: Rc<Vec<StreamerInfo>>,
 }

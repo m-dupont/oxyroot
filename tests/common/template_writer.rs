@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::trace;
 use std::path::PathBuf;
 use std::process::Command;
 use std::{fs, path};
@@ -32,29 +33,29 @@ impl TemplateWriter {
         let s = outdir.as_ref().to_string();
         fs::create_dir_all(&s)?;
         self.out_dir = s.into();
-        println!("outdir = {:?}", self.out_dir);
+        trace!("outdir = {:?}", self.out_dir);
         Ok(self)
     }
 
     pub fn with_value_type<T: AsRef<str>>(mut self, value_t: T) -> Result<TemplateWriter> {
         let value_t = value_t.as_ref().to_string();
         self.value_type = value_t;
-        println!("value_type = {:?}", self.value_type);
+        trace!("value_type = {:?}", self.value_type);
         Ok(self)
     }
 
     pub fn with_compression(mut self, value_t: i32) -> Result<TemplateWriter> {
         let value_t = value_t;
         self.compression = value_t;
-        println!("compression = {:?}", self.compression);
+        trace!("compression = {:?}", self.compression);
         Ok(self)
     }
 
     pub fn write_root_macro(&self) -> Result<()> {
-        println!("outdir = {:?}", self.out_dir.clone());
+        trace!("outdir = {:?}", self.out_dir.clone());
         let mut macro_path = self.out_dir.clone();
         macro_path.push("gen.C");
-        println!("write to {:?}", macro_path);
+        trace!("write to {:?}", macro_path);
 
         let macro_content = format!(
             r#"{{
@@ -86,22 +87,22 @@ impl TemplateWriter {
     }
 
     pub fn write_raw_macro(&self, m: &str) -> Result<()> {
-        println!("outdir = {:?}", self.out_dir.clone());
+        trace!("outdir = {:?}", self.out_dir.clone());
         let mut macro_path = self.out_dir.clone();
         macro_path.push("gen.C");
-        println!("write to {:?}", macro_path);
+        trace!("write to {:?}", macro_path);
         fs::write(macro_path, m)?;
         Ok(())
     }
 
     pub fn execute_macro(&self) -> Result<()> {
-        println!("Execute ROOT");
+        trace!("Execute ROOT");
         let out = Command::new("root")
             .arg("-q")
             .arg("gen.C")
             .current_dir(&self.out_dir)
             .output()?;
-        println!("{}", String::from_utf8(out.stdout)?);
+        trace!("{}", String::from_utf8(out.stdout)?);
         Ok(())
     }
 
@@ -114,7 +115,7 @@ impl TemplateWriter {
 
 impl Drop for TemplateWriter {
     fn drop(&mut self) {
-        println!("Delete {}", self.out_dir.to_str().unwrap());
+        trace!("Delete {}", self.out_dir.to_str().unwrap());
         // fs::remove_dir_all(&self.out_dir).expect("TODO: panic message");
     }
 }

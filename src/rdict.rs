@@ -99,7 +99,7 @@ impl Streamer {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Streamers {
     list: Vec<Streamer>,
 }
@@ -119,7 +119,7 @@ impl Streamers {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StreamerInfo {
     named: rbase::Named,
     chksum: u32,

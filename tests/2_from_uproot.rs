@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::trace;
 use oxyroot::{RootFile, UnmarshalerInto};
 use std::fmt::Debug;
 
@@ -32,9 +33,7 @@ fn open_simple_root() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -162,7 +161,7 @@ fn open_tree_with_struct_p3() -> Result<()> {
         })
         .enumerate()
         .for_each(|(i, (x, y, z))| {
-            // println!("x = {x} y = {y}");
+            // trace!("x = {x} y = {y}");
             let i = i as i32;
             assert_eq!(x, i - 1);
             assert_eq!(x, z);
@@ -178,9 +177,7 @@ fn open_tree_with_vector_parse() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("t1")?;
 
@@ -197,7 +194,7 @@ fn open_tree_with_vector_parse() -> Result<()> {
             let mut ret: Vec<i32> = Vec::new();
             for _ in 0..size {
                 let a = r.read_object_into::<i32>().unwrap();
-                println!("\t a = {:?}", a);
+                trace!("\t a = {:?}", a);
                 ret.push(a);
             }
             ret
@@ -220,9 +217,7 @@ fn open_tree_with_vector_into() -> Result<()> {
     let s = "examples/from_uproot/data/tree_with_jagged_array.root";
 
     let mut f = RootFile::open(s)?;
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
     let tree = f.get_tree("t1")?;
 
     assert_eq!(
@@ -252,9 +247,7 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -349,9 +342,7 @@ fn open_tree_with_slice_i16_into_vec() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -476,9 +467,7 @@ fn open_tree_with_vector_of_string() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -496,7 +485,7 @@ fn open_tree_with_vector_of_string() -> Result<()> {
         .as_iter::<Vec<String>>()
         .enumerate()
         .for_each(|(i, val)| {
-            println!("StlVecStr: i = {i} val = {:?}", val);
+            trace!("StlVecStr: i = {i} val = {:?}", val);
             assert_eq!(val.len(), i % 10);
 
             val.into_iter()
@@ -515,9 +504,7 @@ fn tree_with_array() -> Result<()> {
 
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -539,7 +526,7 @@ fn tree_with_array() -> Result<()> {
         })
         .enumerate()
         .for_each(|(i, buf)| {
-            // println!("buf = {:?}", buf);
+            // trace!("buf = {:?}", buf);
             buf.map(|v| assert_eq!(v, i as i16));
         });
 
@@ -548,7 +535,7 @@ fn tree_with_array() -> Result<()> {
         .as_iter::<[i16; 10]>()
         .enumerate()
         .for_each(|(i, buf)| {
-            // println!("buf = {:?}", buf);
+            // trace!("buf = {:?}", buf);
             buf.map(|v| assert_eq!(v, i as i16));
         });
 
@@ -563,9 +550,7 @@ where
     let s = "examples/from_uproot/data/small-evnt-tree-fullsplit.root";
 
     let mut f = RootFile::open(s)?;
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
     let tree = f.get_tree("tree")?;
     tree.branch(name_branch)
         .unwrap()

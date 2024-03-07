@@ -16,6 +16,10 @@ pub enum Error {
     },
 
     MiscError(String),
+    WrongClass {
+        expected: String,
+        found: String,
+    },
 
     RbufferExtractAsArrayNotPossible(TryFromSliceError),
     RMetaError(crate::rmeta::Error),

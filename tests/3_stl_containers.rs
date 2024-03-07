@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::trace;
 use oxyroot::RootFile;
 use std::collections::{HashMap, HashSet};
 
@@ -11,9 +12,7 @@ fn tree_with_stl_containers__string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -40,9 +39,7 @@ fn tree_with_stl_containers__tstring() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -69,9 +66,7 @@ fn tree_with_stl_containers__vector_int32() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -114,9 +109,7 @@ fn tree_with_stl_containers__vector_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -158,9 +151,7 @@ fn tree_with_stl_containers__vector_tstring() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -202,9 +193,7 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -224,7 +213,7 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
-    println!("v = {:?}", v);
+    trace!("v = {:?}", v);
 
     assert_eq!(
         v,
@@ -255,9 +244,7 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -281,7 +268,7 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
-    println!("v = {:?}", v);
+    trace!("v = {:?}", v);
 
     assert_eq!(
         v,
@@ -317,9 +304,7 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -344,7 +329,7 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
-    println!("v = {:?}", v);
+    trace!("v = {:?}", v);
 
     assert_eq!(
         v,
@@ -380,9 +365,7 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -402,7 +385,7 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
-    println!("v = {:?}", v);
+    trace!("v = {:?}", v);
 
     assert_eq!(
         v,
@@ -433,9 +416,7 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -455,7 +436,7 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
-    println!("v = {:?}", v);
+    trace!("v = {:?}", v);
 
     let good = [
         vec![HashSet::from(["one"])],
@@ -490,8 +471,8 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
                     assert_eq!(set_read, set_provided);
                 });
 
-            println!("row_read = {:?}", row_read);
-            println!("row_provided = {:?}", row_provided);
+            trace!("row_read = {:?}", row_read);
+            trace!("row_provided = {:?}", row_provided);
         });
 
     Ok(())
@@ -506,9 +487,7 @@ fn tree_with_stl_containers__set_int32() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -550,9 +529,7 @@ fn tree_with_stl_containers__set_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -594,9 +571,7 @@ fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -637,9 +612,7 @@ fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -695,9 +668,7 @@ fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -794,9 +765,7 @@ fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -852,9 +821,7 @@ fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -951,9 +918,7 @@ fn tree_with_stl_containers__map_string_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1009,9 +974,7 @@ fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1074,9 +1037,7 @@ fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1185,9 +1146,7 @@ fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1250,9 +1209,7 @@ fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1361,9 +1318,7 @@ fn tree_with_stl_containers__map_string_string() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1422,9 +1377,7 @@ fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1483,9 +1436,7 @@ fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 
@@ -1560,9 +1511,7 @@ fn tree_with_stl_containers__map_int32_vector_set_int16() -> Result<()> {
     // RootFile::open("old.root").unwrap();
     let mut f = RootFile::open(s)?;
 
-    f.keys_name()
-        .map(|k| println!("key = {}", k))
-        .for_each(drop);
+    f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
 
     let tree = f.get_tree("tree")?;
 

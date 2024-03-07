@@ -1,5 +1,6 @@
 use crate::rbytes::Unmarshaler;
 use lazy_static::lazy_static;
+use log::trace;
 // use std::any::Any;
 use std::collections::HashMap;
 use std::fmt;
@@ -89,6 +90,7 @@ impl<'a> Factory<'a> {
     }
 
     pub fn add(&mut self, s: &'a str, f: FactoryBuilderValue) {
+        trace!("FACTORY: add: {}", s);
         let ret = self.map.insert(s, f);
 
         if ret.is_some() {
@@ -97,6 +99,7 @@ impl<'a> Factory<'a> {
     }
 
     pub fn get(&self, s: &'a str) -> Result<&FactoryBuilderValue> {
+        trace!("get: {}", s);
         self.map
             .get(s)
             .ok_or_else(|| Error::ClassNameNotRegisteredInFactory(s.into()))
@@ -178,6 +181,7 @@ lazy_static! {
         crate::rtree::leaf::LeafS::register(&mut f);
         crate::rtree::leaf::LeafC::register(&mut f);
         crate::rtree::leaf::LeafElement::register(&mut f);
+        crate::rtree::basket::Basket::register(&mut f);
 
 
         f

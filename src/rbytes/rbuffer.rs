@@ -6,6 +6,7 @@ use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItem;
+use log::trace;
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -267,6 +268,11 @@ impl<'a> RBuffer<'a> {
 
     pub(crate) fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
         let _beg = self.pos();
+        // if (_beg == 868) {
+        //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
+        // }
+        trace!(";rbuffer.ReadObjectAny.beg: {}", _beg);
+        trace!(";rbuffer.ReadObjectAny.{}.beg: {}", _beg, _beg);
         let bcnt = self.read_u32()?;
         let mut vers = 0;
         let tag: u32;
@@ -280,6 +286,8 @@ impl<'a> RBuffer<'a> {
             start = self.pos();
             tag = self.read_u32()?;
         }
+
+        trace!(";rbuffer.ReadObjectAny.{}.tag: {}", _beg, tag);
 
         // trace!(
         //     "\t\t beg = {} bcnt = {} start = {} tag = {}",
@@ -296,8 +304,24 @@ impl<'a> RBuffer<'a> {
         //     self.pos()
         // );
 
+        trace!(
+            ";rbuffer.ReadObjectAny.{}.kClassMask.value: {}",
+            _beg,
+            tag64 & kClassMask
+        );
+        trace!(
+            ";rbuffer.ReadObjectAny.{}.kNewClassTag.value: {}",
+            _beg,
+            tag64 == kNewClassTag
+        );
+
         if tag64 & kClassMask == 0 {
             if tag64 == kNullTag {
+                trace!(
+                    ";rbuffer.ReadObjectAny.{}.kClassMask.kNullTag: {}",
+                    _beg,
+                    true
+                );
                 return Ok(None);
             }
 
@@ -318,10 +342,27 @@ impl<'a> RBuffer<'a> {
         } else if tag64 == kNewClassTag {
             let cname = self.read_cstring(80)?;
 
+            trace!(
+                ";rbuffer.ReadObjectAny.{}.kNewClassTag.cname: {}",
+                _beg,
+                cname
+            );
+            trace!(
+                ";rbuffer.ReadObjectAny.{}.kNewClassTag.vers: {}",
+                _beg,
+                vers
+            );
+
             // trace!("cname = {}", cname);
             let fct = rtypes::FACTORY.get(cname)?;
 
             if vers > 0 {
+                trace!(
+                    "fct start = {} kMapOffset = {}, start + kMapOffset = {}",
+                    start,
+                    kMapOffset,
+                    start + kMapOffset
+                );
                 self.refs.insert(start + kMapOffset, Func(fct));
                 // todo!()
             } else {
@@ -329,6 +370,13 @@ impl<'a> RBuffer<'a> {
             }
 
             let mut obj: Box<dyn rtypes::FactoryItem> = fct();
+
+            let pos = self.pos();
+            trace!(
+                ";rbuffer.ReadObjectAny.{}.kNewClassTag.pos_before_object: {}",
+                _beg,
+                pos
+            );
 
             // obj.unmarshal(self);
             self.read_boxed_object(&mut obj)?;
@@ -343,7 +391,15 @@ impl<'a> RBuffer<'a> {
 
             Ok(Some(obj))
         } else {
+            // trace!(";rbuffer.ReadObjectAny.default.{}", tag64);
+            // trace!(";rbuffer.ReadObjectAny.default.{}.tag64: {}", tag64, tag64);
             let uref = tag64 & !kClassMask;
+
+            trace!(";rbuffer.ReadObjectAny.{}.default.uref: {}", _beg, uref);
+
+            trace!("fct tag64 = {} uref = {}", tag64, uref);
+
+            // trace!(";rbuffer.ReadObjectAny.default.{}.uref: {}", tag64, uref);
 
             let fct = self.refs.get(&uref);
             assert!(fct.is_some());

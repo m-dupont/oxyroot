@@ -1,15 +1,21 @@
-use crate::factory_fn_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{ensure_maximum_supported_version, Error, Unmarshaler};
 use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
+use crate::rtypes::FactoryItem;
+use crate::{factory_fn_register_impl, rvers, Branch, Object};
+use log::trace;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Basket {
     key: crate::riofs::Key,
-    n_entry_buf: u32,
+    nev_buf: i32,
     last: i32,
-    entry_size: i32,
+    nev_size: i32,
+    buf_size: i32,
+    offsets: Vec<i32>,
+    /// used if self.is_embedded() is True
+    pos_after_last: i64,
 }
 
 impl Named for Basket {
@@ -18,11 +24,20 @@ impl Named for Basket {
     }
 }
 
+impl From<Box<dyn FactoryItem>> for Basket {
+    fn from(f: Box<dyn FactoryItem>) -> Self {
+        if let Ok(b) = f.downcast::<Basket>() {
+            return *b;
+        }
+        panic!("expecting Basket")
+    }
+}
+
 /// Sometimes n_entry_buf in basket does not correspond to number of entries in Basket
 /// The idea is to divide len of vec by the size chunck_size (in Tbranch)
 pub(crate) enum BasketData {
-    TrustNEntries((u32, Vec<u8>)),
-    UnTrustNEntries((u32, Vec<u8>, Vec<i32>)),
+    TrustNEntries((i32, Vec<u8>)),
+    UnTrustNEntries((i32, Vec<u8>, Vec<i32>)),
 }
 
 impl Basket {
@@ -43,10 +58,19 @@ impl Basket {
             let mut byte_offsets = bb;
             let last = byte_offsets.len() - 1;
             byte_offsets[last] = self.border();
-            return BasketData::UnTrustNEntries((self.n_entry_buf, data.to_vec(), byte_offsets));
+            return BasketData::UnTrustNEntries((self.nev_buf, data.to_vec(), byte_offsets));
         }
 
-        BasketData::TrustNEntries((self.n_entry_buf, ret))
+        BasketData::TrustNEntries((self.nev_buf, ret))
+    }
+
+    ///         If this ``TBasket`` is embedded within its ``TBranch`` (i.e. must be
+    //         deserialized as part of the ``TBranch``), then ``is_embedded`` is True.
+    //
+    //         If this ``TBasket`` is a free-standing object, then ``is_embedded`` is
+    //         False.
+    pub fn is_embedded(&self) -> bool {
+        self.key.n_bytes() <= self.key.key_len()
     }
 
     pub fn uncompressed_bytes(&self) -> i32 {
@@ -60,23 +84,138 @@ impl Basket {
         self.last - self.key.key_len()
     }
     pub fn entry_size(&self) -> i32 {
-        self.entry_size
+        self.nev_size
+    }
+    pub fn nev_buf(&self) -> i32 {
+        self.nev_buf
+    }
+    pub fn last(&self) -> i32 {
+        self.last
+    }
+    pub fn key(&self) -> &crate::riofs::Key {
+        &self.key
+    }
+    pub fn pos_after_last(&self) -> i64 {
+        self.pos_after_last
     }
 }
 
 impl Unmarshaler for Basket {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let _beg = r.pos();
+        // if (_beg == 868) {
+        //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
+        // }
+        trace!(";Basket.unmarshal.beg: {}", _beg);
+        trace!(";Basket.unmarshal.{}.beg: {}", _beg, _beg);
         r.read_object(&mut self.key)?;
-        let _vers = r.read_i16()?;
-        let _buf_size = r.read_u32()?;
-        self.entry_size = r.read_i32()?;
 
-        if self.entry_size < 0 {
+        if self.class() != "TBasket" {
+            return Err(Error::WrongClass {
+                expected: "TBasket".to_owned(),
+                found: self.class().to_owned(),
+            });
+        }
+
+        trace!(";Basket.unmarshal.{}.pos_after_header: {}", _beg, r.pos());
+
+        let vers = r.read_i16()?;
+
+        ensure_maximum_supported_version(vers, rvers::BASKET, self.class())?;
+
+        self.buf_size = r.read_i32()?;
+        self.nev_size = r.read_i32()?;
+
+        if self.nev_size < 0 {
             unimplemented!();
         }
 
-        self.n_entry_buf = r.read_u32()?;
+        self.nev_buf = r.read_i32()?;
         self.last = r.read_i32()?;
+
+        let flag = r.read_u8()?;
+
+        trace!(";Basket.unmarshal.{}.last: {}", _beg, self.last);
+        trace!(";Basket.unmarshal.{}.buf_size: {}", _beg, self.buf_size);
+        trace!(";Basket.unmarshal.{}.nev_size: {}", _beg, self.nev_size);
+        trace!(";Basket.unmarshal.{}.nev_buf: {}", _beg, self.nev_buf);
+        trace!(";Basket.unmarshal.{}.fNbytes: {}", _beg, self.key.n_bytes());
+        trace!(";Basket.unmarshal.{}.flag: {}", _beg, flag);
+        trace!(
+            ";Basket.unmarshal.{}.is_embedded: {}",
+            _beg,
+            self.is_embedded()
+        );
+
+        self.pos_after_last = r.pos();
+
+        trace!(
+            ";Basket.unmarshal.{}.pos_after_flag: {}",
+            _beg,
+            self.pos_after_last
+        );
+
+        if self.last > self.buf_size {
+            self.buf_size = self.last;
+        }
+
+        let mut must_gen_offsets = false;
+        let flag = if flag >= 80 {
+            must_gen_offsets = true;
+            flag - 80
+        } else {
+            flag
+        };
+
+        trace!(";Basket.unmarshal.{}.flag: {}", _beg, flag);
+        trace!(
+            ";Basket.unmarshal.{}.must_read_offset: {}",
+            _beg,
+            !must_gen_offsets && flag != 0 && (flag % 10 != 2)
+        );
+
+        if !must_gen_offsets && flag != 0 && (flag % 10 != 2) {
+            if self.nev_buf > 0 {
+                let n = r.read_i32()?;
+                let pos = r.pos();
+                self.offsets.reserve(n as usize);
+                for _ in 0..n {
+                    self.offsets.push(r.read_i32()?);
+                }
+                if 20 < flag && flag < 40 {
+                    unimplemented!();
+                }
+            }
+            if flag > 40 {
+                unimplemented!();
+            }
+        } else if must_gen_offsets {
+            self.offsets.clear();
+            if flag <= 40 {
+                panic!(";Basket.unmarshal.{}.flag: {} <= 40", _beg, flag);
+            }
+        }
+
+        trace!(";Basket.unmarshal.{}.offsets.vec: {:?}", _beg, self.offsets);
+        trace!(
+            ";Basket.unmarshal.{}.offsets.len: {:?}",
+            _beg,
+            self.offsets.len()
+        );
+
+        if flag == 1 || flag > 10 {
+            let mut sz = self.last;
+            if vers <= 1 {
+                sz = r.read_i32()?;
+            }
+            let pos = r.pos();
+            trace!(";Basket.unmarshal.{}.pos_before_buffer: {}", _beg, pos);
+            trace!(";Basket.unmarshal.{}.sz: {}", _beg, sz);
+            let buf = r.read_array_u8(sz as usize)?;
+            self.key.set_buffer(buf.to_vec());
+            let pos = r.pos();
+            trace!(";Basket.unmarshal.{}.pos_after_buffer: {}", _beg, pos);
+        }
 
         // todo!();
         Ok(())

@@ -1,7 +1,7 @@
 use chrono::Local;
 use clap::{Parser, Subcommand};
-use oxyroot::Named;
 use oxyroot::Object;
+use oxyroot::{Named, RootFile};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -42,21 +42,12 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut f = oxyroot::RootFile::open(file).expect("Can not open file");
-    let keys = f.keys_name().collect::<Vec<_>>();
+    let tree = RootFile::open(file)
+        .expect("Can not open file")
+        .get_tree("mytree-1000")
+        .expect("no mytree");
 
-    // trace!("keys = {:?}", keys);
-
-    let keys = f.keys();
-    for k in keys {
-        println!(
-            "> {} name='{}' (title='{}')",
-            k.class(),
-            k.name(),
-            k.title()
-        );
-        println!("> Data in {}:", k.name());
-        let tree = f.get_tree(k.name()).unwrap();
-        tree.show();
-    }
+    let mut bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
+    let vi32 = bi32.collect::<Vec<_>>();
+    println!("i32: {:?}", vi32);
 }

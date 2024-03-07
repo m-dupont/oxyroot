@@ -211,6 +211,13 @@ impl Tree {
 
 impl Unmarshaler for Tree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let _beg = r.pos();
+        // if (_beg == 868) {
+        //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
+        // }
+        trace!(";Tree.unmarshal.beg: {}", _beg);
+        trace!(";Tree.unmarshal.{}.beg: {}", _beg, _beg);
+
         let hdr = r.read_header(self.class())?;
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::TREE, self.class())?;
@@ -295,13 +302,10 @@ impl Unmarshaler for Tree {
             r.read_object(&mut self.iobits)?;
         }
 
+        trace!(";Tree.unmarshal.{}.pos_before_branch: {}", _beg, r.pos());
+
         {
             let mut branches = r.read_object_into::<ObjArray>()?;
-
-            // for obj in branches.take_objs().into_iter() {
-            //     trace!("convert branch");
-            //     obj.downcast::<TBranch>().unwrap();
-            // }
 
             self.branches = branches
                 .take_objs()
@@ -314,10 +318,20 @@ impl Unmarshaler for Tree {
                 // b.set_item_type_name();
             });
         }
-
+        trace!(
+            ";Tree.unmarshal.{}.pos_before_index_leaves: {}",
+            _beg,
+            r.pos()
+        );
         {
             let mut _leaves = r.read_object_into::<ObjArray>()?;
         }
+
+        trace!(
+            ";Tree.unmarshal.{}.pos_before_index_values: {}",
+            _beg,
+            r.pos()
+        );
 
         if hdr.vers > 5 {
             let v = r.read_object_any_into()?;
