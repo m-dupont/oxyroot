@@ -245,8 +245,8 @@ impl<'a> RBuffer<'a> {
         const SIZE: usize = size_of::<f32>();
         // let buf = self.r.extract_as_array::<SIZE>()?;
         // Ok(f32::from_be_bytes(buf))
-        let buf = self.r.extract_const_n::<SIZE>()?;
-        Ok(f32::from_be_bytes(buf.try_into()?))
+        let buf = self.r.extract_as_array::<SIZE>()?;
+        Ok(f32::from_be_bytes(buf))
     }
 
     pub fn read_object_into<T: UnmarshalerInto<Item = T>>(&mut self) -> Result<T> {
