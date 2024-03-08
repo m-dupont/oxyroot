@@ -8,14 +8,11 @@ use crate::rtree::branch::tbranch_props::TBranchProps;
 use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::TioFeatures;
-use crate::rtypes::FactoryItem;
 use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::iter::Map;
-use std::slice::Iter;
 
 #[derive(Default, Debug)]
 pub struct TBranch {
@@ -189,61 +186,51 @@ impl TBranch {
             None
         };
 
-        let ret =
-            izip!(
-                &self.basket_seek,
-                &self.basket_bytes,
-                size_leaves,
-                leaves
-            ).filter(|(start, len, mut chunk_size, leave)| {
-                **len > 0
-            })
-                .map(|(start, len, mut chunk_size, leave)| {
-                    trace!(
-                    "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
-                    *start as i64 + *len as i64,
-                    chunk_size, leave
+        let ret = izip!(&self.basket_seek, &self.basket_bytes, size_leaves, leaves)
+            .filter(|(_start, len, _chunk_size, _leave)| **len > 0)
+            .map(|(start, len, mut chunk_size, leave)| {
+                assert_ne!(*len, 0);
+                let mut reader = self.reader.as_ref().unwrap().clone();
+                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+                let mut r = RBuffer::new(&buf, 0);
+                let b = r.read_object_into::<Basket>().unwrap();
+
+                trace!(
+                    "chunk_size = {}, b.entry_size() = {}",
+                    chunk_size,
+                    b.entry_size()
                 );
-                    assert_ne!(*len, 0);
-                    let mut reader = self.reader.as_ref().unwrap().clone();
-                    let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                    let mut r = RBuffer::new(&buf, 0);
-                    let b = r.read_object_into::<Basket>().unwrap();
 
-
-                    trace!("chunk_size = {}, b.entry_size() = {}", chunk_size, b.entry_size());
-
-                    match leave {
-                        // In case of string, we have to use n
-                        Leaf::C(_) | Leaf::Element(_) => {
-                            chunk_size = b.entry_size();
-                        },
-                        _ => {}
+                match leave {
+                    // In case of string, we have to use n
+                    Leaf::C(_) | Leaf::Element(_) => {
+                        chunk_size = b.entry_size();
                     }
+                    _ => {}
+                }
 
-
-                    match b.raw_data(&mut reader) {
-                        BasketData::TrustNEntries((n, buf)) => {
+                match b.raw_data(&mut reader) {
+                    BasketData::TrustNEntries((n, buf)) => {
+                        trace!("send ({n},{chunk_size},{:?})", buf);
+                        BranchChunks::RegularSized((n, chunk_size, buf))
+                    }
+                    BasketData::UnTrustNEntries((n, buf, _byte_offsets)) => match leave {
+                        Leaf::C(_) => {
+                            // In case of string, we have to use n
                             trace!("send ({n},{chunk_size},{:?})", buf);
                             BranchChunks::RegularSized((n, chunk_size, buf))
                         }
-                        BasketData::UnTrustNEntries((n, buf, _byte_offsets)) => match leave {
-                            Leaf::C(_) => {
-                                // In case of string, we have to use n
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                BranchChunks::RegularSized((n, chunk_size, buf))
-                            },
-                            Leaf::Element(_) => {
-                                panic!("I dont want to be here (Element should be in TBranchElement)");
-                            },
-                            _ => {
-                                let n = buf.len() / chunk_size as usize;
-                                trace!("send ({n},{chunk_size},{:?})", buf);
-                                BranchChunks::RegularSized((n as i32, chunk_size, buf))
-                            }
-                        },
-                    }
-                });
+                        Leaf::Element(_) => {
+                            panic!("I dont want to be here (Element should be in TBranchElement)");
+                        }
+                        _ => {
+                            let n = buf.len() / chunk_size as usize;
+                            trace!("send ({n},{chunk_size},{:?})", buf);
+                            BranchChunks::RegularSized((n as i32, chunk_size, buf))
+                        }
+                    },
+                }
+            });
         match embedded_basket {
             None => Box::new(ret),
             Some(before) => Box::new(before.chain(ret)),
@@ -260,7 +247,7 @@ impl TBranch {
         // trace!("len = {} leaves = {:?}", self.leaves.len(), self.leaves);
 
         if self.leaves.len() == 1 {
-            let leave = self.leaves.get(0).unwrap();
+            let leave = self.leaves.first().unwrap();
             trace!("leave = {:?}", leave);
 
             lazy_static! {
@@ -499,7 +486,7 @@ impl Unmarshaler for TBranch {
                 let mut b = vec![0; self.max_baskets as usize];
                 r.read_array_i32(b.as_mut_slice())?;
 
-                self.basket_bytes.extend_from_slice(&b.as_slice());
+                self.basket_bytes.extend_from_slice(b.as_slice());
 
                 trace!(
                     ";tBranch.unmarshal.{}..vers>6.basket_bytes.max_baskets: {}",

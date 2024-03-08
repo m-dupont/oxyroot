@@ -1,6 +1,5 @@
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Error::MiscError;
 use crate::rbytes::{
     ensure_maximum_supported_version, ensure_minimum_supported_version, Unmarshaler,
 };

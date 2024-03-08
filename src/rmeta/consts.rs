@@ -123,12 +123,11 @@ pub enum EnumNamed {
 
 impl EnumNamed {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeEnumNamedFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeEnumNamedFromInteger(i))
     }
 
-    pub fn to_i32(&self) -> Result<i32> {
-        num::ToPrimitive::to_i32(self)
-            .ok_or_else(|| Error::CantMakeIntegerFromEnumNamed(self.clone()))
+    pub fn to_i32(self) -> Result<i32> {
+        num::ToPrimitive::to_i32(&self).ok_or(Error::CantMakeIntegerFromEnumNamed(self))
     }
 }
 
@@ -161,7 +160,7 @@ pub enum ESTLType {
 
 impl ESTLType {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeESTLTypeFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeESTLTypeFromInteger(i))
     }
 
     // pub fn to_i32(&self) -> Result<i32> {
@@ -227,7 +226,7 @@ pub enum EReadWrite {
 
 impl EReadWrite {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or_else(|| Error::CantMakeEReadWriteFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeEReadWriteFromInteger(i))
     }
 
     pub fn to_i32(&self) -> i32 {

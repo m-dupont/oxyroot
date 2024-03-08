@@ -15,7 +15,7 @@ use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
 use std::cell::RefCell;
-use std::iter::{once, Once};
+use std::iter::once;
 
 #[derive(Default)]
 pub struct TBranchElement {
@@ -81,8 +81,6 @@ impl TBranchElement {
     pub fn streamer(&self) -> Option<&Streamer> {
         let streamer = self.branch.sinfos.as_ref().unwrap().get(self.class_name());
 
-        let streamer = streamer;
-
         let element = match streamer {
             None => None,
             Some(streamer) => streamer.get(self.clean_name()),
@@ -120,7 +118,7 @@ impl TBranchElement {
                 }
             }
         } else if self.branch.leaves.len() == 1 {
-            let leave = self.branch.leaves.get(0).unwrap();
+            let leave = self.branch.leaves.first().unwrap();
             trace!("leave = {:?}", leave);
             lazy_static! {
                 static ref RE_TITLE_HAS_DIMS: Regex =
@@ -250,15 +248,7 @@ impl TBranchElement {
 
             Some(self.branch.baskets.iter().map(move |b| {
                 let key_lenght = b.key().key_len();
-                let buf = b
-                    .key()
-                    .buffer()
-                    .iter()
-                    // .skip(key_lenght)
-                    .cloned()
-                    .collect::<Vec<_>>();
-                let n = b.nev_buf();
-                let chunk_size = 1;
+                let buf = b.key().buffer();
 
                 let n = buf.len() as i32;
 
@@ -314,13 +304,8 @@ impl TBranchElement {
             size_leaves,
             leaves
         )
-            .filter(|(start, len, mut chunk_size, leave)| **len > 0)
+            .filter(|(_start, len, _chunk_size, _leave)| **len > 0)
             .map(|(start, len, mut chunk_size, leave)| {
-                //     trace!(
-                //     "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
-                //     *start as i64 + *len as i64,
-                //     chunk_size, leave
-                // );
                 let mut reader = self.branch.reader().as_ref().unwrap().clone();
                 let buf = reader.read_at(*start as u64, *len as u64).unwrap();
                 let mut r = RBuffer::new(&buf, 0);

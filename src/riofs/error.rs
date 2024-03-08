@@ -11,7 +11,7 @@ pub enum Error {
         n_bytes_name_max_allowed: i32,
     },
     CantDecodeNameCycle(String),
-    RbytesError(crate::rbytes::Error),
+    Rbytes(crate::rbytes::Error),
     KeyNotInFile {
         key: String,
         file: String,
@@ -43,7 +43,7 @@ impl std::error::Error for Error {}
 
 impl From<crate::rbytes::Error> for Error {
     fn from(e: crate::rbytes::Error) -> Self {
-        Error::RbytesError(e)
+        Error::Rbytes(e)
     }
 }
 

@@ -58,7 +58,7 @@ impl Default for Key {
             rvers: 0,
             n_bytes: 0,
             obj_len: 0,
-            datetime: NaiveDateTime::from_timestamp(0, 0),
+            datetime: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
             key_len: 0,
             cycle: 0,
             seek_key: 0,
@@ -83,7 +83,7 @@ impl Unmarshaler for Key {
 
         let rvers = r.read_i16()?;
         let obj_len = r.read_i32()?;
-        let datetime = NaiveDateTime::from_timestamp(r.read_u32()? as i64, 0);
+        let datetime = NaiveDateTime::from_timestamp_opt(r.read_u32()? as i64, 0).unwrap();
         let key_len = r.read_i16()? as i32;
         let cycle = r.read_i16()?;
 

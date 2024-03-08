@@ -41,8 +41,8 @@ pub struct TDirectoryFile {
 impl Default for TDirectoryFile {
     fn default() -> Self {
         TDirectoryFile {
-            ctime: NaiveDateTime::from_timestamp(0, 0),
-            mtime: NaiveDateTime::from_timestamp(0, 0),
+            ctime: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            mtime: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
             n_bytes_keys: 0,
             n_bytes_name: 0,
             dir: TDirectory::default(),
@@ -197,9 +197,7 @@ impl TDirectoryFile {
         let obj = key.object(file, ctx)?;
 
         match obj {
-            None => {
-                return Err(Error::ObjectNotInDirectory(namecycle.to_string()));
-            }
+            None => Err(Error::ObjectNotInDirectory(namecycle.to_string())),
             Some(o) => Ok(o),
         }
     }
@@ -243,8 +241,8 @@ impl Unmarshaler for TDirectoryFile {
         let ctime = r.read_u32()?;
         let mtime = r.read_u32()?;
 
-        let ctime = NaiveDateTime::from_timestamp(ctime as i64, 0);
-        let mtime = NaiveDateTime::from_timestamp(mtime as i64, 0);
+        let ctime = NaiveDateTime::from_timestamp_opt(ctime as i64, 0).unwrap();
+        let mtime = NaiveDateTime::from_timestamp_opt(mtime as i64, 0).unwrap();
         trace!("read ctime = {}", ctime);
 
         let n_bytes_keys = r.read_i32()?;

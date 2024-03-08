@@ -212,7 +212,7 @@ impl Branch {
         self.get_basket(|r| r.read_object_into::<T>().unwrap())
     }
 
-    pub(crate) fn streamer_type(&self) -> Option<i32> {
+    pub(crate) fn _streamer_type(&self) -> Option<i32> {
         match self {
             Branch::Base(_bb) => None,
             Branch::Element(be) => Some(be.streamer_type()),

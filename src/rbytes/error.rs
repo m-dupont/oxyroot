@@ -15,14 +15,14 @@ pub enum Error {
         min_expected: i16,
     },
 
-    MiscError(String),
+    Misc(String),
     WrongClass {
         expected: String,
         found: String,
     },
 
     RbufferExtractAsArrayNotPossible(TryFromSliceError),
-    RMetaError(crate::rmeta::Error),
+    RMeta(crate::rmeta::Error),
     RTypes(crate::rtypes::error::Error),
 }
 
@@ -42,7 +42,7 @@ impl From<TryFromSliceError> for Error {
 
 impl From<crate::rmeta::Error> for Error {
     fn from(e: crate::rmeta::Error) -> Self {
-        Error::RMetaError(e)
+        Error::RMeta(e)
     }
 }
 

@@ -6,10 +6,8 @@ use crate::rbytes::{
 };
 use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
-use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
-use crate::rvers;
 use log::trace;
 
 #[derive(Default)]

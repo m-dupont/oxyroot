@@ -58,7 +58,7 @@ pub enum ColorNamed {
 
 impl ColorNamed {
     pub fn from_i16(i: i16) -> Result<Self> {
-        num::FromPrimitive::from_i16(i).ok_or_else(|| Error::CantMakeColorNamedFromInteger(i))
+        num::FromPrimitive::from_i16(i).ok_or(Error::CantMakeColorNamedFromInteger(i))
     }
 
     // pub fn to_i16(&self) -> Result<i16> {

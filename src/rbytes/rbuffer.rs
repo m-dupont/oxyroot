@@ -1,6 +1,6 @@
 use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag, kNullTag};
 use crate::rbytes::rbuffer::RBufferRefsItem::Func;
-use crate::rbytes::Error::MiscError;
+use crate::rbytes::Error::Misc;
 use crate::rbytes::Result;
 use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rtypes;
@@ -63,7 +63,7 @@ impl<'a> Rbuff<'a> {
 
 impl<'a> Read for Rbuff<'a> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if (self.c as usize) >= self.p.len() {
+        if self.c >= self.p.len() {
             return Ok(0);
         }
 
@@ -326,7 +326,7 @@ impl<'a> RBuffer<'a> {
             }
 
             if tag == 1 {
-                return Err(MiscError(
+                return Err(Misc(
                     "rbytes: tag == 1 means 'self'; not implemented yet".to_string(),
                 ));
             }

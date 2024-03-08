@@ -315,13 +315,7 @@ impl RootFile {
     }
 
     pub fn keys(&self) -> Vec<Key> {
-        self.dir
-            .as_ref()
-            .unwrap()
-            .keys()
-            .iter()
-            .map(|k| k.clone())
-            .collect()
+        self.dir.as_ref().unwrap().keys().clone()
     }
 }
 
@@ -340,12 +334,10 @@ impl RootFileStreamerInfoContext {
     }
 
     pub(crate) fn get(&self, name: &str) -> Option<&StreamerInfo> {
-        for streamer in self.list().iter().rev() {
-            if streamer.name() == name {
-                return Some(streamer);
-            }
-        }
-        None
+        self.list()
+            .iter()
+            .rev()
+            .find(|&streamer| streamer.name() == name)
     }
 }
 

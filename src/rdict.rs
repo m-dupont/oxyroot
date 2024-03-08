@@ -5,7 +5,7 @@ use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
 use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase};
 
 use crate::rbytes;
-use crate::rbytes::Error::MiscError;
+use crate::rbytes::Error::Misc;
 use crate::rcont;
 use crate::rmeta;
 use crate::rmeta::{ESTLType, Enum, EnumNamed};
@@ -55,7 +55,7 @@ impl TryFrom<Box<dyn FactoryItem>> for Streamer {
                 Streamer::ObjectAny(*value.downcast::<StreamerObjectAny>().unwrap())
             }
             _ => {
-                return Err(MiscError(format!(
+                return Err(Misc(format!(
                     "Unknow type or write code for {}",
                     value.class()
                 )))
@@ -110,12 +110,7 @@ impl Streamers {
     }
 
     pub fn get(&self, name: &str) -> Option<&Streamer> {
-        for s in self.list.iter() {
-            if s.name() == name {
-                return Some(s);
-            }
-        }
-        None
+        self.list.iter().find(|&s| s.name() == name)
     }
 }
 

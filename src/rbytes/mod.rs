@@ -163,7 +163,7 @@ where
 
         self.reserve(size as usize);
 
-        keys.into_iter().zip(values.into_iter()).for_each(|(k, v)| {
+        keys.into_iter().zip(values).for_each(|(k, v)| {
             self.insert(k, v);
         });
 

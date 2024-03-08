@@ -3,7 +3,7 @@ use crate::rbytes::{ensure_maximum_supported_version, Error, Unmarshaler};
 use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
 use crate::rtypes::FactoryItem;
-use crate::{factory_fn_register_impl, rvers, Branch, Object};
+use crate::{factory_fn_register_impl, rvers, Object};
 use log::trace;
 
 #[derive(Default, Debug)]
@@ -14,8 +14,6 @@ pub struct Basket {
     nev_size: i32,
     buf_size: i32,
     offsets: Vec<i32>,
-    /// used if self.is_embedded() is True
-    pos_after_last: i64,
 }
 
 impl Named for Basket {
@@ -89,14 +87,9 @@ impl Basket {
     pub fn nev_buf(&self) -> i32 {
         self.nev_buf
     }
-    pub fn last(&self) -> i32 {
-        self.last
-    }
+
     pub fn key(&self) -> &crate::riofs::Key {
         &self.key
-    }
-    pub fn pos_after_last(&self) -> i64 {
-        self.pos_after_last
     }
     pub fn offsets(&self) -> &Vec<i32> {
         &self.offsets
@@ -150,14 +143,6 @@ impl Unmarshaler for Basket {
             self.is_embedded()
         );
 
-        self.pos_after_last = r.pos();
-
-        trace!(
-            ";Basket.unmarshal.{}.pos_after_flag: {}",
-            _beg,
-            self.pos_after_last
-        );
-
         if self.last > self.buf_size {
             self.buf_size = self.last;
         }
@@ -180,7 +165,6 @@ impl Unmarshaler for Basket {
         if !must_gen_offsets && flag != 0 && (flag % 10 != 2) {
             if self.nev_buf > 0 {
                 let n = r.read_i32()?;
-                let pos = r.pos();
                 self.offsets.reserve(n as usize);
                 for _ in 0..n {
                     self.offsets.push(r.read_i32()?);
