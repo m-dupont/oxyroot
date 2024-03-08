@@ -7,7 +7,7 @@ use oxyroot::RBuffer;
 #[test]
 fn read_i32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/int")?
+        .with_outdir("/tmp/rust/i32")?
         .with_value_type("int")?;
 
     temp.write_root_macro()?;
@@ -133,7 +133,7 @@ fn read_i8_branch() -> Result<()> {
 fn read_i64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
         .with_outdir("/tmp/rust/i64")?
-        .with_value_type("ULong64_t")?;
+        .with_value_type("Long64_t")?;
 
     temp.write_root_macro()?;
     temp.execute_macro()?;
@@ -147,6 +147,32 @@ fn read_i64_branch() -> Result<()> {
     let mut b = tree.branch("v_i").unwrap().get_basket(parse);
 
     for i in -10..10 {
+        assert_eq!(i, b.next().unwrap());
+    }
+
+    assert!(b.next().is_none());
+    Ok(())
+}
+
+#[test]
+fn read_u64_branch() -> Result<()> {
+    let temp = TemplateWriter::default()
+        .with_outdir("/tmp/rust/u64")?
+        .with_value_type("ULong64_t")?;
+
+    temp.write_root_macro()?;
+    temp.execute_macro()?;
+
+    let parse = |r: &mut RBuffer| {
+        let val = r.read_u64().unwrap();
+        val
+    };
+
+    let tree = temp.tree()?;
+    let mut b = tree.branch("v_i").unwrap().get_basket(parse);
+
+    for ii in -10..10 {
+        let i = ii as u64;
         assert_eq!(i, b.next().unwrap());
     }
 
