@@ -98,6 +98,9 @@ impl Basket {
     pub fn pos_after_last(&self) -> i64 {
         self.pos_after_last
     }
+    pub fn offsets(&self) -> &Vec<i32> {
+        &self.offsets
+    }
 }
 
 impl Unmarshaler for Basket {
@@ -211,11 +214,27 @@ impl Unmarshaler for Basket {
             let pos = r.pos();
             trace!(";Basket.unmarshal.{}.pos_before_buffer: {}", _beg, pos);
             trace!(";Basket.unmarshal.{}.sz: {}", _beg, sz);
+
             let buf = r.read_array_u8(sz as usize)?;
+            trace!(";Basket.unmarshal.{}.buf.len: {}", _beg, buf.len());
+
             self.key.set_buffer(buf.to_vec());
             let pos = r.pos();
             trace!(";Basket.unmarshal.{}.pos_after_buffer: {}", _beg, pos);
         }
+
+        trace!(
+            ";Basket.unmarshal.{}.key_lenght: {}",
+            _beg,
+            self.key.key_len()
+        );
+        trace!(";Basket.unmarshal.{}.border: {}", _beg, self.border());
+
+        trace!(
+            ";Basket.unmarshal.{}.key_obj_len: {}",
+            _beg,
+            self.key.obj_len()
+        );
 
         // todo!();
         Ok(())

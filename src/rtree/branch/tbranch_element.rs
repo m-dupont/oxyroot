@@ -15,6 +15,7 @@ use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
 use std::cell::RefCell;
+use std::iter::{once, Once};
 
 #[derive(Default)]
 pub struct TBranchElement {
@@ -234,13 +235,86 @@ impl TBranchElement {
             unimplemented!();
         };
 
-        Box::new(
-            izip!(
-                &self.branch.basket_seek,
-                &self.branch.basket_bytes,
-                size_leaves,
-                leaves
-            )
+        let embedded_basket = if !self.branch.baskets.is_empty() {
+            assert_eq!(self.branch.baskets.len(), 1);
+
+            let element = self.streamer();
+
+            let header_bytes = streamer_type::header_bytes_from_type(
+                self.streamer_type(),
+                element,
+                self.class_name(),
+            );
+
+            trace!("header_bytes = {}", header_bytes);
+
+            Some(self.branch.baskets.iter().map(move |b| {
+                let key_lenght = b.key().key_len();
+                let buf = b
+                    .key()
+                    .buffer()
+                    .iter()
+                    // .skip(key_lenght)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                let n = b.nev_buf();
+                let chunk_size = 1;
+
+                let n = buf.len() as i32;
+
+                let offsets = b.offsets().iter().chain(once(&n));
+                // let offsets = std::iter::once(&key_lenght).chain(offsets);
+
+                // let byte_offsets = offsets.iter().zip(offsets.iter().skip(1));
+                let byte_offsets = offsets.clone().zip(offsets.skip(1));
+                // .collect();
+                // trace!("byte_offsets = {:?}", byte_offsets);
+                // trace!("buf = {:?}", buf);
+
+                trace!(
+                    ";TBranchElement.get_baskets_buffer.embedded_basket.byte_offsets: {:?}",
+                    byte_offsets.clone().collect::<Vec<_>>()
+                );
+
+                let data: Vec<_> = byte_offsets
+                    .map(|(start, stop)| {
+                        let b = &buf[*start as usize..*stop as usize];
+                        b.to_vec()
+                    })
+                    .collect();
+
+                trace!(
+                    ";TBranchElement.get_baskets_buffer.embedded_basket.buf.len: {}",
+                    buf.len()
+                );
+                trace!(
+                    ";TBranchElement.get_baskets_buffer.embedded_basket.data.len: {}",
+                    data.len()
+                );
+
+                trace!(
+                    ";TBranchElement.get_baskets_buffer.embedded_basket.data.value: {:?}",
+                    data
+                );
+
+                trace!(
+                    ";TBranchElement.get_baskets_buffer.embedded_basket.buf.key_lenght: {}",
+                    key_lenght
+                );
+
+                BranchChunks::IrregularSized((0, data, header_bytes))
+            }))
+        } else {
+            None
+        };
+
+        let ret = izip!(
+            &self.branch.basket_seek,
+            &self.branch.basket_bytes,
+            size_leaves,
+            leaves
+        )
+            .filter(|(start, len, mut chunk_size, leave)| **len > 0)
             .map(|(start, len, mut chunk_size, leave)| {
                 //     trace!(
                 //     "get_baskets_buffer: (start = {start}, len = {len} (-> {}), chunk_size = {}, leave = {:?})",
@@ -253,10 +327,10 @@ impl TBranchElement {
                 let b = r.read_object_into::<Basket>().unwrap();
 
                 trace!(
-                    "chunk_size = {}, b.entry_size() = {}",
-                    chunk_size,
-                    b.entry_size()
-                );
+                "chunk_size = {}, b.entry_size() = {}",
+                chunk_size,
+                b.entry_size()
+            );
 
                 match leave {
                     // In case of string, we have to use n
@@ -267,11 +341,11 @@ impl TBranchElement {
                 }
 
                 trace!(
-                    "classname = {} streamer_type = {}, stl_type = {}",
-                    self.class_name(),
-                    self.streamer_type(),
-                    self.stl_type()
-                );
+                "classname = {} streamer_type = {}, stl_type = {}",
+                self.class_name(),
+                self.streamer_type(),
+                self.stl_type()
+            );
 
                 match b.raw_data(&mut reader) {
                     BasketData::TrustNEntries((n, buf)) => {
@@ -320,8 +394,11 @@ impl TBranchElement {
                         }
                     },
                 }
-            }),
-        )
+            });
+        match embedded_basket {
+            None => Box::new(ret),
+            Some(before) => Box::new(before.chain(ret)),
+        }
     }
 }
 
@@ -345,7 +422,7 @@ impl Unmarshaler for TBranchElement {
         if hdr.vers >= 10 {
             self.clsver = r.read_i16()?;
         } else {
-            self.clsver = r.read_i32()? as i16;
+            self.clsver = r.read_u32()? as i16;
         }
 
         self.id = r.read_i32()?;
@@ -356,7 +433,9 @@ impl Unmarshaler for TBranchElement {
             self.max = r.read_i32()?;
 
             let _bcount1 = r.read_object_any_into()?;
+            assert!(_bcount1.is_none());
             let _bcount2 = r.read_object_any_into()?;
+            assert!(_bcount2.is_none());
 
             // bcount1 := r.ReadObjectAny()
             // if bcount1 != nil {
