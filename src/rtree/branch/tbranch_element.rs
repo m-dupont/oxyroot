@@ -304,82 +304,82 @@ impl TBranchElement {
             size_leaves,
             leaves
         )
-            .filter(|(_start, len, _chunk_size, _leave)| **len > 0)
-            .map(|(start, len, mut chunk_size, leave)| {
-                let mut reader = self.branch.reader().as_ref().unwrap().clone();
-                let buf = reader.read_at(*start as u64, *len as u64).unwrap();
-                let mut r = RBuffer::new(&buf, 0);
-                let b = r.read_object_into::<Basket>().unwrap();
+        .filter(|(_start, len, _chunk_size, _leave)| **len > 0)
+        .map(|(start, len, mut chunk_size, leave)| {
+            let mut reader = self.branch.reader().as_ref().unwrap().clone();
+            let buf = reader.read_at(*start as u64, *len as u64).unwrap();
+            let mut r = RBuffer::new(&buf, 0);
+            let b = r.read_object_into::<Basket>().unwrap();
 
-                trace!(
+            trace!(
                 "chunk_size = {}, b.entry_size() = {}",
                 chunk_size,
                 b.entry_size()
             );
 
-                match leave {
-                    // In case of string, we have to use n
-                    Leaf::C(_) | Leaf::Element(_) => {
-                        chunk_size = b.entry_size();
-                    }
-                    _ => {}
+            match leave {
+                // In case of string, we have to use n
+                Leaf::C(_) | Leaf::Element(_) => {
+                    chunk_size = b.entry_size();
                 }
+                _ => {}
+            }
 
-                trace!(
+            trace!(
                 "classname = {} streamer_type = {}, stl_type = {}",
                 self.class_name(),
                 self.streamer_type(),
                 self.stl_type()
             );
 
-                match b.raw_data(&mut reader) {
-                    BasketData::TrustNEntries((n, buf)) => {
+            match b.raw_data(&mut reader) {
+                BasketData::TrustNEntries((n, buf)) => {
+                    trace!("send ({n},{chunk_size},{:?})", buf);
+                    BranchChunks::RegularSized((n, chunk_size, buf))
+                }
+                BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
+                    // In case of string, we have to use n
+                    Leaf::C(_) => {
                         trace!("send ({n},{chunk_size},{:?})", buf);
                         BranchChunks::RegularSized((n, chunk_size, buf))
                     }
-                    BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
-                        // In case of string, we have to use n
-                        Leaf::C(_) => {
-                            trace!("send ({n},{chunk_size},{:?})", buf);
-                            BranchChunks::RegularSized((n, chunk_size, buf))
-                        }
-                        Leaf::Element(_) => {
-                            let element = self.streamer();
+                    Leaf::Element(_) => {
+                        let element = self.streamer();
 
-                            let header_bytes = streamer_type::header_bytes_from_type(
-                                self.streamer_type(),
-                                element,
-                                self.class_name(),
-                            );
+                        let header_bytes = streamer_type::header_bytes_from_type(
+                            self.streamer_type(),
+                            element,
+                            self.class_name(),
+                        );
 
-                            trace!("header_bytes = {}", header_bytes);
-                            // trace!("buf = {:?}", buf);
+                        trace!("header_bytes = {}", header_bytes);
+                        // trace!("buf = {:?}", buf);
 
-                            let byte_offsets = byte_offsets.iter().zip(byte_offsets.iter().skip(1));
-                            // .collect();
-                            // trace!("byte_offsets = {:?}", byte_offsets);
-                            // trace!("buf = {:?}", buf);
+                        let byte_offsets = byte_offsets.iter().zip(byte_offsets.iter().skip(1));
+                        // .collect();
+                        // trace!("byte_offsets = {:?}", byte_offsets);
+                        // trace!("buf = {:?}", buf);
 
-                            let data: Vec<_> = byte_offsets
-                                .map(|(start, stop)| {
-                                    let b = &buf[*start as usize..*stop as usize];
-                                    b.to_vec()
-                                })
-                                .collect();
+                        let data: Vec<_> = byte_offsets
+                            .map(|(start, stop)| {
+                                let b = &buf[*start as usize..*stop as usize];
+                                b.to_vec()
+                            })
+                            .collect();
 
-                            // trace!("data = {:?}", data);
+                        // trace!("data = {:?}", data);
 
-                            trace!("send ({n},{chunk_size},{:?})", data);
-                            BranchChunks::IrregularSized((n, data, header_bytes))
-                        }
-                        _ => {
-                            let n = buf.len() / chunk_size as usize;
-                            trace!("send ({n},{chunk_size},{:?})", buf);
-                            BranchChunks::RegularSized((n as i32, chunk_size, buf))
-                        }
-                    },
-                }
-            });
+                        trace!("send ({n},{chunk_size},{:?})", data);
+                        BranchChunks::IrregularSized((n, data, header_bytes))
+                    }
+                    _ => {
+                        let n = buf.len() / chunk_size as usize;
+                        trace!("send ({n},{chunk_size},{:?})", buf);
+                        BranchChunks::RegularSized((n as i32, chunk_size, buf))
+                    }
+                },
+            }
+        });
         match embedded_basket {
             None => Box::new(ret),
             Some(before) => Box::new(before.chain(ret)),

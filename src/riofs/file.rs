@@ -310,7 +310,7 @@ impl RootFile {
         Ok(objet)
     }
 
-    pub fn keys_name(&self) -> impl Iterator<Item=&str> {
+    pub fn keys_name(&self) -> impl Iterator<Item = &str> {
         self.dir.as_ref().unwrap().keys().iter().map(|e| e.name())
     }
 
