@@ -18,6 +18,7 @@ struct Cli {
 }
 
 fn main() {
+    println!("THIS BINARY IS ONLY FOR DEV");
     let _stylish_logger = Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
@@ -44,10 +45,10 @@ fn main() {
 
     let tree = RootFile::open(file)
         .expect("Can not open file")
-        .get_tree("mytree-1000")
+        .get_tree("mytree")
         .expect("no mytree");
 
-    let mut bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
+    let mut bi32 = tree.branch("slif64").unwrap().as_iter::<Vec<f64>>();
     let vi32 = bi32.collect::<Vec<_>>();
     println!("i32: {:?}", vi32);
 }
