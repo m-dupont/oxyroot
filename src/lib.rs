@@ -153,6 +153,7 @@ pub use rbytes::rbuffer::RBuffer;
 pub use rbytes::Unmarshaler;
 pub use rbytes::UnmarshalerInto;
 
+pub use rusty::SizedSlice;
 pub use rusty::Slice;
 
 pub use root::traits::Named;

@@ -1,13 +1,14 @@
 use chrono::Local;
 use clap::Parser;
-use oxyroot::RootFile;
-use oxyroot::{Branch, Tree};
+use oxyroot::{Branch, RBuffer, SizedSlice, Tree, Unmarshaler};
+use oxyroot::{RootFile, Slice};
 use std::fmt::Debug;
 use std::io::Write;
 use std::path::PathBuf;
 
 use env_logger;
 use env_logger::{Builder, Target, WriteStyle};
+use regex::Regex;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -36,6 +37,19 @@ impl<'a> ZipperDumperItem<'a> {
             }};
         }
 
+        macro_rules! make_box_branch_for_sized_slice {
+            ($ftype: ty, $n: expr) => {{
+                let f = move |r: &mut RBuffer| {
+                    let mut s = SizedSlice::<$ftype>::new($n);
+                    s.unmarshal(r).unwrap();
+                    s
+                };
+                let bo: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a> =
+                    Box::new(branch.get_basket(f).map(|x| Box::new(x) as Box<dyn Debug>));
+                bo
+            }};
+        }
+
         let it = match branch.interpretation().as_str() {
             "i32" => {
                 let bo: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a> = Box::new(
@@ -53,6 +67,8 @@ impl<'a> ZipperDumperItem<'a> {
             "u16" => make_box_branch_for_type!(u16),
             "i8" => make_box_branch_for_type!(i8),
             "u8" => make_box_branch_for_type!(u8),
+            "i64" => make_box_branch_for_type!(i64),
+            "u64" => make_box_branch_for_type!(u64),
             "bool" => make_box_branch_for_type!(bool),
             "String" => make_box_branch_for_type!(String),
             "Vec<i32>" => make_box_branch_for_type!(Vec<i32>),
@@ -65,7 +81,47 @@ impl<'a> ZipperDumperItem<'a> {
             "Vec<String>" => make_box_branch_for_type!(Vec<String>),
             "Vec<f64>" => make_box_branch_for_type!(Vec<f64>),
             "Vec<f32>" => make_box_branch_for_type!(Vec<f32>),
-            _ => unimplemented!("type_name = {:?}", branch.interpretation()),
+            "Slice<bool>" => make_box_branch_for_type!(Slice<bool>),
+            "Slice<i32>" => make_box_branch_for_type!(Slice<i32>),
+            "Slice<u32>" => make_box_branch_for_type!(Slice<u32>),
+            "Slice<f64>" => make_box_branch_for_type!(Slice<f64>),
+            "Slice<f32>" => make_box_branch_for_type!(Slice<f32>),
+            "Slice<i16>" => make_box_branch_for_type!(Slice<i16>),
+            "Slice<u16>" => make_box_branch_for_type!(Slice<u16>),
+            "Slice<i8>" => make_box_branch_for_type!(Slice<i8>),
+            "Slice<u8>" => make_box_branch_for_type!(Slice<u8>),
+            "Slice<i64>" => make_box_branch_for_type!(Slice<i64>),
+            "Slice<u64>" => make_box_branch_for_type!(Slice<u64>),
+            "Slice<String>" => make_box_branch_for_type!(Slice<String>),
+            a => {
+                let re = Regex::new(r"\[([A-Za-z0-9]+);([0-9]+)\]").unwrap();
+                if let Some(gs) = re.captures(a) {
+                    let n = &gs[2];
+                    let n = n.parse::<usize>().unwrap();
+
+                    match &gs[1] {
+                        "bool" => make_box_branch_for_sized_slice!(bool, n),
+                        "i32" => make_box_branch_for_sized_slice!(i32, n),
+                        "u32" => make_box_branch_for_sized_slice!(u32, n),
+                        "i64" => make_box_branch_for_sized_slice!(i64, n),
+                        "u64" => make_box_branch_for_sized_slice!(u64, n),
+                        "f64" => make_box_branch_for_sized_slice!(f64, n),
+                        "f32" => make_box_branch_for_sized_slice!(f32, n),
+                        "i16" => make_box_branch_for_sized_slice!(i16, n),
+                        "u16" => make_box_branch_for_sized_slice!(u16, n),
+                        "i8" => make_box_branch_for_sized_slice!(i8, n),
+                        "u8" => make_box_branch_for_sized_slice!(u8, n),
+                        "String" => make_box_branch_for_sized_slice!(String, n),
+                        _ => {
+                            unimplemented!("type_name = {:?}", branch.interpretation())
+                        }
+                    }
+                } else {
+                    unimplemented!("type_name = {:?}", branch.interpretation())
+                }
+
+                // println!("a = {:?}", &gs[1]);
+            }
         };
         ZipperDumperItem {
             branch: branch,

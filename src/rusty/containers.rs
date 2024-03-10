@@ -1,5 +1,6 @@
 use crate::rbytes::{Unmarshaler, UnmarshalerInto};
 use crate::RBuffer;
+use log::trace;
 use std::fmt::Debug;
 
 /// Represent a array of `T*` in C++
@@ -50,7 +51,10 @@ where
     T: UnmarshalerInto<Item = T> + Debug,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let beg = r.pos();
+        trace!("Slice<T>.unmarshal.{beg}.pos.beg.:{beg}");
         r.do_skip_header()?;
+        trace!("Slice<T>.unmarshal.{beg}.pos.after_header.:{}", r.pos());
         // r.skip(1)?;
 
         let mut len = r.len() as usize;
@@ -59,6 +63,34 @@ where
             self.inner.push(r.read_object_into::<T>().unwrap());
             let after = r.pos();
             len -= (after - before) as usize;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct SizedSlice<T> {
+    inner: Vec<T>,
+    n: usize,
+}
+
+impl<T> SizedSlice<T> {
+    pub fn new(n: usize) -> Self {
+        SizedSlice {
+            inner: Vec::with_capacity(n),
+            n,
+        }
+    }
+}
+
+impl<T> Unmarshaler for SizedSlice<T>
+where
+    T: UnmarshalerInto<Item = T>,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        for i in 0..self.n {
+            self.inner.push(r.read_object_into::<T>().unwrap());
         }
 
         Ok(())
