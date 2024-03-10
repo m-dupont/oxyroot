@@ -198,7 +198,9 @@ pub(crate) fn clean_type_name<T: AsRef<str>>(ty: T) -> String {
     // undo change (int32_t -> int32_t32_t)
     let ret = ret.replace("int32_t32_t", "int32_t");
     let ret = ret.replace("uint32_t16_t", "uint16_t");
+    let ret = ret.replace("uint32_t8_t", "uint8_t");
     let ret = ret.replace("int32_t16_t", "int16_t");
+    let ret = ret.replace("int32_t8_t", "int8_t");
     let ret = ret.replace("int32_t64_t", "int64_t");
 
     let ret = ret.replace("unsigned short", "uint16_t");
@@ -226,6 +228,8 @@ pub(crate) fn type_name_cpp_to_rust(ty: &str) -> String {
         ("int32_t", "i32"),
         ("uint16_t", "u16"),
         ("int16_t", "i16"),
+        ("uint8_t", "u8"),
+        ("int8_t", "i8"),
         ("float", "f32"),
         ("double", "f64"),
         ("bool", "bool"),
@@ -295,6 +299,7 @@ mod tests {
     #[test]
     fn test_clean_type_to_rust() -> Result<()> {
         let names = [
+            ("int8_t", "i8"),
             ("vector<int>", "Vec<i32>"),
             ("vector<set<int>>", "Vec<HashSet<i32>>"),
             ("vector<unsigned int>", "Vec<u32>"),
