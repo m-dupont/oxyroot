@@ -2,7 +2,7 @@ use chrono::Local;
 use clap::Parser;
 use oxyroot::{Branch, RBuffer, SizedSlice, Tree, Unmarshaler};
 use oxyroot::{RootFile, Slice};
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -18,9 +18,63 @@ struct Cli {
     file: PathBuf,
 }
 
+trait Dumpable: Debug {
+    fn dump(&self) -> String;
+}
+
+macro_rules! impl_dumpable_primitive {
+    ($ftype:ty) => {
+        impl Dumpable for $ftype {
+            fn dump(&self) -> String {
+                format!("{:?}", self)
+            }
+        }
+    };
+}
+
+impl_dumpable_primitive!(i32);
+impl_dumpable_primitive!(u32);
+impl_dumpable_primitive!(f64);
+impl_dumpable_primitive!(f32);
+impl_dumpable_primitive!(i16);
+impl_dumpable_primitive!(u16);
+impl_dumpable_primitive!(i8);
+impl_dumpable_primitive!(u8);
+impl_dumpable_primitive!(i64);
+impl_dumpable_primitive!(u64);
+impl_dumpable_primitive!(bool);
+impl_dumpable_primitive!(String);
+
+impl<T> Dumpable for Vec<T>
+where
+    T: Dumpable,
+{
+    fn dump(&self) -> String {
+        format!("{:?}", self)
+    }
+}
+
+impl<T> Dumpable for Slice<T>
+where
+    T: Dumpable,
+{
+    fn dump(&self) -> String {
+        format!("{:?}", self.inner())
+    }
+}
+
+impl<T> Dumpable for SizedSlice<T>
+where
+    T: Dumpable,
+{
+    fn dump(&self) -> String {
+        format!("{:?}", self.inner())
+    }
+}
+
 struct ZipperDumperItem<'a> {
     branch: &'a Branch,
-    iterator: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a>,
+    iterator: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a>,
 }
 
 impl<'a> ZipperDumperItem<'a> {
@@ -28,10 +82,10 @@ impl<'a> ZipperDumperItem<'a> {
         // define heare to have branch in scope
         macro_rules! make_box_branch_for_type {
             ($ftype: ty) => {{
-                let bo: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a> = Box::new(
+                let bo: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a> = Box::new(
                     branch
                         .as_iter::<$ftype>()
-                        .map(|x| Box::new(x) as Box<dyn Debug>),
+                        .map(|x| Box::new(x) as Box<dyn Dumpable>),
                 );
                 bo
             }};
@@ -44,18 +98,21 @@ impl<'a> ZipperDumperItem<'a> {
                     s.unmarshal(r).unwrap();
                     s
                 };
-                let bo: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a> =
-                    Box::new(branch.get_basket(f).map(|x| Box::new(x) as Box<dyn Debug>));
+                let bo: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a> = Box::new(
+                    branch
+                        .get_basket(f)
+                        .map(|x| Box::new(x) as Box<dyn Dumpable>),
+                );
                 bo
             }};
         }
 
         let it = match branch.interpretation().as_str() {
             "i32" => {
-                let bo: Box<dyn Iterator<Item = Box<dyn Debug + 'a>> + 'a> = Box::new(
+                let bo: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a> = Box::new(
                     branch
                         .as_iter::<i32>()
-                        .map(|x| Box::new(x) as Box<dyn Debug>),
+                        .map(|x| Box::new(x) as Box<dyn Dumpable>),
                 );
                 bo
             }
@@ -164,7 +221,7 @@ impl<'a> ZiperDumperBranch<'a> {
         for i in 0..n {
             for zbv in self.iterators.iter_mut() {
                 let it = zbv.iterator.as_mut().next().unwrap();
-                println!("[{}][{}]: {:?}", i, zbv.branch.name(), it);
+                println!("[{}][{}]: {}", i, zbv.branch.name(), it.dump());
             }
         }
     }
@@ -202,6 +259,7 @@ fn main() {
         .collect::<Vec<String>>();
 
     for trees in keys {
+        println!(">>> tree: {:?}", trees);
         let tree = f.get_tree(&trees).unwrap();
         tree.show();
 

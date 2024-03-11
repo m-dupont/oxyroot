@@ -38,6 +38,9 @@ impl<T> Slice<T> {
     pub fn into_vec(self) -> Vec<T> {
         self.inner
     }
+    pub fn inner(&self) -> &Vec<T> {
+        &self.inner
+    }
 }
 
 impl<T> From<Slice<T>> for Vec<T> {
@@ -87,6 +90,9 @@ impl<T> SizedSlice<T> {
             inner: Vec::with_capacity(n),
             n,
         }
+    }
+    pub fn inner(&self) -> &Vec<T> {
+        &self.inner
     }
 }
 
