@@ -152,8 +152,6 @@ impl<'a> ZiperDumperBranch<'a> {
             .filter_map(|x| x)
             .collect::<Vec<_>>();
 
-        println!("iterators = {:?}", iterators.len());
-
         ZiperDumperBranch {
             tree: tree,
             iterators: iterators,
