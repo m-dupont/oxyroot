@@ -38,6 +38,7 @@ env_logger = "0.9.0"
 [features]
 zlib-ng = ["flate2/zlib-ng"]
 build-binaries = ["clap", "env_logger"]
+default = ["build-binaries"]
 
 [[bin]]
 name = "oxyroot-ls"
