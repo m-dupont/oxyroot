@@ -7,6 +7,7 @@ use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::branch::tbranch_props::TBranchProps;
 use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
+use crate::rtree::streamer_type;
 use crate::rtree::tree::TioFeatures;
 use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
 use itertools::izip;
@@ -214,7 +215,7 @@ impl TBranch {
                         trace!("send ({n},{chunk_size},{:?})", buf);
                         BranchChunks::RegularSized((n, chunk_size, buf))
                     }
-                    BasketData::UnTrustNEntries((n, buf, _byte_offsets)) => match leave {
+                    BasketData::UnTrustNEntries((n, buf, byte_offsets)) => match leave {
                         Leaf::C(_) => {
                             // In case of string, we have to use n
                             trace!("send ({n},{chunk_size},{:?})", buf);
@@ -224,10 +225,28 @@ impl TBranch {
                             panic!("I dont want to be here (Element should be in TBranchElement)");
                         }
                         _ => {
-                            let n = buf.len() / chunk_size as usize;
-                            trace!("send ({n},{chunk_size},{:?})", buf);
-                            BranchChunks::RegularSized((n as i32, chunk_size, buf))
-                        }
+                            // trial and error...
+                            if self.entry_offset_len == 4000 {
+                                let n = buf.len() / chunk_size as usize;
+                                trace!("send ({n},{chunk_size},{:?})", buf);
+                                BranchChunks::RegularSized((n as i32, chunk_size, buf))
+                            } else {
+                                let byte_offsets =
+                                    byte_offsets.iter().zip(byte_offsets.iter().skip(1));
+                                let data: Vec<_> = byte_offsets
+                                    .map(|(start, stop)| {
+                                        let b = &buf[*start as usize..*stop as usize];
+                                        b.to_vec()
+                                    })
+                                    .collect();
+                                BranchChunks::IrregularSized((n, data, 0))
+                            }
+                        } // _ => {
+                          //     trace!("leave = {:?}", leave);
+                          //     let n = buf.len() / chunk_size as usize;
+                          //     trace!("send ({n},{chunk_size},{:?})", buf);
+                          //     BranchChunks::RegularSized((n as i32, chunk_size, buf))
+                          // }
                     },
                 }
             });
@@ -315,6 +334,7 @@ impl Unmarshaler for TBranch {
             self.compress = r.read_i32()?;
             self.basket_size = r.read_i32()?;
             self.entry_offset_len = r.read_i32()?;
+            trace!(";tBranch.unmarshal.{}.beg: {}", _beg, _beg);
             self.write_basket = r.read_i32()?;
             self.entry_number = r.read_i64()?;
 

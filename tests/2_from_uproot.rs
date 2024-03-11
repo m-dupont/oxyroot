@@ -1,7 +1,8 @@
 use anyhow::Result;
 use log::trace;
-use oxyroot::{RootFile, UnmarshalerInto};
+use oxyroot::{RBuffer, RootFile, SizedSlice, Slice, Unmarshaler, UnmarshalerInto};
 use std::fmt::Debug;
+use std::path::{Path, PathBuf};
 
 #[test]
 fn open_nested() -> Result<()> {
@@ -608,6 +609,445 @@ fn open_tree_with_vector_f32() -> Result<()> {
 #[test]
 fn open_tree_with_vector_f64() -> Result<()> {
     open_tree_with_vector_primitive::<f64>("StlVecF64")
+}
+
+fn open_sample_n_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let b = tree.branch("n").unwrap().as_iter::<i32>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let b = tree.branch("n").unwrap().as_iter::<i32>();
+    b.enumerate().for_each(|(i, val)| {
+        assert_eq!(val, (i % 5) as i32);
+    });
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_n() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    open_sample_n_impl(s)
+}
+
+fn open_sample_b_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "b";
+    let b = tree.branch(branch_name).unwrap().as_iter::<bool>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<bool>()
+        .collect();
+    let vgood = vec![
+        true, false, true, false, true, false, true, false, true, false, true, false, true, false,
+        true, false, true, false, true, false, true, false, true, false, true, false, true, false,
+        true, false,
+    ];
+    assert_eq!(vv, vgood);
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_b() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_b_impl(s)
+}
+
+fn open_sample_i4_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "i4";
+    let b = tree.branch(branch_name).unwrap().as_iter::<i32>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree.branch(branch_name).unwrap().as_iter::<i32>().collect();
+    let vgood = vec![
+        -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12, 13, 14,
+    ];
+    assert_eq!(vv, vgood);
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_i4() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_i4_impl(s)
+}
+
+fn open_sample_ab_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "ab";
+    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<[bool; 3]>()
+        .collect();
+    let vgood = vec![
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+    ];
+
+    for (v, vg) in vv.iter().zip(vgood) {
+        assert_eq!(v, vg.as_slice());
+    }
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_ab() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_ab_impl(s)
+}
+
+fn open_sample_ai4_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "ai4";
+    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<[i32; 3]>()
+        .collect();
+    let vgood = vec![
+        vec![-14, -13, -12],
+        vec![-13, -12, -11],
+        vec![-12, -11, -10],
+        vec![-11, -10, -9],
+        vec![-10, -9, -8],
+        vec![-9, -8, -7],
+        vec![-8, -7, -6],
+        vec![-7, -6, -5],
+        vec![-6, -5, -4],
+        vec![-5, -4, -3],
+        vec![-4, -3, -2],
+        vec![-3, -2, -1],
+        vec![-2, -1, 0],
+        vec![-1, 0, 1],
+        vec![0, 1, 2],
+        vec![1, 2, 3],
+        vec![2, 3, 4],
+        vec![3, 4, 5],
+        vec![4, 5, 6],
+        vec![5, 6, 7],
+        vec![6, 7, 8],
+        vec![7, 8, 9],
+        vec![8, 9, 10],
+        vec![9, 10, 11],
+        vec![10, 11, 12],
+        vec![11, 12, 13],
+        vec![12, 13, 14],
+        vec![13, 14, 15],
+        vec![14, 15, 16],
+        vec![15, 16, 17],
+    ];
+
+    for (v, vg) in vv.iter().zip(vgood) {
+        assert_eq!(v, vg.as_slice());
+    }
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_ai4() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_ai4_impl(s)
+}
+
+fn open_sample_ab_sizedslice_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "ab";
+    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let f = move |r: &mut RBuffer| {
+        let mut s = SizedSlice::<bool>::new(3);
+        s.unmarshal(r).unwrap();
+        s
+    };
+
+    let vv: Vec<_> = tree.branch(branch_name).unwrap().get_basket(f).collect();
+    let vgood = vec![
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+        vec![false, true, false],
+        vec![true, false, true],
+    ];
+
+    for (v, vg) in vv.into_iter().zip(vgood) {
+        let v: Vec<_> = v.into();
+        assert_eq!(v, vg);
+    }
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_ab_sizedslice() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_ab_sizedslice_impl(s)
+}
+
+fn open_sample_ai4_sizedslice_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "ai4";
+    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let f = move |r: &mut RBuffer| {
+        let mut s = SizedSlice::<i32>::new(3);
+        s.unmarshal(r).unwrap();
+        s
+    };
+
+    let vv: Vec<_> = tree.branch(branch_name).unwrap().get_basket(f).collect();
+    let vgood = vec![
+        vec![-14, -13, -12],
+        vec![-13, -12, -11],
+        vec![-12, -11, -10],
+        vec![-11, -10, -9],
+        vec![-10, -9, -8],
+        vec![-9, -8, -7],
+        vec![-8, -7, -6],
+        vec![-7, -6, -5],
+        vec![-6, -5, -4],
+        vec![-5, -4, -3],
+        vec![-4, -3, -2],
+        vec![-3, -2, -1],
+        vec![-2, -1, 0],
+        vec![-1, 0, 1],
+        vec![0, 1, 2],
+        vec![1, 2, 3],
+        vec![2, 3, 4],
+        vec![3, 4, 5],
+        vec![4, 5, 6],
+        vec![5, 6, 7],
+        vec![6, 7, 8],
+        vec![7, 8, 9],
+        vec![8, 9, 10],
+        vec![9, 10, 11],
+        vec![10, 11, 12],
+        vec![11, 12, 13],
+        vec![12, 13, 14],
+        vec![13, 14, 15],
+        vec![14, 15, 16],
+        vec![15, 16, 17],
+    ];
+
+    for (v, vg) in vv.into_iter().zip(vgood) {
+        let v: Vec<_> = v.into();
+        assert_eq!(v, vg);
+    }
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_ai4_sizedslice() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_ai4_sizedslice_impl(s)
+}
+
+fn open_sample_Ab_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "Ab";
+    let b = tree.branch(branch_name).unwrap().as_iter::<Slice<bool>>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<Slice<bool>>()
+        .collect();
+    let vgood = vec![
+        vec![],
+        vec![true],
+        vec![true, true],
+        vec![true, true, true],
+        vec![true, true, true, true],
+        vec![],
+        vec![false],
+        vec![false, false],
+        vec![false, false, false],
+        vec![false, false, false, false],
+        vec![],
+        vec![true],
+        vec![true, true],
+        vec![true, true, true],
+        vec![true, true, true, true],
+        vec![],
+        vec![false],
+        vec![false, false],
+        vec![false, false, false],
+        vec![false, false, false, false],
+        vec![],
+        vec![true],
+        vec![true, true],
+        vec![true, true, true],
+        vec![true, true, true, true],
+        vec![],
+        vec![false],
+        vec![false, false],
+        vec![false, false, false],
+        vec![false, false, false, false],
+    ];
+
+    for (v, vg) in vv.into_iter().zip(vgood) {
+        assert_eq!(v.into_vec(), vg.as_slice());
+    }
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_Ab() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_Ab_impl(s)
+}
+
+fn open_sample_str_impl<P>(path: P) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut f = RootFile::open(path)?;
+    // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
+    let tree = f.get_tree("sample")?;
+    assert_eq!(tree.entries(), 30);
+    let branch_name = "str";
+    let b = tree.branch(branch_name).unwrap().as_iter::<String>();
+    assert_eq!(b.count(), tree.entries() as usize);
+
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<String>()
+        .collect();
+
+    vv.into_iter().enumerate().for_each(|(i, v)| {
+        let s = format!("hey-{i}");
+        assert_eq!(s, v);
+    });
+
+    Ok(())
+}
+
+#[test]
+fn open_sample_str() -> Result<()> {
+    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
+    crate::open_sample_str_impl(s)
 }
 
 //

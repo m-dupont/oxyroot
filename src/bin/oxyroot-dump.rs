@@ -24,7 +24,7 @@ struct ZipperDumperItem<'a> {
 }
 
 impl<'a> ZipperDumperItem<'a> {
-    pub fn new(branch: &'a Branch) -> ZipperDumperItem {
+    pub fn new(branch: &'a Branch) -> Option<ZipperDumperItem> {
         // define heare to have branch in scope
         macro_rules! make_box_branch_for_type {
             ($ftype: ty) => {{
@@ -113,20 +113,28 @@ impl<'a> ZipperDumperItem<'a> {
                         "u8" => make_box_branch_for_sized_slice!(u8, n),
                         "String" => make_box_branch_for_sized_slice!(String, n),
                         _ => {
-                            unimplemented!("type_name = {:?}", branch.interpretation())
+                            eprintln!(
+                                "Can not interpret type_name = {:?}",
+                                branch.interpretation()
+                            );
+                            return None;
                         }
                     }
                 } else {
-                    unimplemented!("type_name = {:?}", branch.interpretation())
+                    eprintln!(
+                        "Can not interpret type_name = {:?}",
+                        branch.interpretation()
+                    );
+                    return None;
                 }
 
                 // println!("a = {:?}", &gs[1]);
             }
         };
-        ZipperDumperItem {
+        Some(ZipperDumperItem {
             branch: branch,
             iterator: it,
-        }
+        })
     }
 }
 
@@ -137,7 +145,14 @@ pub struct ZiperDumperBranch<'a> {
 
 impl<'a> ZiperDumperBranch<'a> {
     pub fn new(tree: &'a Tree) -> ZiperDumperBranch<'a> {
-        let iterators = tree.branches().map(ZipperDumperItem::new).collect();
+        let iterators = tree
+            .branches_r()
+            .iter()
+            .map(|b| ZipperDumperItem::new(b))
+            .filter_map(|x| x)
+            .collect::<Vec<_>>();
+
+        println!("iterators = {:?}", iterators.len());
 
         ZiperDumperBranch {
             tree: tree,

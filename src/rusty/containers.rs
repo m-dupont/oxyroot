@@ -75,6 +75,12 @@ pub struct SizedSlice<T> {
     n: usize,
 }
 
+impl<T> From<SizedSlice<T>> for Vec<T> {
+    fn from(value: SizedSlice<T>) -> Self {
+        value.inner
+    }
+}
+
 impl<T> SizedSlice<T> {
     pub fn new(n: usize) -> Self {
         SizedSlice {
