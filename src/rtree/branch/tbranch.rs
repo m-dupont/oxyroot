@@ -225,11 +225,16 @@ impl TBranch {
                             panic!("I dont want to be here (Element should be in TBranchElement)");
                         }
                         _ => {
+                            let n_elements_in_buffer = buf.len() / chunk_size as usize;
                             // trial and error...
-                            if self.entry_offset_len == 4000 {
-                                let n = buf.len() / chunk_size as usize;
+                            if n_elements_in_buffer == self.entries as usize {
+                                // assert_eq!(n, self.entries as usize);
                                 trace!("send ({n},{chunk_size},{:?})", buf);
-                                BranchChunks::RegularSized((n as i32, chunk_size, buf))
+                                BranchChunks::RegularSized((
+                                    n_elements_in_buffer as i32,
+                                    chunk_size,
+                                    buf,
+                                ))
                             } else {
                                 let byte_offsets =
                                     byte_offsets.iter().zip(byte_offsets.iter().skip(1));

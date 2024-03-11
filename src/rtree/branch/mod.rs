@@ -189,6 +189,9 @@ impl Branch {
                                 .iter()
                                 .map(|buf| {
                                     trace!("buf = {:?}", buf);
+                                    // if buf.is_empty() {
+                                    //     return T::default();
+                                    // }
                                     let mut r = RBuffer::new(buf, 0);
                                     r.set_skip_header(Some(header_bytes));
 

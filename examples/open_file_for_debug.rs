@@ -1,5 +1,5 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::RootFile;
+use oxyroot::{RootFile, Slice};
 use std::io::Write;
 
 fn main() {
@@ -20,6 +20,9 @@ fn main() {
 
     let file = "examples/from_uproot/data/HZZ.root";
     let mut tree = RootFile::open(file).unwrap().get_tree("events").unwrap();
-    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>();
-    assert_eq!(Jet_Py.count(), 2773);
+    let mut Photon_E = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>();
+    let v = Photon_E.collect::<Vec<_>>();
+    println!("{:?}", v.len());
+    println!("{:?}", v);
+    // assert_eq!(Photon_E.count(), 2421);
 }

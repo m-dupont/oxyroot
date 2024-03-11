@@ -21,8 +21,17 @@ fn open_nested() -> Result<()> {
         "Slice<f32>"
     );
 
-    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>();
-    assert_eq!(Jet_Py.count(), 2773);
+    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<Slice<f32>>();
+    assert_eq!(Jet_Py.count(), 2421);
+
+    let mut NElectron = tree.branch("NElectron").unwrap().as_iter::<i32>();
+    assert_eq!(NElectron.count(), 2421);
+
+    let mut Photon_E = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>();
+    assert_eq!(Photon_E.count(), 2421);
+
+    let mut Electron_Px = tree.branch("Electron_Px").unwrap().as_iter::<Slice<f32>>();
+    assert_eq!(Electron_Px.count(), 2421);
 
     Ok(())
 }
