@@ -128,6 +128,7 @@ impl<'a> ZipperDumperItem<'a> {
             "u64" => make_box_branch_for_type!(u64),
             "bool" => make_box_branch_for_type!(bool),
             "String" => make_box_branch_for_type!(String),
+            "TString" => make_box_branch_for_type!(String),
             "Vec<i32>" => make_box_branch_for_type!(Vec<i32>),
             "Vec<u32>" => make_box_branch_for_type!(Vec<u32>),
             "Vec<i16>" => make_box_branch_for_type!(Vec<i16>),
@@ -136,6 +137,7 @@ impl<'a> ZipperDumperItem<'a> {
             "Vec<u8>" => make_box_branch_for_type!(Vec<u8>),
             "Vec<bool>" => make_box_branch_for_type!(Vec<bool>),
             "Vec<String>" => make_box_branch_for_type!(Vec<String>),
+            "Vec<TString>" => make_box_branch_for_type!(Vec<String>),
             "Vec<f64>" => make_box_branch_for_type!(Vec<f64>),
             "Vec<f32>" => make_box_branch_for_type!(Vec<f32>),
             "Slice<bool>" => make_box_branch_for_type!(Slice<bool>),
@@ -150,6 +152,7 @@ impl<'a> ZipperDumperItem<'a> {
             "Slice<i64>" => make_box_branch_for_type!(Slice<i64>),
             "Slice<u64>" => make_box_branch_for_type!(Slice<u64>),
             "Slice<String>" => make_box_branch_for_type!(Slice<String>),
+            "Slice<TString>" => make_box_branch_for_type!(Slice<String>),
             a => {
                 let re = Regex::new(r"\[([A-Za-z0-9]+);([0-9]+)\]").unwrap();
                 if let Some(gs) = re.captures(a) {
@@ -169,6 +172,7 @@ impl<'a> ZipperDumperItem<'a> {
                         "i8" => make_box_branch_for_sized_slice!(i8, n),
                         "u8" => make_box_branch_for_sized_slice!(u8, n),
                         "String" => make_box_branch_for_sized_slice!(String, n),
+                        "TString" => make_box_branch_for_sized_slice!(String, n),
                         _ => {
                             eprintln!(
                                 "Can not interpret type_name = {:?}",
