@@ -611,6 +611,13 @@ fn open_tree_with_vector_f64() -> Result<()> {
     open_tree_with_vector_primitive::<f64>("StlVecF64")
 }
 
+const SAMPLE_PATH: [&'static str; 4] = [
+    "tests_data/from_uproot/sample-6.10.05-uncompressed.root",
+    "tests_data/from_uproot/sample-6.10.05-zlib.root",
+    "tests_data/from_uproot/sample-6.10.05-lzma.root",
+    "tests_data/from_uproot/sample-6.10.05-lz4.root",
+];
+
 fn open_sample_n_impl<P>(path: P) -> Result<()>
 where
     P: AsRef<Path>,
@@ -632,8 +639,10 @@ where
 
 #[test]
 fn open_sample_n() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    open_sample_n_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_n_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_b_impl<P>(path: P) -> Result<()>
@@ -665,8 +674,10 @@ where
 
 #[test]
 fn open_sample_b() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_b_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_b_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_i4_impl<P>(path: P) -> Result<()>
@@ -693,8 +704,10 @@ where
 
 #[test]
 fn open_sample_i4() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_i4_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_i4_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_ab_impl<P>(path: P) -> Result<()>
@@ -756,8 +769,10 @@ where
 
 #[test]
 fn open_sample_ab() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_ab_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_ab_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_ai4_impl<P>(path: P) -> Result<()>
@@ -819,8 +834,10 @@ where
 
 #[test]
 fn open_sample_ai4() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_ai4_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_ai4_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_ab_sizedslice_impl<P>(path: P) -> Result<()>
@@ -885,8 +902,10 @@ where
 
 #[test]
 fn open_sample_ab_sizedslice() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_ab_sizedslice_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_ab_sizedslice_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_ai4_sizedslice_impl<P>(path: P) -> Result<()>
@@ -951,8 +970,10 @@ where
 
 #[test]
 fn open_sample_ai4_sizedslice() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_ai4_sizedslice_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_ai4_sizedslice_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_Ab_impl<P>(path: P) -> Result<()>
@@ -1014,8 +1035,10 @@ where
 
 #[test]
 fn open_sample_Ab() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_Ab_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_Ab_impl(s)?;
+    }
+    Ok(())
 }
 
 fn open_sample_str_impl<P>(path: P) -> Result<()>
@@ -1046,8 +1069,10 @@ where
 
 #[test]
 fn open_sample_str() -> Result<()> {
-    let s = "tests_data/from_uproot/sample-6.10.05-uncompressed.root";
-    crate::open_sample_str_impl(s)
+    for s in SAMPLE_PATH {
+        open_sample_str_impl(s)?;
+    }
+    Ok(())
 }
 
 //
