@@ -97,7 +97,7 @@ pub struct RootFile {
     header: RootFileHeader,
     spans: FreeList,
     sinfos: RootFileStreamerInfoContext,
-    dir: Option<TDirectoryFile>,
+    dir: TDirectoryFile,
 }
 
 impl RootFile {
@@ -209,7 +209,7 @@ impl RootFile {
 
         dir.read_keys(self)?;
 
-        self.dir = Some(dir);
+        self.dir = dir;
 
         // f.version %= 1000000
 
@@ -295,8 +295,6 @@ impl RootFile {
 
     fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
         self.dir
-            .as_mut()
-            .unwrap()
             .get_object(name, &mut self.inner.reader, Some(&self.sinfos))
 
         // Ok(obj)
@@ -311,11 +309,11 @@ impl RootFile {
     }
 
     pub fn keys_name(&self) -> impl Iterator<Item = &str> {
-        self.dir.as_ref().unwrap().keys().iter().map(|e| e.name())
+        self.dir.keys().iter().map(|e| e.name())
     }
 
     pub fn keys(&self) -> Vec<Key> {
-        self.dir.as_ref().unwrap().keys().clone()
+        self.dir.keys().clone()
     }
 }
 
