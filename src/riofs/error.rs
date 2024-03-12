@@ -31,6 +31,9 @@ pub enum Error {
     },
     RCompress(crate::rcompress::Error),
     RTypes(crate::rtypes::error::Error),
+    FileIsOpenedWriteOnly,
+    FileIsOpenedReadOnly,
+    FileIsNotOpened,
 }
 
 impl std::fmt::Display for Error {

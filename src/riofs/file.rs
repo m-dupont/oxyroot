@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -79,13 +79,36 @@ impl RootFileReader {
 
 impl Clone for RootFileReader {
     fn clone(&self) -> Self {
-        RootFileReader::new(self.path.clone()).unwrap()
+        RootFileReader::new(&self.path).unwrap()
     }
 }
 
+#[derive(Default, Debug)]
+pub(crate) struct RootFileWriter {
+    path: PathBuf,
+    writer: Option<BufWriter<File>>,
+}
+
+impl RootFileWriter {
+    pub(crate) fn new<P>(path: P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let f = File::create(path.as_ref())?;
+        let buf_writer = BufWriter::new(f);
+        let reader = Self {
+            path: path.as_ref().to_path_buf(),
+            writer: Some(buf_writer),
+        };
+        Ok(reader)
+    }
+}
 #[derive(Default)]
-struct RootFileReaderInner {
-    reader: RootFileReader,
+enum RootFileInner {
+    Reader(RootFileReader),
+    Writer(RootFileWriter),
+    #[default]
+    None,
 }
 
 /// Rust equivalent of [`TFile`](https://root.cern/doc/master/classTFile.html).
@@ -93,7 +116,7 @@ struct RootFileReaderInner {
 /// Can only read for now. Aims to be constructed with [open](crate::RootFile::open) method.
 #[derive(Default)]
 pub struct RootFile {
-    inner: RootFileReaderInner,
+    inner: RootFileInner,
     header: RootFileHeader,
     spans: FreeList,
     sinfos: RootFileStreamerInfoContext,
@@ -124,10 +147,7 @@ impl RootFile {
     {
         let reader = RootFileReader::new(path)?;
 
-        let inner = RootFileReaderInner {
-            reader,
-            ..Default::default()
-        };
+        let inner = RootFileInner::Reader(reader);
 
         let mut f = RootFile {
             inner,
@@ -139,8 +159,35 @@ impl RootFile {
         Ok(f)
     }
 
-    pub(crate) fn read_at(&mut self, start: u64, len: u64) -> Result<Vec<u8>> {
-        self.inner.reader.read_at(start, len)
+    pub fn create<P>(path: P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let writer = RootFileWriter::new(path)?;
+
+        let inner = RootFileInner::Writer(writer);
+
+        let mut f = RootFile {
+            inner,
+            ..Default::default()
+        };
+
+        f.read_header()?;
+
+        Ok(f)
+    }
+
+    fn reader(&self) -> Result<&RootFileReader> {
+        match &self.inner {
+            RootFileInner::Reader(r) => Ok(r),
+            RootFileInner::Writer(_) => Err(Error::FileIsOpenedWriteOnly),
+            _ => Err(Error::FileIsNotOpened),
+        }
+    }
+
+    pub(crate) fn read_at(&self, start: u64, len: u64) -> Result<Vec<u8>> {
+        let mut reader = self.reader()?.clone();
+        reader.read_at(start, len)
     }
 
     fn read_header(&mut self) -> Result<()> {
@@ -232,7 +279,9 @@ impl RootFile {
         let key = r.read_object_into::<Key>()?;
         debug!("key = {:?}", key);
 
-        let buf = key.bytes(&mut self.inner.reader, None)?;
+        let mut reader = self.reader()?.clone();
+
+        let buf = key.bytes(&mut reader, None)?;
         trace!("buf = {:?}", buf);
 
         let mut rbuf = RBuffer::new(&buf, 0);
@@ -269,8 +318,9 @@ impl RootFile {
         }
 
         let si_key = RBuffer::new(&buf, 0).read_object_into::<Key>()?;
+        let mut reader = self.reader()?.clone();
 
-        let ogj = si_key.object(&mut self.inner.reader, None)?.unwrap();
+        let ogj = si_key.object(&mut reader, None)?.unwrap();
 
         let mut objs: Box<List> = ogj.downcast::<List>().unwrap();
 
@@ -294,8 +344,13 @@ impl RootFile {
     }
 
     fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
-        self.dir
-            .get_object(name, &mut self.inner.reader, Some(&self.sinfos))
+        let mut reader = self.reader()?.clone();
+        self.dir.get_object(name, &mut reader, Some(&self.sinfos))
+
+        // let a = &(&*self).dir;
+        // let b = self.reader()?;
+        //
+        // a.get_object(name, b, Some(&self.sinfos))
 
         // Ok(obj)
     }
@@ -303,7 +358,8 @@ impl RootFile {
     pub fn get_tree(&mut self, name: &str) -> Result<Tree> {
         let objet = self.get_object(name)?;
         let mut objet: Tree = *objet.downcast::<Tree>().expect("");
-        objet.set_reader(Some(self.inner.reader.clone()));
+
+        objet.set_reader(Some(self.reader()?.clone()));
         objet.set_streamer_info(self.sinfos.clone());
         Ok(objet)
     }

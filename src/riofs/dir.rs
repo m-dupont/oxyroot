@@ -152,7 +152,7 @@ impl TDirectoryFile {
     }
 
     pub(crate) fn get_object(
-        &mut self,
+        &self,
         namecycle: &str,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,
