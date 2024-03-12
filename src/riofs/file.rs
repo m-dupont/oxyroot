@@ -84,9 +84,8 @@ impl Clone for RootFileReader {
 }
 
 #[derive(Default)]
-struct RootFileInner {
+struct RootFileReaderInner {
     reader: RootFileReader,
-    header: RootFileHeader,
 }
 
 /// Rust equivalent of [`TFile`](https://root.cern/doc/master/classTFile.html).
@@ -94,7 +93,8 @@ struct RootFileInner {
 /// Can only read for now. Aims to be constructed with [open](crate::RootFile::open) method.
 #[derive(Default)]
 pub struct RootFile {
-    inner: RootFileInner,
+    inner: RootFileReaderInner,
+    header: RootFileHeader,
     spans: FreeList,
     sinfos: RootFileStreamerInfoContext,
     dir: Option<TDirectoryFile>,
@@ -102,19 +102,19 @@ pub struct RootFile {
 
 impl RootFile {
     pub(crate) fn n_bytes_name(&self) -> i32 {
-        self.inner.header.n_bytes_name
+        self.header.n_bytes_name
     }
 
     pub(crate) fn version(&self) -> i32 {
-        self.inner.header.version
+        self.header.version
     }
 
     pub(crate) fn begin(&self) -> i64 {
-        self.inner.header.begin
+        self.header.begin
     }
 
     pub(crate) fn end(&self) -> i64 {
-        self.inner.header.end
+        self.header.end
     }
 
     /// Open file, use [std::io::BufReader] for reading, so it can only handle local files for now.
@@ -124,7 +124,7 @@ impl RootFile {
     {
         let reader = RootFileReader::new(path)?;
 
-        let inner = RootFileInner {
+        let inner = RootFileReaderInner {
             reader,
             ..Default::default()
         };
@@ -157,53 +157,53 @@ impl RootFile {
         let version = r.read_i32()?;
         trace!("version = {}", version);
 
-        self.inner.header.begin = r.read_i32()? as i64;
+        self.header.begin = r.read_i32()? as i64;
         let is_64 = version > 1000000;
 
-        self.inner.header.end = if is_64 {
+        self.header.end = if is_64 {
             r.read_i64()?
         } else {
             r.read_i32()? as i64
         };
 
-        self.inner.header.seek_free = if is_64 {
+        self.header.seek_free = if is_64 {
             r.read_i64()?
         } else {
             r.read_i32()? as i64
         };
 
-        self.inner.header.n_bytes_free = r.read_i32()?;
-        self.inner.header.n_free = r.read_i32()?;
-        self.inner.header.n_bytes_name = r.read_i32()?;
-        self.inner.header.units = r.read_u8()?;
-        self.inner.header.compression = r.read_i32()?;
+        self.header.n_bytes_free = r.read_i32()?;
+        self.header.n_free = r.read_i32()?;
+        self.header.n_bytes_name = r.read_i32()?;
+        self.header.units = r.read_u8()?;
+        self.header.compression = r.read_i32()?;
 
-        self.inner.header.seek_info = if is_64 {
+        self.header.seek_info = if is_64 {
             r.read_i64()?
         } else {
             r.read_i32()? as i64
         };
 
-        self.inner.header.n_bytes_info = r.read_i32()?;
+        self.header.n_bytes_info = r.read_i32()?;
 
-        self.inner.header.version = version % 1000000;
+        self.header.version = version % 1000000;
         trace!("version = {}", version);
 
         let _ = r.read_u16()?;
         // let mut uuid: [u8; 16] = [0; 16];
         let uuid = r.read_array_u8(16)?;
         let uuid = <&[u8; 16]>::try_from(uuid)?;
-        self.inner.header.uuid = Uuid::from_bytes(*uuid);
+        self.header.uuid = Uuid::from_bytes(*uuid);
 
-        trace!("uuid = {}", self.inner.header.uuid);
+        trace!("uuid = {}", self.header.uuid);
 
         let mut dir = TDirectoryFile::read_dir_info(self)?;
 
-        if self.inner.header.seek_free > 0 {
+        if self.header.seek_free > 0 {
             self.read_free_segments()?;
         }
 
-        if self.inner.header.seek_info > 0 {
+        if self.header.seek_info > 0 {
             self.read_streamer_info()?;
         }
 
@@ -218,12 +218,12 @@ impl RootFile {
     fn read_free_segments(&mut self) -> Result<()> {
         trace!("read_free_segments");
         let buf = self.read_at(
-            self.inner.header.seek_free as u64,
-            self.inner.header.n_bytes_free as u64,
+            self.header.seek_free as u64,
+            self.header.n_bytes_free as u64,
         )?;
-        if buf.len() != self.inner.header.n_bytes_free as usize {
+        if buf.len() != self.header.n_bytes_free as usize {
             return Err(Error::CantReadAmountOfBytesFromFile {
-                requested: self.inner.header.n_bytes_free as usize,
+                requested: self.header.n_bytes_free as usize,
                 read: buf.len(),
             });
         }
@@ -248,22 +248,22 @@ impl RootFile {
     }
 
     fn read_streamer_info(&mut self) -> Result<()> {
-        if self.inner.header.seek_info <= 0 || self.inner.header.seek_info >= self.end() {
+        if self.header.seek_info <= 0 || self.header.seek_info >= self.end() {
             return Err(Error::InvalidPointerToStreamerInfo {
-                seek: self.inner.header.seek_info,
+                seek: self.header.seek_info,
                 min_allowed: 0,
                 max_allowed: self.end(),
             });
         }
 
         let buf = self.read_at(
-            self.inner.header.seek_info as u64,
-            self.inner.header.n_bytes_info as u64,
+            self.header.seek_info as u64,
+            self.header.n_bytes_info as u64,
         )?;
 
-        if buf.len() != self.inner.header.n_bytes_info as usize {
+        if buf.len() != self.header.n_bytes_info as usize {
             return Err(Error::CantReadAmountOfBytesFromFile {
-                requested: self.inner.header.n_bytes_info as usize,
+                requested: self.header.n_bytes_info as usize,
                 read: buf.len(),
             });
         }

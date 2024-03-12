@@ -14,7 +14,8 @@ repository = "https://github.com/m-dupont/oxyroot"
 log = "0.4"
 num = "0.4"
 uuid = "1.0.0"
-chrono = "0.4"
+chrono = "0.4.35"
+
 #flate2 = { version = "1.0.24", features = ["zlib-ng"], default-features = false }
 flate2 = { version = "1" }
 lazy_static = "1.4.0"
