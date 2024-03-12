@@ -44,7 +44,7 @@ pub struct TBranchElement {
     // STL container type
     // bcount1: *tbranchElement // pointer to primary branchcount branch
     // bcount2: *tbranchElement // pointer to secondary branchcount branch
-    pub(crate) props: RefCell<TBranchProps>,
+    pub(crate) props: TBranchProps,
 }
 
 impl Named for TBranchElement {
@@ -63,15 +63,15 @@ impl TBranchElement {
     }
 
     pub fn is_top_level(&self) -> Option<bool> {
-        self.props.borrow().is_top_level
+        self.props.is_top_level
         // let props = self.props.take();
         // let ret = props.is_top_level;
         // self.props.set(props);
         // ret
     }
 
-    pub fn set_is_top_level(&self, v: Option<bool>) {
-        self.props.borrow_mut().is_top_level = v;
+    pub fn set_is_top_level(&mut self, v: Option<bool>) {
+        self.props.is_top_level = v;
 
         // let mut props = self.props.take();
         // props.is_top_level = v;
