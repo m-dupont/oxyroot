@@ -1,20 +1,25 @@
+use crate::riofs::consts;
+use itertools::cons_tuples;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::StreamerInfoContext;
+use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{Marshaler, StreamerInfoContext};
 use crate::rcont::list::List;
 use crate::rdict::StreamerInfo;
 use crate::riofs::blocks::{FreeList, FreeSegments};
+use crate::riofs::consts::kStartBigFile;
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::key::Key;
 use crate::riofs::{Error, Result};
 use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
 use crate::rtypes::FactoryItem;
+use crate::rvers;
 use log::{debug, trace};
 use uuid::Uuid;
 
@@ -102,7 +107,23 @@ impl RootFileWriter {
         };
         Ok(reader)
     }
+
+    pub(crate) fn write_at(&mut self, buf: &[u8], start: u64) -> Result<()> {
+        self.writer
+            .as_mut()
+            .expect("ERROR")
+            .seek(SeekFrom::Start(start))?;
+        self.writer.as_mut().expect("ERROR").write_all(buf)?;
+        Ok(())
+    }
 }
+
+// impl Clone for RootFileWriter {
+//     fn clone(&self) -> Self {
+//         RootFileWriter::new(&self.path).unwrap()
+//     }
+// }
+
 #[derive(Default)]
 enum RootFileInner {
     Reader(RootFileReader),
@@ -121,6 +142,7 @@ pub struct RootFile {
     spans: FreeList,
     sinfos: RootFileStreamerInfoContext,
     dir: TDirectoryFile,
+    id: String,
 }
 
 impl RootFile {
@@ -163,16 +185,83 @@ impl RootFile {
     where
         P: AsRef<Path>,
     {
+        let s = path.as_ref().to_str().unwrap().to_string();
         let writer = RootFileWriter::new(path)?;
 
         let inner = RootFileInner::Writer(writer);
 
+        let mut header = RootFileHeader::default();
+        header.version = rvers::ROOT;
+        header.begin = consts::kBEGIN;
+        header.end = consts::kBEGIN;
+        header.units = 4;
+        header.compression = 1;
+
+        let mut spans = FreeList::default();
+        spans.append(FreeSegments::new(header.begin, consts::kStartBigFile));
+
+        let dir = TDirectoryFile::new(s.clone());
+
         let mut f = RootFile {
             inner,
+            header,
+            spans,
+            dir,
+            id: s.clone(),
             ..Default::default()
         };
 
-        f.read_header()?;
+        let name_len = f.dir.dir().named().size_of();
+        trace!(";RootFile.create.f.dir.dir.named.Sizeof:{}", name_len);
+        trace!(
+            ";RootFile.create.f.dir.dir.named.name:{}",
+            f.dir.dir().named().name
+        );
+        trace!(
+            ";RootFile.create.f.dir.dir.named.title:{}",
+            f.dir.dir().named().title
+        );
+        trace!(";RootFile.create.f.version:{}", f.version());
+        trace!(
+            ";RootFile.create.f.dir.recordSize:{}",
+            TDirectoryFile::record_size(f.version())
+        );
+
+        let obj_len = name_len + TDirectoryFile::record_size(f.version()) as i32;
+        trace!(";RootFile.create.f.objlen:{}", obj_len);
+
+        let mut key = Key::new(
+            f.dir.dir().named().name.clone(),
+            f.dir.dir().named().title.clone(),
+            "TFile".to_string(),
+            obj_len,
+            &mut f,
+        )?;
+
+        f.header.n_bytes_name = key.key_len() + name_len;
+        trace!(
+            ";RootFile.create.f.header.n_bytes_name:{}",
+            f.header.n_bytes_name
+        );
+        f.dir.n_bytes_name = key.key_len() + name_len;
+
+        f.dir.seek_dir = key.seek_key();
+        trace!(";RootFile.create.f.dir.seek_dir:{}", f.dir.seek_dir);
+
+        f.write_header()?;
+
+        let mut buf = WBuffer::new(0);
+        buf.write_string(&f.id)?;
+        buf.write_string(f.title())?;
+
+        f.dir().marshal(&mut buf)?;
+
+        let mut buf = buf.buffer();
+        trace!(";RootFile.create.buf_for_key.len:{:?}", buf.len());
+
+        key.set_buffer(buf, false);
+
+        key.write_to_file(f.writer()?)?;
 
         Ok(f)
     }
@@ -185,9 +274,22 @@ impl RootFile {
         }
     }
 
+    fn writer(&mut self) -> Result<&mut RootFileWriter> {
+        match &mut self.inner {
+            RootFileInner::Writer(w) => Ok(w),
+            RootFileInner::Reader(_) => Err(Error::FileIsOpenedReadOnly),
+            _ => Err(Error::FileIsNotOpened),
+        }
+    }
+
     pub(crate) fn read_at(&self, start: u64, len: u64) -> Result<Vec<u8>> {
         let mut reader = self.reader()?.clone();
         reader.read_at(start, len)
+    }
+
+    pub(crate) fn write_at(&mut self, buf: &[u8], start: u64) -> Result<()> {
+        let mut writer = self.writer()?;
+        writer.write_at(buf, start)
     }
 
     fn read_header(&mut self) -> Result<()> {
@@ -262,6 +364,80 @@ impl RootFile {
 
         Ok(())
     }
+
+    pub(crate) fn set_end(&mut self, pos: i64) -> Result<()> {
+        trace!(";RootFile.set_end.pos:{:?}", pos);
+        self.header.end = pos;
+        if self.spans.len() == 0 {
+            panic!("self.spans.len()")
+        }
+        let blk = self.spans.vec().last_mut().unwrap();
+        if blk.last != kStartBigFile {
+            panic!("blk.last")
+        }
+        blk.first = pos;
+        Ok(())
+    }
+
+    fn write_header(&mut self) -> Result<()> {
+        self.header.n_free = self.spans.len() as i32;
+
+        let mut w = WBuffer::new(self.begin() as u32);
+
+        let mut version = self.version();
+        if self.is_big_file()
+            || self.header.seek_free > kStartBigFile
+            || self.header.seek_info > kStartBigFile
+        {
+            if version < 1000000 {
+                version += 1000000;
+            }
+            self.header.units = 8
+        }
+
+        w.write_array_u8(ROOT_MAGIC.as_bytes())?;
+        w.write_i32(version as i32)?;
+        w.write_i32(self.header.begin as i32)?;
+
+        if version < 1000000 {
+            w.write_i32(self.header.end as i32)?;
+            w.write_i32(self.header.seek_free as i32)?;
+            w.write_i32(self.header.n_bytes_free as i32)?;
+            w.write_i32(self.header.n_free as i32)?;
+            w.write_i32(self.header.n_bytes_name as i32)?;
+            w.write_u8(self.header.units)?;
+            w.write_i32(self.header.compression as i32)?;
+            w.write_i32(self.header.seek_info as i32)?;
+            w.write_i32(self.header.n_bytes_info as i32)?;
+        } else {
+            w.write_i64(self.header.end)?;
+            w.write_i64(self.header.seek_free)?;
+            w.write_i32(self.header.n_bytes_free as i32)?;
+            w.write_i32(self.header.n_free as i32)?;
+            w.write_i32(self.header.n_bytes_name as i32)?;
+            w.write_u8(self.header.units)?;
+            w.write_i32(self.header.compression as i32)?;
+            w.write_i64(self.header.seek_info)?;
+            w.write_i32(self.header.n_bytes_info as i32)?;
+        }
+
+        // TODO: marshal uuid version
+        w.write_i16(rvers::UUID)?;
+        w.write_array_u8(self.header.uuid.as_ref())?;
+
+        let mut buf = Vec::new();
+        buf.resize(self.header.begin as usize, 0u8);
+        self.write_at(&buf, 0)?;
+
+        let buf = w.buffer();
+        trace!(";RootFile.write_header.buf.len:{:?}", buf.len());
+        self.write_at(&buf, 0)?;
+
+        //
+
+        Ok(())
+    }
+
     fn read_free_segments(&mut self) -> Result<()> {
         trace!("read_free_segments");
         let buf = self.read_at(
@@ -370,6 +546,17 @@ impl RootFile {
 
     pub fn keys(&self) -> Vec<Key> {
         self.dir.keys().clone()
+    }
+    pub fn dir(&self) -> &TDirectoryFile {
+        &self.dir
+    }
+
+    fn is_big_file(&self) -> bool {
+        self.end() > consts::kStartBigFile
+    }
+
+    fn title(&self) -> &str {
+        self.dir().dir().named().title()
     }
 }
 

@@ -18,8 +18,11 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let file = "/tmp/a.root";
+    let file = "/tmp/g.root";
     let mut tree = RootFile::create(file).unwrap();
+
+    std::fs::rename(file, "/tmp/a.root").unwrap();
+
     // println!("tree = {:?}", tree);
     // assert_eq!(Photon_E.count(), 2421);
 }

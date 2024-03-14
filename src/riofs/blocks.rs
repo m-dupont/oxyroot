@@ -3,9 +3,15 @@ use crate::rbytes::Unmarshaler;
 
 #[derive(Default)]
 pub struct FreeSegments {
-    first: i64,
+    pub(crate) first: i64,
     // first free word of segment
-    last: i64, // last free word of segment
+    pub(crate) last: i64, // last free word of segment
+}
+
+impl FreeSegments {
+    pub(crate) fn new(first: i64, last: i64) -> Self {
+        FreeSegments { first, last }
+    }
 }
 
 impl Unmarshaler for FreeSegments {
@@ -34,7 +40,14 @@ impl Unmarshaler for FreeSegments {
 pub struct FreeList(Vec<FreeSegments>);
 
 impl FreeList {
+    pub(crate) fn vec(&mut self) -> &mut Vec<FreeSegments> {
+        &mut self.0
+    }
     pub fn append(&mut self, seg: FreeSegments) {
         self.0.push(seg)
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }

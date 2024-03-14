@@ -87,8 +87,8 @@ impl<'a> Read for Rbuff<'a> {
 }
 
 #[derive(Debug)]
-enum RBufferRefsItem<'a> {
-    Func(&'a FactoryBuilderValue),
+pub(crate) enum RBufferRefsItem {
+    Func(FactoryBuilderValue),
     // Obj(&'a Box<dyn FactoryItem>),
 }
 
@@ -100,7 +100,7 @@ pub struct RBuffer<'a> {
     r: Rbuff<'a>,
     offset: u32,
     // sictx: Option<&'a dyn StreamerInfoContext>,
-    refs: HashMap<i64, RBufferRefsItem<'a>>,
+    refs: HashMap<i64, RBufferRefsItem>,
     skip_header: Option<i32>,
 }
 
@@ -363,7 +363,7 @@ impl<'a> RBuffer<'a> {
                     kMapOffset,
                     start + kMapOffset
                 );
-                self.refs.insert(start + kMapOffset, Func(fct));
+                self.refs.insert(start + kMapOffset, Func(*fct));
                 // todo!()
             } else {
                 todo!()

@@ -11,7 +11,9 @@ pub use error::Result;
 pub mod consts;
 mod error;
 pub mod rbuffer;
+pub mod wbuffer;
 
+use crate::rbytes::wbuffer::WBuffer;
 use paste::paste;
 
 /// Header represents a type header in a ROOT buffer.
@@ -53,6 +55,10 @@ pub trait StreamerInfoContext {
 /// * Owned byte containers (`Vec<T>`, `HashMap<K,V>`, HashSet<K> )
 pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
+}
+
+pub trait Marshaler {
+    fn marshal(&self, w: &mut WBuffer) -> Result<i64>;
 }
 
 macro_rules! impl_unmarshaler_primitive {

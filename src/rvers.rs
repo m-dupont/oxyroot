@@ -1,5 +1,5 @@
 /// ROOT version
-pub const _ROOT: i32 = 62600;
+pub const ROOT: i32 = 63002;
 
 pub const _ATT_AXIS: i16 = 4;
 // ROOT version for TAttAxis
@@ -125,10 +125,11 @@ pub const STREAMER_STLSTRING: i16 = 2;
 // MultiGraph               = 2  // ROOT version for TMultiGraph
 // Profile                  = 7  // ROOT version for TProfile
 // Profile2D                = 8  // ROOT version for TProfile2D
-// Directory                = 5  // ROOT version for TDirectory
-// DirectoryFile            = 5  // ROOT version for TDirectoryFile
-// File                     = 8  // ROOT version for TFile
-// Key                      = 4  // ROOT version for TKey
+pub const DIRECTORY: i16 = 5; // ROOT version for TDirectory
+                              // DirectoryFile            = 5  // ROOT version for TDirectoryFile
+                              // File                     = 8  // ROOT version for TFile
+                              // ROOT version for TKey
+pub const Key: i16 = 4;
 // FeldmanCousins           = 1  // ROOT version for TFeldmanCousins
 // LorentzVector            = 4  // ROOT version for TLorentzVector
 // Vector2                  = 3  // ROOT version for TVector2

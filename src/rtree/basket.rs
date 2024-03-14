@@ -202,7 +202,7 @@ impl Unmarshaler for Basket {
             let buf = r.read_array_u8(sz as usize)?;
             trace!(";Basket.unmarshal.{}.buf.len: {}", _beg, buf.len());
 
-            self.key.set_buffer(buf.to_vec());
+            self.key.set_buffer(buf.to_vec(), true);
             let pos = r.pos();
             trace!(";Basket.unmarshal.{}.pos_after_buffer: {}", _beg, pos);
         }

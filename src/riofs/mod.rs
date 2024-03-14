@@ -1,4 +1,5 @@
 mod blocks;
+pub(crate) mod consts;
 mod dir;
 mod error;
 pub mod file;
