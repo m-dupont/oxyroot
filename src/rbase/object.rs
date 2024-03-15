@@ -1,8 +1,11 @@
 use crate::rbase::consts::{K_IS_ON_HEAP, K_IS_REFERENCED};
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{Marshaler, Unmarshaler};
+use crate::rvers;
+use log::trace;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Object {
     id: u32,
     bits: u32,
@@ -36,5 +39,26 @@ impl Unmarshaler for Object {
         }
 
         Ok(())
+    }
+}
+
+impl Marshaler for Object {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        let n = w.pos();
+        trace!(";Object.marshal.n:{:?}", n);
+        w.write_u16(rvers::OBJECT as u16)?;
+
+        if self.test_bits(K_IS_REFERENCED) {
+            let uid = self.id & 0xffffff;
+            w.write_u32(uid)?;
+            w.write_u32(self.bits)?;
+            w.write_u16(0x0)?;
+        } else {
+            w.write_u32(self.id)?;
+            w.write_u32(self.bits)?;
+        }
+
+        trace!(";Object.marshal.buf:{:?}", w.p());
+        Ok(w.pos() - n)
     }
 }

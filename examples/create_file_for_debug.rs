@@ -20,6 +20,7 @@ fn main() {
 
     let file = "/tmp/g.root";
     let mut tree = RootFile::create(file).unwrap();
+    tree.close().unwrap();
 
     std::fs::rename(file, "/tmp/a.root").unwrap();
 

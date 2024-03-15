@@ -9,7 +9,7 @@ use crate::root::traits::Object;
 /// to identify a derived object in containers, directories and files.
 /// Most member functions defined in this base class are in general
 /// overridden by the derived classes.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Named {
     pub(crate) obj: rbase::Object,
     pub(crate) name: String,

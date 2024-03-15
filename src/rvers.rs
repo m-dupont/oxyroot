@@ -14,7 +14,7 @@ pub const _DATIME: i16 = 1;
 /// ROOT version for TNamed
 pub const _NAMED: i16 = 1;
 
-pub const _OBJECT: i16 = 1;
+pub const OBJECT: i16 = 1;
 // ROOT version for TObject
 /// ROOT version for TObjString
 pub const OBJ_STRING: i16 = 1;

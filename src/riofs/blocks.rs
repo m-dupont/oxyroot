@@ -1,5 +1,8 @@
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{Marshaler, Unmarshaler};
+use crate::riofs::consts::kStartBigFile;
+use log::trace;
 
 #[derive(Default)]
 pub struct FreeSegments {
@@ -11,6 +14,12 @@ pub struct FreeSegments {
 impl FreeSegments {
     pub(crate) fn new(first: i64, last: i64) -> Self {
         FreeSegments { first, last }
+    }
+    pub(crate) fn size_of(&self) -> i32 {
+        if self.last > kStartBigFile {
+            return 18;
+        }
+        10
     }
 }
 
@@ -33,6 +42,30 @@ impl Unmarshaler for FreeSegments {
         self.first = first;
         self.last = last;
         Ok(())
+    }
+}
+
+impl Marshaler for FreeSegments {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        let beg = w.pos();
+        trace!(";FreeSegments.marshal.beg:{:?}", beg);
+        let mut vers = 1 as i16;
+        if self.last > kStartBigFile {
+            vers += 1000;
+        }
+        w.write_i16(vers)?;
+        if vers > 1000 {
+            w.write_i64(self.first)?;
+            w.write_i64(self.last)?;
+        } else {
+            w.write_i32(self.first as i32)?;
+            w.write_i32(self.last as i32)?;
+        }
+
+        let end = w.pos();
+
+        trace!(";FreeSegments.marshal.buf.end:{:?}", w.p());
+        Ok((end - beg) as i64)
     }
 }
 

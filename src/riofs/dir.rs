@@ -17,6 +17,7 @@ use uuid::Uuid;
 use crate::rtypes::FactoryItem;
 use crate::rvers;
 
+#[derive(Clone)]
 pub struct TDirectory {
     pub(crate) rvers: i16,
     _uuid: Uuid,
@@ -39,6 +40,7 @@ impl TDirectory {
     }
 }
 
+#[derive(Clone)]
 pub struct TDirectoryFile {
     ctime: DateTime<Utc>,
     mtime: DateTime<Utc>, //
@@ -173,6 +175,90 @@ impl TDirectoryFile {
         }
 
         Ok(dir)
+    }
+
+    pub(crate) fn close(&mut self, file: &mut RootFile) -> Result<()> {
+        trace!(";TDirectoryFile.close:{:?}", true);
+        self.save(file)?;
+        Ok(())
+    }
+
+    fn save(&mut self, file: &mut RootFile) -> Result<()> {
+        self.save_keys(file)?;
+        self.write_header(file)?;
+
+        // TODO: implement case where we have sub dirs
+
+        Ok(())
+    }
+
+    fn save_keys(&mut self, file: &mut RootFile) -> Result<()> {
+        trace!(";TDirectoryFile.save_keys:{:?}", true);
+        trace!(";TDirectoryFile.n_bytes_keys:{:?}", self.n_bytes_keys);
+
+        let mut n_bytes = 4;
+
+        if file.is_big_file() {
+            n_bytes += 8;
+        }
+
+        for (i, key) in self.keys.iter().enumerate() {
+            trace!(";TDirectoryFile.save_keys.for_loop_keys.i:{:?}", i);
+            unimplemented!("save_keys");
+        }
+
+        let mut hdr = Key::new(
+            self.dir().named().name.clone(),
+            self.dir().named().title.clone(),
+            "TDirectory".to_string(),
+            n_bytes,
+            file,
+        )?;
+
+        let mut buf = WBuffer::new(0);
+        buf.write_i32(self.keys.len() as i32)?;
+
+        for (i, key) in self.keys.iter().enumerate() {
+            trace!(";TDirectoryFile.save_keys.for_loop_keys.i:{:?}", i);
+            unimplemented!("save_keys");
+        }
+        hdr.set_buffer(buf.buffer(), false);
+
+        self.seek_keys = hdr.seek_key();
+        trace!(";TDirectoryFile.save_keys.seek_keys:{:?}", self.seek_keys);
+        self.n_bytes_keys = hdr.n_bytes();
+        trace!(
+            ";TDirectoryFile.save_keys.n_bytes_keys:{:?}",
+            self.n_bytes_keys
+        );
+
+        hdr.write_to_file(file.writer()?)?;
+
+        Ok(())
+    }
+
+    fn write_header(&mut self, file: &mut RootFile) -> Result<()> {
+        self.mtime = utils::now();
+
+        let n_bytes = Self::record_size(file.version()) as i32;
+        trace!(";TDirectoryFile.write_header.n_bytes:{:?}", n_bytes);
+        trace!(
+            ";TDirectoryFile.write_header.file.version:{:?}",
+            file.version()
+        );
+
+        let mut buf = WBuffer::new(0);
+        self.marshal(&mut buf)?;
+
+        let buf = buf.buffer();
+        trace!(";TDirectoryFile.write_header.buf.len:{:?}", buf.len());
+        trace!(";TDirectoryFile.write_header.buf.value:{:?}", &buf);
+        let wstart = self.seek_dir as u64 + self.n_bytes_name as u64;
+        trace!(";TDirectoryFile.write_header.buf.wstart:{:?}", wstart);
+
+        file.write_at(&buf, wstart)?;
+
+        Ok(())
     }
 
     pub(crate) fn get_object(

@@ -28,6 +28,7 @@ const HEADER_SIZE: usize = 9;
 const K_MAX_COMPRESSED_BLOCK_SIZE: usize = 0xffffff;
 
 #[allow(dead_code)]
+#[derive(PartialEq)]
 enum Kind {
     #[allow(dead_code)]
     Inherit = -1,
@@ -108,4 +109,42 @@ pub fn decompress(dst: &mut [u8], mut src: &[u8]) -> Result<usize> {
     }
 
     Ok(0)
+}
+
+fn root_compress_algo_level(algo: i32) -> (Kind, i32) {
+    let kind = algo / 100;
+    let level = algo % 100;
+    let kind = match kind {
+        0 => Kind::UseGlobal,
+        1 => Kind::Zlib,
+        2 => Kind::Lzma,
+        3 => Kind::OldCompression,
+        4 => Kind::LZ4,
+        5 => Kind::Zstd,
+        _ => Kind::UndefinedCompression,
+    };
+    (kind, level)
+}
+
+pub fn compress(src: Vec<u8>, compression: i32) -> Result<Vec<u8>> {
+    assert_eq!(compression, 1);
+
+    let (kind, level) = root_compress_algo_level(compression);
+
+    if kind == Kind::UseGlobal || level == 0 || src.len() < 512 {
+        // no compression
+        // let mut dst = Vec::new();
+        //std::io::copy(src, &mut dst)?;
+        return Ok(src);
+    }
+
+    unimplemented!();
+
+    // let mut dst = Vec::new();
+    // {
+    //     let mut w = flate2::write::ZlibEncoder::new(&mut dst, flate2::Compression::default());
+    //     std::io::copy(&mut src, &mut w)?;
+    // }
+    //
+    // Ok(dst)
 }

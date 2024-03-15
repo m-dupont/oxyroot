@@ -1,11 +1,13 @@
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{
-    ensure_maximum_supported_version, ensure_minimum_supported_version, Unmarshaler,
+    ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, Unmarshaler,
 };
 use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
+use log::trace;
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
 
@@ -72,6 +74,33 @@ impl Unmarshaler for List {
         Ok(())
 
         // ensure!()
+    }
+}
+
+impl Marshaler for List {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        trace!(";List.marshal.call.w.pos:{:?}", w.pos());
+        let beg = w.pos();
+
+        let hdr = w.write_header(self.class(), rvers::LIST)?;
+
+        self.obj.marshal(w)?;
+
+        w.write_string(self.name.as_ref().unwrap_or(&String::new()))?;
+
+        w.write_i32(self.objs.len() as i32)?;
+
+        for obj in &self.objs {
+            unimplemented!("List.marshal");
+            w.write_object_any(obj)?;
+        }
+
+        trace!(";List.marshal.buf.value:{:?}", w.p());
+        trace!(";List.marshal.buf.pos:{:?}", w.pos());
+
+        w.set_header(hdr)?;
+
+        Ok(w.pos() - beg)
     }
 }
 

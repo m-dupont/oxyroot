@@ -232,6 +232,45 @@ impl Key {
         Ok(key)
     }
 
+    pub(crate) fn new_from_buffer(
+        name: String,
+        title: String,
+        class: String,
+        cycle: i16,
+        buf: Vec<u8>,
+        f: &mut RootFile,
+    ) -> Result<Self> {
+        let indent = name.clone() + "-" + &title;
+        trace!(";Key.new_from_buffer.buf.value:{:?}", &buf);
+        let key_len = key_len_for(&name, &title, &class, f);
+        let obj_len = buf.len() as i32;
+        let mut key = Key {
+            key_len,
+            name,
+            title,
+            class,
+            obj_len,
+            n_bytes: key_len + obj_len,
+            seek_key: f.end(),
+            seek_pdir: f.dir().seek_dir,
+            ..Default::default()
+        };
+
+        if f.is_big_file() {
+            key.rvers += 1000;
+        }
+
+        key.buffer = rcompress::compress(buf, f.compression())?;
+        trace!(
+            ";Key.new_from_buffer.buf.after_compression:{:?}",
+            key.buffer
+        );
+        key.n_bytes = key.key_len + key.buffer.len() as i32;
+        f.set_end(key.seek_key + key.n_bytes as i64)?;
+
+        Ok(key)
+    }
+
     pub(crate) fn set_buffer(&mut self, buffer: Vec<u8>, update_obj_len: bool) {
         self.buffer = buffer;
         if update_obj_len {

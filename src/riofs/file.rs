@@ -19,7 +19,7 @@ use crate::riofs::{Error, Result};
 use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
 use crate::rtypes::FactoryItem;
-use crate::rvers;
+use crate::{rcont, rvers, Object};
 use log::{debug, trace};
 use uuid::Uuid;
 
@@ -42,6 +42,12 @@ struct RootFileHeader {
     seek_info: i64,
     n_bytes_info: i32,
     uuid: Uuid,
+}
+
+impl RootFileHeader {
+    pub fn compression(&self) -> i32 {
+        self.compression
+    }
 }
 
 #[derive(Default, Debug)]
@@ -266,6 +272,16 @@ impl RootFile {
         Ok(f)
     }
 
+    pub fn close(&mut self) -> Result<()> {
+        let mut dir = self.dir().clone();
+        dir.close(self)?;
+        let _ = std::mem::replace(&mut self.dir, dir);
+        self.write_streamer_info()?;
+        self.write_free_segments()?;
+        self.write_header()?;
+        Ok(())
+    }
+
     fn reader(&self) -> Result<&RootFileReader> {
         match &self.inner {
             RootFileInner::Reader(r) => Ok(r),
@@ -274,7 +290,7 @@ impl RootFile {
         }
     }
 
-    fn writer(&mut self) -> Result<&mut RootFileWriter> {
+    pub(crate) fn writer(&mut self) -> Result<&mut RootFileWriter> {
         match &mut self.inner {
             RootFileInner::Writer(w) => Ok(w),
             RootFileInner::Reader(_) => Err(Error::FileIsOpenedReadOnly),
@@ -519,6 +535,119 @@ impl RootFile {
         Ok(())
     }
 
+    fn write_streamer_info(&mut self) -> Result<()> {
+        self.find_deep_streamer()?;
+
+        let sinfos = List::new();
+
+        trace!(
+            ";RootFile.write_streamer_info.sinfos.title:{}",
+            sinfos.title()
+        );
+        trace!(
+            ";RootFile.write_streamer_info.sinfos.class:{}",
+            sinfos.class()
+        );
+
+        let mut key = Key::new(
+            "StreamerInfo".to_string(),
+            sinfos.title().to_string(),
+            sinfos.class().to_string(),
+            0,
+            self,
+        )?;
+        let offset = key.key_len();
+        trace!(";RootFile.write_streamer_info.offset:{}", offset);
+
+        let mut buf = WBuffer::new(offset as u32);
+
+        sinfos.marshal(&mut buf)?;
+
+        trace!(
+            ";RootFile.write_streamer_info.buf.after_sinfos:{:?}",
+            buf.p()
+        );
+
+        let key = Key::new_from_buffer(
+            "StreamerInfo".to_string(),
+            sinfos.title().to_string(),
+            sinfos.class().to_string(),
+            1,
+            buf.buffer(),
+            self,
+        )?;
+
+        self.header.seek_info = key.seek_key();
+        self.header.n_bytes_info = key.n_bytes();
+
+        trace!(
+            ";RootFile.write_streamer_info.seek_info:{}",
+            self.header.seek_info
+        );
+        trace!(
+            ";RootFile.write_streamer_info.n_bytes_info:{}",
+            self.header.n_bytes_info
+        );
+
+        key.write_to_file(self.writer()?)?;
+
+        Ok(())
+    }
+
+    fn write_free_segments(&mut self) -> Result<()> {
+        trace!(";RootFile.write_free_segments.call:{}", true);
+        if self.header.seek_free != 0 {
+            unimplemented!("self.header.seek_free != 0")
+        }
+
+        let mut nbytes = 0;
+        for span in self.spans.vec() {
+            nbytes += span.size_of();
+        }
+        trace!(";RootFile.write_free_segments.nbytes:{}", nbytes);
+
+        let mut key = Key::new(
+            self.dir.dir().named().name.clone(),
+            self.dir.dir().named().title.clone(),
+            "TFile".to_string(),
+            nbytes,
+            self,
+        )?;
+
+        assert_ne!(key.seek_key(), 0);
+
+        if !self.is_big_file() && self.end() > kStartBigFile {
+            unimplemented!("!self.is_big_file() && self.end() > kStartBigFile")
+        }
+
+        let nbytes = key.obj_len();
+        let mut buf = WBuffer::new(0);
+
+        for span in self.spans.vec() {
+            span.marshal(&mut buf)?;
+        }
+
+        if buf.pos() != nbytes.into() {
+            unimplemented!("buf.pos() != nbytes as usize")
+        }
+
+        self.header.n_bytes_free = key.n_bytes();
+        self.header.seek_free = key.seek_key();
+        key.set_buffer(buf.buffer(), false);
+        key.write_to_file(self.writer()?)?;
+
+        Ok(())
+    }
+
+    fn find_deep_streamer(&mut self) -> Result<()> {
+        trace!(";Rootfile.find_deep_streamer.call:true");
+        trace!(
+            ";Rootfile.find_deep_streamer.f.sinfos.len:{}",
+            self.sinfos.list().len()
+        );
+        Ok(())
+    }
+
     fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
         let mut reader = self.reader()?.clone();
         self.dir.get_object(name, &mut reader, Some(&self.sinfos))
@@ -551,12 +680,15 @@ impl RootFile {
         &self.dir
     }
 
-    fn is_big_file(&self) -> bool {
+    pub(crate) fn is_big_file(&self) -> bool {
         self.end() > consts::kStartBigFile
     }
 
     fn title(&self) -> &str {
         self.dir().dir().named().title()
+    }
+    pub fn compression(&self) -> i32 {
+        self.header.compression()
     }
 }
 
