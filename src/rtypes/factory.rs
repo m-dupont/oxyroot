@@ -41,13 +41,13 @@ pub trait FactoryBuilder {
 #[macro_export]
 macro_rules! factory_fn_register_impl {
     (  $t:ty, $n:literal  ) => {
-        impl $t {
-            pub fn new() -> Self {
-                Self {
-                    ..Default::default()
-                }
-            }
-        }
+        // impl $t {
+        //     pub fn new() -> Self {
+        //         Self {
+        //             ..Default::default()
+        //         }
+        //     }
+        // }
 
         impl $crate::root::traits::Object for $t {
             fn class(&self) -> &'_ str {
@@ -58,7 +58,7 @@ macro_rules! factory_fn_register_impl {
         impl $crate::rtypes::factory::FactoryBuilder for $t {
             fn register(factory: &mut $crate::rtypes::factory::Factory) {
                 let f = || {
-                    let v: Self = Self::new();
+                    let v: Self = Self::default();
                     let b: Box<dyn $crate::rtypes::factory::FactoryItem> = Box::new(v);
                     b
                 };
