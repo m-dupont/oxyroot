@@ -6,11 +6,21 @@ use crate::RBuffer;
 
 use crate::rcolors::Color;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct AttFill {
     color: Color,
     style: i16,
     _width: i16,
+}
+
+impl Default for AttFill {
+    fn default() -> Self {
+        AttFill {
+            color: Color::default(),
+            style: 1001,
+            _width: 0,
+        }
+    }
 }
 
 impl Unmarshaler for AttFill {

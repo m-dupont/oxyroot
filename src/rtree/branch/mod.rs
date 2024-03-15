@@ -2,6 +2,8 @@ mod tbranch;
 mod tbranch_element;
 mod tbranch_props;
 
+pub(crate) mod wbranch;
+
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
 use std::fmt::{Debug, Formatter};

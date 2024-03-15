@@ -1,5 +1,5 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{RootFile, Slice};
+use oxyroot::{RootFile, Slice, Tree};
 use std::io::Write;
 
 fn main() {
@@ -19,8 +19,12 @@ fn main() {
         .init();
 
     let file = "/tmp/g.root";
-    let mut tree = RootFile::create(file).unwrap();
-    tree.close().unwrap();
+    let mut f = RootFile::create(file).unwrap();
+    let mut tree = Tree::new("mytree".to_string());
+    f.add_tree(&tree).unwrap();
+    tree.write(&mut f).unwrap();
+
+    f.close().unwrap();
 
     std::fs::rename(file, "/tmp/a.root").unwrap();
 

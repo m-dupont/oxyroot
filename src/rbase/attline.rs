@@ -1,16 +1,26 @@
-use crate::factory_all_for_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
 use crate::rvers;
+use crate::{factory_all_for_register_impl, rcolors};
+use num_traits::ToPrimitive;
 
-use crate::rcolors::Color;
+use crate::rcolors::{Color, ColorNamed};
 
-#[derive(Default)]
 pub(crate) struct AttLine {
     color: Color,
     style: i16,
     width: i16,
+}
+
+impl Default for AttLine {
+    fn default() -> Self {
+        AttLine {
+            color: Color::Int(ColorNamed::Blue as i16 + 2),
+            style: 1,
+            width: 1,
+        }
+    }
 }
 
 impl Unmarshaler for AttLine {

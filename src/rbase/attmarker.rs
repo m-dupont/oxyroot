@@ -6,11 +6,20 @@ use crate::rvers;
 
 use crate::rcolors::Color;
 
-#[derive(Default)]
 pub(crate) struct AttMarker {
     color: Color,
     style: i16,
     width: f32,
+}
+
+impl Default for AttMarker {
+    fn default() -> Self {
+        AttMarker {
+            color: Color::Int(1),
+            style: 1,
+            width: 1.0,
+        }
+    }
 }
 
 impl Unmarshaler for AttMarker {

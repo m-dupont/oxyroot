@@ -1,4 +1,3 @@
-use crate::factory_all_for_register_impl;
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{
@@ -8,6 +7,7 @@ use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::Branch;
+use crate::{factory_all_for_register_impl, RootFile};
 use log::trace;
 
 #[derive(Default)]
@@ -105,6 +105,30 @@ pub struct Tree {
 }
 
 impl Tree {
+    pub fn new(name: String) -> Self {
+        Self {
+            named: rbase::Named::default().with_name(name),
+            weight: 1.0,
+            scan_field: 25,
+            default_entry_offset_len: 1000,
+            max_entries: 1000000000000,
+            max_entry_loop: 1000000000000,
+            auto_save: -300000000,
+            auto_flush: -300000000,
+            estimate: 1000000,
+            branches: Vec::new(),
+            ..Default::default()
+        }
+    }
+
+    pub fn add_branch(&mut self, branch: Branch) {
+        self.branches.push(branch);
+    }
+
+    pub fn write(&mut self, file: &mut RootFile) -> crate::rbytes::Result<()> {
+        todo!()
+    }
+
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         if let Some(r) = &reader {
             for b in self.branches.iter_mut() {

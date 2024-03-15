@@ -32,6 +32,13 @@ impl root::traits::Named for Named {
     }
 }
 
+impl Named {
+    pub(crate) fn with_name(mut self, name: String) -> Self {
+        self.name = name;
+        self
+    }
+}
+
 impl Unmarshaler for Named {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
