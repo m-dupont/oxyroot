@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use crate::root::traits;
 use trait_set::trait_set;
 
+use crate::Marshaler;
 use downcast::{downcast, Any};
 
 use crate::rtypes::Error;
@@ -21,7 +22,7 @@ pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItem>;
 
 trait_set! {
     /// Trait of values stored in the Factory
-    pub trait FactoryItem = Any + Unmarshaler + traits::Named;
+    pub trait FactoryItem = Any + Unmarshaler + Marshaler + traits::Named;
 }
 
 downcast!(dyn FactoryItem);

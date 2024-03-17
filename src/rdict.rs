@@ -1,10 +1,12 @@
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
-use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase};
+use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase, Marshaler};
 
 use crate::rbytes;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::Error::Misc;
 use crate::rcont;
 use crate::rmeta;
@@ -173,6 +175,12 @@ impl Unmarshaler for StreamerInfo {
         Ok(())
 
         // todo!()
+    }
+}
+
+impl Marshaler for StreamerInfo {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
@@ -349,6 +357,12 @@ impl Unmarshaler for StreamerBase {
     }
 }
 
+impl Marshaler for StreamerBase {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
+
 factory_all_for_register_impl!(StreamerBase, "TStreamerBase");
 
 #[derive(Default, Debug)]
@@ -372,6 +386,12 @@ impl Unmarshaler for StreamerString {
         r.check_header(&hdr)?;
 
         Ok(())
+    }
+}
+
+impl Marshaler for StreamerString {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
@@ -441,6 +461,11 @@ impl Unmarshaler for StreamerBasicType {
         Ok(())
     }
 }
+impl Marshaler for StreamerBasicType {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 
 factory_all_for_register_impl!(StreamerBasicType, "TStreamerBasicType");
 
@@ -458,6 +483,12 @@ impl Unmarshaler for StreamerObject {
         r.read_object(&mut self.element)?;
         r.check_header(&hdr)?;
         Ok(())
+    }
+}
+
+impl Marshaler for StreamerObject {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
@@ -480,6 +511,12 @@ impl Unmarshaler for StreamerObjectPointer {
     }
 }
 
+impl Marshaler for StreamerObjectPointer {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
+
 factory_all_for_register_impl!(StreamerObjectPointer, "TStreamerObjectPointer");
 
 #[derive(Default, Debug)]
@@ -499,6 +536,12 @@ impl Unmarshaler for StreamerObjectAny {
     }
 }
 
+impl Marshaler for StreamerObjectAny {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
+
 factory_all_for_register_impl!(StreamerObjectAny, "TStreamerObjectAny");
 
 #[derive(Default, Debug)]
@@ -510,6 +553,12 @@ pub struct StreamerBasicPointer {
     cname: String,
     /// name of the class with the counter
     ccls: String,
+}
+
+impl Marshaler for StreamerBasicPointer {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
 }
 
 factory_all_for_register_impl!(StreamerBasicPointer, "TStreamerBasicPointer");
@@ -540,6 +589,11 @@ pub struct StreamerSTL {
     ctype: rmeta::Enum,
 }
 
+impl Marshaler for StreamerSTL {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 factory_all_for_register_impl!(StreamerSTL, "TStreamerSTL");
 
 impl RVersioner for StreamerSTL {
@@ -584,6 +638,12 @@ impl Unmarshaler for StreamerSTL {
 #[derive(Default, Debug)]
 pub struct StreamerSTLstring {
     streamer_stl: StreamerSTL,
+}
+
+impl Marshaler for StreamerSTLstring {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
 }
 
 factory_all_for_register_impl!(StreamerSTLstring, "TStreamerSTLstring");

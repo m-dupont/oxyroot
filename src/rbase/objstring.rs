@@ -1,7 +1,9 @@
-use crate::factory_all_for_register_impl;
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
+use crate::{factory_all_for_register_impl, Marshaler};
 use crate::{rbase, rvers};
 
 #[derive(Default)]
@@ -10,6 +12,11 @@ pub(crate) struct ObjString {
     str: String,
 }
 
+impl Marshaler for ObjString {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 factory_all_for_register_impl!(ObjString, "TObjString");
 
 impl RVersioner for ObjString {

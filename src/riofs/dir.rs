@@ -354,7 +354,12 @@ impl TDirectoryFile {
         self.dir.rvers > 1000
     }
 
-    // pub(crate) fn put(&mut self, name: &str: obj: )
+    pub(crate) fn put<T>(&mut self, name: &str, obj: &T)
+    where
+        T: FactoryItem,
+    {
+        todo!()
+    }
 }
 
 impl Unmarshaler for TDirectoryFile {

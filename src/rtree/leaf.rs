@@ -1,11 +1,13 @@
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::TBranch;
 use crate::rtypes::FactoryItem;
-use crate::{factory_all_for_register_impl, rbase, Branch};
+use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
 use log::trace;
 use std::any::TypeId;
@@ -240,6 +242,11 @@ impl Unmarshaler for TLeaf {
     }
 }
 
+impl Marshaler for TLeaf {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 factory_fn_register_impl!(TLeaf, "TLeaf");
 
 #[derive(Default, Debug)]
@@ -269,6 +276,12 @@ impl Unmarshaler for LeafC {
         Ok(())
 
         // todo!()
+    }
+}
+
+impl Marshaler for LeafC {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
@@ -320,6 +333,12 @@ macro_rules! make_tleaf_variant {
                 // todo!()
             }
         }
+
+        impl Marshaler for $struct_name {
+            fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+                todo!()
+            }
+        }
     };
 }
 
@@ -365,4 +384,9 @@ impl Unmarshaler for LeafElement {
     }
 }
 
+impl Marshaler for LeafElement {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 factory_all_for_register_impl!(LeafElement, "TLeafElement");

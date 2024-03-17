@@ -1,10 +1,12 @@
-use crate::rbase;
+use crate::rbase::AttFill;
 use crate::rbytes::ensure_maximum_supported_version;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits;
 use crate::root::traits::Object;
 use crate::rvers;
+use crate::{rbase, Marshaler};
 use log::trace;
 
 use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
@@ -103,6 +105,12 @@ impl Unmarshaler for ObjArray {
         trace!(";ObjArray.unmarshal.{}.end: {}", _beg, end);
 
         Ok(())
+    }
+}
+
+impl Marshaler for ObjArray {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 

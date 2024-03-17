@@ -1,5 +1,6 @@
-use crate::rbase;
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{
     ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, Unmarshaler,
 };
@@ -9,6 +10,7 @@ use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
 use crate::{factory_all_for_register_impl, RootFile};
+use crate::{rbase, Named};
 use log::trace;
 
 #[derive(Default)]
@@ -47,6 +49,12 @@ impl Unmarshaler for TioFeatures {
         // trace!("buf = {:?}", buf);
         //
         // todo!()
+    }
+}
+
+impl Marshaler for TioFeatures {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
@@ -208,6 +216,9 @@ where
     fn close(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
         trace!(";WriterTree.close:{:?}", true);
         self.flush(file)?;
+
+        // file.dir().put(self.named.name(), self);
+
         todo!();
         Ok(())
     }
@@ -313,6 +324,24 @@ impl ReaderTree {
         }
 
         self.branches_r().iter().for_each(show_one_branch);
+    }
+}
+
+impl<T> Marshaler for WriterTree<T>
+where
+    T: Marshaler,
+{
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
+
+impl<T> Unmarshaler for WriterTree<T>
+where
+    T: Unmarshaler + Marshaler,
+{
+    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        todo!()
     }
 }
 
@@ -494,4 +523,21 @@ impl Unmarshaler for ReaderTree {
     }
 }
 
+impl Marshaler for ReaderTree {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
+
 factory_all_for_register_impl!(ReaderTree, "TTree");
+
+impl<T> Object for WriterTree<T>
+where
+    T: Marshaler,
+{
+    fn class(&self) -> &'_ str {
+        self.class()
+    }
+}
+
+impl<T> Named for WriterTree<T> where T: Marshaler {}

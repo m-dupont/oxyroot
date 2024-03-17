@@ -1,8 +1,10 @@
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
-use crate::rvers;
 use crate::{factory_all_for_register_impl, rcolors};
+use crate::{rvers, Marshaler};
 use num_traits::ToPrimitive;
 
 use crate::rcolors::{Color, ColorNamed};
@@ -42,6 +44,12 @@ impl Unmarshaler for AttLine {
 
         r.check_header(&hdr)?;
         Ok(())
+    }
+}
+
+impl Marshaler for AttLine {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 

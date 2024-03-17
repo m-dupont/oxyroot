@@ -1,4 +1,6 @@
+use crate::rbase::AttFill;
 use crate::rbytes::ensure_maximum_supported_version;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rdict::Streamer;
 use crate::rmeta::EReadWrite;
 use crate::root::traits::Named;
@@ -9,7 +11,7 @@ use crate::rtree::branch::{BranchChunks, TBranch};
 use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::streamer_type::{_from_leaftype_to_str, clean_type_name};
-use crate::{factory_fn_register_impl, RBuffer, Unmarshaler};
+use crate::{factory_fn_register_impl, Marshaler, RBuffer, Unmarshaler};
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
@@ -435,6 +437,12 @@ impl Unmarshaler for TBranchElement {
 
         // todo!();
         Ok(())
+    }
+}
+
+impl Marshaler for TBranchElement {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 

@@ -1,11 +1,13 @@
+use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, Error, Unmarshaler};
 use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::tree::{TioFeatures, WriterTree};
 use crate::rtypes::FactoryItem;
-use crate::{factory_fn_register_impl, rbytes, rvers, Branch, Object, RootFile};
+use crate::{factory_fn_register_impl, rbytes, rvers, Branch, Marshaler, Object, RootFile};
 use log::trace;
 
 #[derive(Debug)]
@@ -278,4 +280,9 @@ impl Unmarshaler for Basket {
     }
 }
 
+impl Marshaler for Basket {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
+    }
+}
 factory_fn_register_impl!(Basket, "TBasket");

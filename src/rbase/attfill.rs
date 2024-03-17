@@ -1,8 +1,9 @@
-use crate::factory_all_for_register_impl;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::Unmarshaler;
 use crate::root::traits::Object;
 use crate::rvers;
 use crate::RBuffer;
+use crate::{factory_all_for_register_impl, Marshaler};
 
 use crate::rcolors::Color;
 
@@ -42,6 +43,12 @@ impl Unmarshaler for AttFill {
         r.check_header(&hdr)?;
 
         Ok(())
+    }
+}
+
+impl Marshaler for AttFill {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 

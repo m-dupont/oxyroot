@@ -1,4 +1,6 @@
+use crate::rbase::AttFill;
 use crate::rbytes::ensure_maximum_supported_version;
+use crate::rbytes::wbuffer::WBuffer;
 use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
@@ -9,7 +11,7 @@ use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::tree::TioFeatures;
-use crate::{factory_fn_register_impl, rbase, Branch, RBuffer, Unmarshaler};
+use crate::{factory_fn_register_impl, rbase, Branch, Marshaler, RBuffer, Unmarshaler};
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
@@ -611,6 +613,12 @@ impl Unmarshaler for TBranch {
         Ok(())
 
         // todo!()
+    }
+}
+
+impl Marshaler for TBranch {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        todo!()
     }
 }
 
