@@ -15,37 +15,41 @@ use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
 
+pub(crate) const DEFAULT_BASKET_SIZE: i32 = 32 * 1024;
+pub(crate) const DEFAULT_SPLIT_LEVEL: i32 = 99;
+pub(crate) const DEFAULT_MAX_BASKETS: i32 = 10;
+
 #[derive(Default, Debug)]
 pub struct TBranch {
-    named: rbase::Named,
+    pub(crate) named: rbase::Named,
     attfill: rbase::AttFill,
 
     /// compression level and algorithm
     compress: i32,
     /// initial size of BASKET buffer
-    basket_size: i32,
+    pub(crate) basket_size: i32,
     /// initial length of entryOffset table in the basket buffers
     entry_offset_len: i32,
     /// last basket number written
-    write_basket: i32,
+    pub(crate) write_basket: i32,
     /// current entry number (last one filled in this branch)
     entry_number: i64,
     /// IO features for newly-created baskets
-    iobits: TioFeatures,
+    pub(crate) iobits: TioFeatures,
     /// offset of this branch
     offset: i32,
     /// maximum number of baskets so far
-    max_baskets: i32,
+    pub(crate) max_baskets: i32,
     /// branch split level
-    split_level: i32,
+    pub(crate) split_level: i32,
     /// number of entries
     entries: i64,
     /// number of the first entry in this branch
     first_entry: i64,
     /// total number of bytes in all leaves before compression
-    tot_bytes: i64,
+    pub(crate) tot_bytes: i64,
     /// total number of bytes in all leaves after compression
-    zip_bytes: i64,
+    pub(crate) zip_bytes: i64,
 
     branches: Vec<Branch>,
     pub(crate) leaves: Vec<Leaf>,
@@ -88,6 +92,13 @@ impl TBranch {
     // pub fn branches(&self) -> impl Iterator<Item = &Branch> {
     //     self.branches.iter() //.map(|b| b.into())
     // }
+
+    pub fn new(name: String) -> Self {
+        TBranch {
+            named: rbase::Named::default().with_name(name),
+            ..Default::default()
+        }
+    }
 
     pub fn branches(&self) -> &Vec<Branch> {
         &self.branches //.map(|b| b.into())

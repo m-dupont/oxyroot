@@ -147,11 +147,14 @@ mod utils;
 
 pub use riofs::file::RootFile;
 pub use rtree::branch::Branch;
+pub use rtree::tree::ReaderTree;
 pub use rtree::tree::Tree;
 
 pub use rbytes::rbuffer::RBuffer;
 pub use rbytes::Unmarshaler;
 pub use rbytes::UnmarshalerInto;
+
+pub use rbytes::Marshaler;
 
 pub use rusty::SizedSlice;
 pub use rusty::Slice;

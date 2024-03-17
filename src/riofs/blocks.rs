@@ -2,6 +2,7 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, Unmarshaler};
 use crate::riofs::consts::kStartBigFile;
+use crate::root::traits;
 use log::trace;
 
 #[derive(Default)]
@@ -66,6 +67,12 @@ impl Marshaler for FreeSegments {
 
         trace!(";FreeSegments.marshal.buf.end:{:?}", w.p());
         Ok((end - beg) as i64)
+    }
+}
+
+impl traits::Object for FreeSegments {
+    fn class(&self) -> &'_ str {
+        "FreeSegments"
     }
 }
 

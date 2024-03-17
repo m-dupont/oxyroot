@@ -106,7 +106,7 @@ impl TemplateWriter {
         Ok(())
     }
 
-    pub fn tree(&self) -> Result<oxyroot::Tree> {
+    pub fn tree(&self) -> Result<oxyroot::ReaderTree> {
         let mut f = oxyroot::RootFile::open(self.final_file_path().to_str().unwrap())?;
         let tree = f.get_tree("T")?;
         Ok(tree)

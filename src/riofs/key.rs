@@ -249,6 +249,7 @@ impl Key {
             name,
             title,
             class,
+            cycle,
             obj_len,
             n_bytes: key_len + obj_len,
             seek_key: f.end(),
@@ -268,7 +269,34 @@ impl Key {
         key.n_bytes = key.key_len + key.buffer.len() as i32;
         f.set_end(key.seek_key + key.n_bytes as i64)?;
 
+        trace!(";Key.new_from_buffer.key.seek_key:{:?}", key.seek_key);
+        trace!(";Key.new_from_buffer.key.obj_len:{:?}", key.obj_len);
+        trace!(";Key.new_from_buffer.key.seek_pdir:{:?}", key.seek_pdir);
+        trace!(";Key.new_from_buffer.key.cycle:{:?}", key.cycle);
+        trace!(";Key.new_from_buffer.key.title:{:?}", key.title());
+
         Ok(key)
+    }
+
+    pub(crate) fn new_key_for_basket_internal(
+        name: String,
+        title: String,
+        class: String,
+        cycle: i16,
+        f: &RootFile,
+    ) -> Self {
+        let mut key = Key {
+            key_len: key_len_for(&name, &title, &class, f),
+            name,
+            title,
+            class,
+            cycle,
+            seek_pdir: f.dir().seek_dir,
+            ..Default::default()
+        };
+        key.n_bytes = key.key_len;
+        trace!(";Key.new_key_for_basket_internal.key:{:?}", &key);
+        key
     }
 
     pub(crate) fn set_buffer(&mut self, buffer: Vec<u8>, update_obj_len: bool) {
@@ -391,6 +419,9 @@ impl Key {
         w.write_at(buf, self.seek_key as u64 + self.key_len as u64)?;
 
         Ok(())
+    }
+    pub(crate) fn rvers(&self) -> i16 {
+        self.rvers
     }
 }
 

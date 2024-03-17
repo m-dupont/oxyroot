@@ -9,7 +9,9 @@ use crate::root::traits::Named;
 use crate::root::traits::Object;
 
 use crate::rbytes::wbuffer::WBuffer;
+use crate::riofs::blocks::FreeSegments;
 use crate::riofs::{utils, Error, Result};
+use crate::root::traits;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use log::trace;
 use uuid::Uuid;
@@ -72,6 +74,12 @@ impl Default for TDirectoryFile {
             class_name: String::new(),
             keys: Vec::new(),
         }
+    }
+}
+
+impl traits::Object for TDirectoryFile {
+    fn class(&self) -> &'_ str {
+        "TDirectoryFile"
     }
 }
 
@@ -345,6 +353,8 @@ impl TDirectoryFile {
     pub(crate) fn is_big_file(&self) -> bool {
         self.dir.rvers > 1000
     }
+
+    // pub(crate) fn put(&mut self, name: &str: obj: )
 }
 
 impl Unmarshaler for TDirectoryFile {

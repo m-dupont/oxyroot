@@ -1,11 +1,12 @@
 use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{
-    ensure_maximum_supported_version, ensure_minimum_supported_version, Unmarshaler,
+    ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, Unmarshaler,
 };
 use crate::rcont::objarray::ObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
+use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
 use crate::{factory_all_for_register_impl, RootFile};
 use log::trace;
@@ -20,8 +21,8 @@ pub struct Clusters {
 //     val:
 // }
 
-#[derive(Default, Debug)]
-pub struct TioFeatures(u8);
+#[derive(Default, Debug, Copy, Clone)]
+pub struct TioFeatures(pub(crate) u8);
 
 impl Unmarshaler for TioFeatures {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
@@ -53,8 +54,7 @@ factory_all_for_register_impl!(TioFeatures, "TIOFeatures");
 /// Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
 ///
 /// Mainly used to retrieve [crate::Branch] ant iterate over them
-#[derive(Default)]
-pub struct Tree {
+pub struct Tree<B> {
     rvers: i16,
     named: rbase::Named,
     attline: rbase::AttLine,
@@ -96,18 +96,68 @@ pub struct Tree {
     estimate: i64,
 
     clusters: Clusters,
-    iobits: TioFeatures,
+    pub(crate) iobits: TioFeatures,
 
-    branches: Vec<Branch>,
+    branches: Vec<B>,
 
     reader: Option<RootFileReader>,
     sinfos: Option<RootFileStreamerInfoContext>,
 }
 
-impl Tree {
+impl<B> Tree<B> {
+    pub fn tot_bytes(&self) -> i64 {
+        self.tot_bytes
+    }
+    pub fn title(&self) -> &str {
+        self.named.title.as_str()
+    }
+}
+
+impl<B> Default for Tree<B> {
+    fn default() -> Self {
+        Self {
+            rvers: 0,
+            named: rbase::Named::default(),
+            attline: rbase::AttLine::default(),
+            attfill: rbase::AttFill::default(),
+            attmarker: rbase::AttMarker::default(),
+            entries: 0,
+            tot_bytes: 0,
+            zip_bytes: 0,
+            saved_bytes: 0,
+            flushed_bytes: 0,
+            weight: 1.0,
+            timer_interval: 0,
+            scan_field: 0,
+            update: 0,
+            default_entry_offset_len: 0,
+            max_entries: 0,
+            max_entry_loop: 0,
+            max_virtual_size: 0,
+            auto_save: 0,
+            auto_flush: 0,
+            estimate: 0,
+            clusters: Clusters::default(),
+            iobits: TioFeatures::default(),
+            branches: Vec::new(),
+            reader: None,
+            sinfos: None,
+        }
+    }
+}
+
+pub type ReaderTree = Tree<Branch>;
+pub type WriterTree<T> = Tree<WBranch<T>>;
+
+impl<T> WriterTree<T>
+where
+    T: Marshaler + std::fmt::Debug + 'static,
+{
     pub fn new(name: String) -> Self {
         Self {
-            named: rbase::Named::default().with_name(name),
+            named: rbase::Named::default()
+                .with_name(name.clone())
+                .with_title(name),
             weight: 1.0,
             scan_field: 25,
             default_entry_offset_len: 1000,
@@ -121,14 +171,49 @@ impl Tree {
         }
     }
 
-    pub fn add_branch(&mut self, branch: Branch) {
-        self.branches.push(branch);
+    // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
+    pub fn new_branch<I>(&mut self, name: String, provider: I, f: &RootFile)
+    where
+        I: Iterator<Item = T> + 'static,
+    {
+        // let b: Box<dyn Iterator<Item = dyn Marshaler>> =
+        //     Box::new(provider.map(|x| Box::new(x) as Box<dyn Marshaler>));
+        // let branch = WBranch::new(name, b);
+        // self.branches.push(branch);
+        let b = Box::new(provider);
+        let WBranchwb = WBranch::new(name, b, self, f);
+        self.branches.push(WBranchwb);
+    }
+    pub fn write_all(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
+        // loop {
+        //     for b in self.branches.iter_mut() {
+        //         match b.write() {
+        //             None => return Ok(()),
+        //             Some(_) => {}
+        //         }
+        //     }
+        // }
+
+        self.close(file)
     }
 
-    pub fn write(&mut self, file: &mut RootFile) -> crate::rbytes::Result<()> {
-        todo!()
+    fn flush(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
+        trace!(";WriterTree.flush:{:?}", true);
+        for b in self.branches.iter_mut() {
+            b.flush(file)?;
+        }
+        Ok(())
     }
 
+    fn close(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
+        trace!(";WriterTree.close:{:?}", true);
+        self.flush(file)?;
+        todo!();
+        Ok(())
+    }
+}
+
+impl ReaderTree {
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         if let Some(r) = &reader {
             for b in self.branches.iter_mut() {
@@ -231,7 +316,7 @@ impl Tree {
     }
 }
 
-impl Unmarshaler for Tree {
+impl Unmarshaler for ReaderTree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let _beg = r.pos();
         // if (_beg == 868) {
@@ -409,4 +494,4 @@ impl Unmarshaler for Tree {
     }
 }
 
-factory_all_for_register_impl!(Tree, "TTree");
+factory_all_for_register_impl!(ReaderTree, "TTree");

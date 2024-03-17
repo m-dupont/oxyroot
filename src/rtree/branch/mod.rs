@@ -28,6 +28,7 @@ pub(crate) enum BranchChunks {
 ///
 /// Choice between `TBranch` or `TBranchElement` is done when Root file is read.
 /// [Branch] should not be constructed by user but accessed via [crate::Tree::branch]
+#[derive(Debug)]
 pub enum Branch {
     Base(TBranch),
     Element(TBranchElement),
@@ -43,19 +44,31 @@ impl From<Box<dyn FactoryItem>> for Branch {
     }
 }
 
-impl Debug for Branch {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Branch::Base(_) => f.write_str("TBranch{")?,
-            Branch::Element(_) => f.write_str("TBranchElement{")?,
-        };
-        f.write_str(format!("name: {}", self.name()).as_str())?;
-        f.write_str(format!("item_t: {}", self.item_type_name()).as_str())?;
-        f.write_str("}")
-    }
-}
+// impl Debug for Branch {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Branch::Base(_) => f.write_str("TBranch{")?,
+//             Branch::Element(_) => f.write_str("TBranchElement{")?,
+//         };
+//         f.write_str(format!("name: {}", self.name()).as_str())?;
+//         f.write_str(format!("item_t: {}", self.item_type_name()).as_str())?;
+//         f.write_str("}")
+//     }
+// }
 
 impl Branch {
+    fn tbranch(&mut self) -> &mut TBranch {
+        match self {
+            Branch::Base(ref mut bb) => bb,
+            Branch::Element(ref mut be) => &mut be.branch,
+        }
+    }
+
+    pub fn new(name: String) -> Self {
+        let mut b = Branch::Base(TBranch::new(name));
+        b
+    }
+
     pub fn name(&self) -> &str {
         let b: &TBranch = self.into();
         b.name()

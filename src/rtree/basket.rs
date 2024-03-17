@@ -2,18 +2,39 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, Error, Unmarshaler};
 use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
+use crate::rtree::branch::wbranch::WBranch;
+use crate::rtree::tree::{TioFeatures, WriterTree};
 use crate::rtypes::FactoryItem;
-use crate::{factory_fn_register_impl, rvers, Object};
+use crate::{factory_fn_register_impl, rbytes, rvers, Branch, Object, RootFile};
 use log::trace;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Basket {
     key: crate::riofs::Key,
     nev_buf: i32,
-    last: i32,
-    nev_size: i32,
-    buf_size: i32,
+    pub(crate) last: i32,
+    pub(crate) nev_size: i32,
+    pub(crate) buf_size: i32,
     offsets: Vec<i32>,
+    header: bool,
+    pub(crate) rvers: i16,
+    pub(crate) iobits: TioFeatures,
+}
+
+impl Default for Basket {
+    fn default() -> Self {
+        Basket {
+            key: crate::riofs::Key::default(),
+            nev_buf: 0,
+            last: 0,
+            nev_size: 0,
+            buf_size: 0,
+            offsets: Vec::new(),
+            header: false,
+            rvers: rvers::BASKET,
+            iobits: TioFeatures::default(),
+        }
+    }
 }
 
 impl Named for Basket {
@@ -39,6 +60,33 @@ pub(crate) enum BasketData {
 }
 
 impl Basket {
+    pub(crate) fn new_from_branch<T: rbytes::Marshaler + std::fmt::Debug>(
+        b: &Branch,
+        cycle: i16,
+        buf_size: i32,
+        offset_len: i32,
+        tree: &WriterTree<T>,
+        f: &RootFile,
+    ) -> Self {
+        let mut basket = Basket {
+            key: crate::riofs::Key::new_key_for_basket_internal(
+                b.name().to_string(),
+                tree.title().to_string(),
+                "TBasket".to_string(),
+                cycle,
+                f,
+            ),
+            nev_buf: 0,
+            last: 0,
+            nev_size: offset_len,
+            buf_size,
+            header: true,
+            ..Default::default()
+        };
+        trace!(";Basket.new_from_branch.key:{:?}", &basket);
+        basket
+    }
+
     pub(crate) fn raw_data(&self, file: &mut RootFileReader) -> BasketData {
         let ret = self.key.bytes(file, None).unwrap();
 
@@ -93,6 +141,9 @@ impl Basket {
     }
     pub fn offsets(&self) -> &Vec<i32> {
         &self.offsets
+    }
+    pub fn set_key(&mut self, key: crate::riofs::Key) {
+        self.key = key;
     }
 }
 

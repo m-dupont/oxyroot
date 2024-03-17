@@ -1,4 +1,5 @@
 use crate::riofs::consts;
+use crate::rtree::tree::{ReaderTree, WriterTree};
 use itertools::cons_tuples;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
@@ -660,16 +661,19 @@ impl RootFile {
         // Ok(obj)
     }
 
-    pub fn get_tree(&mut self, name: &str) -> Result<Tree> {
+    pub fn get_tree(&mut self, name: &str) -> Result<ReaderTree> {
         let objet = self.get_object(name)?;
-        let mut objet: Tree = *objet.downcast::<Tree>().expect("");
+        let mut objet: ReaderTree = *objet.downcast::<ReaderTree>().expect("");
 
         objet.set_reader(Some(self.reader()?.clone()));
         objet.set_streamer_info(self.sinfos.clone());
         Ok(objet)
     }
 
-    pub fn add_tree(&mut self, tree: &Tree) -> Result<()> {
+    pub fn add_tree<T>(&mut self, tree: &WriterTree<T>) -> Result<()>
+    where
+        T: Marshaler + Debug,
+    {
         // let mut writer = self.writer()?;
         // tree.write_to_file(&mut writer)
         Ok(())

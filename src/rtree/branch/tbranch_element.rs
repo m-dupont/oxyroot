@@ -17,7 +17,7 @@ use regex::Regex;
 use std::cell::RefCell;
 use std::iter::once;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct TBranchElement {
     pub(crate) branch: TBranch,
 

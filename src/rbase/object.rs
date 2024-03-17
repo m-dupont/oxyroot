@@ -2,6 +2,7 @@ use crate::rbase::consts::{K_IS_ON_HEAP, K_IS_REFERENCED};
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, Unmarshaler};
+use crate::root::traits;
 use crate::rvers;
 use log::trace;
 
@@ -14,6 +15,11 @@ pub(crate) struct Object {
 impl Object {
     fn test_bits(&self, bits: u32) -> bool {
         self.bits & bits != 0
+    }
+}
+impl traits::Object for Object {
+    fn class(&self) -> &'_ str {
+        "TObject"
     }
 }
 

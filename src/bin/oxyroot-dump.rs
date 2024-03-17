@@ -1,6 +1,6 @@
 use chrono::Local;
 use clap::Parser;
-use oxyroot::{Branch, RBuffer, SizedSlice, Tree, Unmarshaler, UnmarshalerInto};
+use oxyroot::{Branch, RBuffer, ReaderTree, SizedSlice, Tree, Unmarshaler, UnmarshalerInto};
 use oxyroot::{RootFile, Slice};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
@@ -1563,12 +1563,12 @@ impl<'a> ZipperDumperItem<'a> {
 }
 
 pub struct ZiperDumperBranch<'a> {
-    tree: &'a Tree,
+    tree: &'a ReaderTree,
     iterators: Vec<ZipperDumperItem<'a>>,
 }
 
 impl<'a> ZiperDumperBranch<'a> {
-    pub fn new(tree: &'a Tree) -> ZiperDumperBranch<'a> {
+    pub fn new(tree: &'a ReaderTree) -> ZiperDumperBranch<'a> {
         let iterators = tree
             .branches_r()
             .iter()

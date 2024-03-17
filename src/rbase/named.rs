@@ -37,6 +37,11 @@ impl Named {
         self.name = name;
         self
     }
+
+    pub(crate) fn with_title(mut self, title: String) -> Self {
+        self.title = title;
+        self
+    }
 }
 
 impl Unmarshaler for Named {

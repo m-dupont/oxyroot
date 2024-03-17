@@ -1,5 +1,5 @@
 use crate::rdict::StreamerInfo;
-use crate::root;
+use crate::{root, Object};
 use rbuffer::RBuffer;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -61,38 +61,51 @@ pub trait Marshaler {
     fn marshal(&self, w: &mut WBuffer) -> Result<i64>;
 }
 
-macro_rules! impl_unmarshaler_primitive {
-    ($ftype:ty, $buffer_fn:ident) => {
+macro_rules! impl_marshalers_primitive {
+    ($ftype:ty, $buffer_read_fn:ident, $buffer_write_fn:ident) => {
         impl Unmarshaler for $ftype {
             fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
-                *self = r.$buffer_fn()?;
+                *self = r.$buffer_read_fn()?;
                 Ok(())
+            }
+        }
+
+        impl Marshaler for $ftype {
+            fn marshal(&self, w: &mut WBuffer) -> Result<i64> {
+                let beg = w.pos();
+                w.$buffer_write_fn(*self)?;
+                Ok(w.pos() - beg)
             }
         }
     };
 
     ($ftype:ty) => {
         paste! {
-            impl_unmarshaler_primitive!($ftype, [<read_$ftype>]);
+            impl_marshalers_primitive!($ftype, [<read_$ftype>], [<write_$ftype>]);
+        }
 
-
-
+        paste! {
+                    impl $crate::root::traits::Object for $ftype {
+                fn class(&self) -> &'_ str {
+                "[<$ftype>]"
+                }
+            }
         }
     };
 }
 
-impl_unmarshaler_primitive!(i8);
-impl_unmarshaler_primitive!(u8);
-impl_unmarshaler_primitive!(i16);
-impl_unmarshaler_primitive!(u16);
-impl_unmarshaler_primitive!(i32);
-impl_unmarshaler_primitive!(u32);
-impl_unmarshaler_primitive!(i64);
-impl_unmarshaler_primitive!(u64);
+impl_marshalers_primitive!(i8);
+impl_marshalers_primitive!(u8);
+impl_marshalers_primitive!(i16);
+impl_marshalers_primitive!(u16);
+impl_marshalers_primitive!(i32);
+impl_marshalers_primitive!(u32);
+impl_marshalers_primitive!(i64);
+impl_marshalers_primitive!(u64);
 
-impl_unmarshaler_primitive!(f32);
-impl_unmarshaler_primitive!(f64);
-impl_unmarshaler_primitive!(bool);
+impl_marshalers_primitive!(f32);
+impl_marshalers_primitive!(f64);
+impl_marshalers_primitive!(bool);
 
 impl Unmarshaler for String {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {

@@ -2,9 +2,13 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
+use crate::rtree::branch::wbranch::WBranch;
+use crate::rtree::branch::TBranch;
 use crate::rtypes::FactoryItem;
-use crate::{factory_all_for_register_impl, rbase};
+use crate::{factory_all_for_register_impl, rbase, Branch};
 use crate::{factory_fn_register_impl, rvers};
+use log::trace;
+use std::any::TypeId;
 
 #[derive(Debug)]
 pub enum Leaf {
@@ -21,6 +25,26 @@ pub enum Leaf {
 }
 
 impl Leaf {
+    pub(crate) fn new<T: 'static>(b: &TBranch) -> Self {
+        let ty = TypeId::of::<T>();
+
+        let tleaf = TLeaf::default()
+            .with_etype(std::mem::size_of::<T>() as i32)
+            .with_name(b.named.name.clone())
+            .with_title(b.named.name.clone());
+
+        let leaf = if ty == TypeId::of::<i32>() {
+            let leaf = Leaf::I(LeafI::new(tleaf));
+            leaf
+        } else {
+            unimplemented!()
+        };
+
+        trace!(";Leaf.new.leaf:{:?}", leaf);
+
+        leaf
+    }
+
     fn tleaf(&self) -> &TLeaf {
         let l: &TLeaf = self.into();
         l
@@ -141,6 +165,33 @@ pub struct TLeaf {
                     // branch   BRANCH    // supporting branch of this leaf
 }
 
+impl TLeaf {
+    pub(crate) fn with_name(mut self, name: String) -> Self {
+        self.named.name = name;
+        self
+    }
+
+    pub(crate) fn with_title(mut self, title: String) -> Self {
+        self.named.title = title;
+        self
+    }
+
+    pub(crate) fn with_shape(mut self, shape: Vec<i32>) -> Self {
+        self.shape = shape;
+        self
+    }
+
+    pub(crate) fn with_len(mut self, len: i32) -> Self {
+        self.len = len;
+        self
+    }
+
+    pub(crate) fn with_etype(mut self, etype: i32) -> Self {
+        self.etype = etype;
+        self
+    }
+}
+
 impl Named for TLeaf {
     fn title(&self) -> &'_ str {
         self.named.title()
@@ -191,43 +242,6 @@ impl Unmarshaler for TLeaf {
 
 factory_fn_register_impl!(TLeaf, "TLeaf");
 
-// #[derive(Default, Debug)]
-// pub struct LeafI {
-//     rvers: i16,
-//     tleaf: TLeaf,
-//     min: i32,
-//     max: i32,
-//     // ptr: &i32;
-// }
-//
-// impl Unmarshaler for LeafI {
-//     fn unmarshal(&mut self, r: &mut RBuffer) -> anyhow::Result<()> {
-//         let hdr = r.read_header(self.class())?;
-//         ensure!(
-//             hdr.vers <= rvers::LEAF_I,
-//             "rtree: invalid {} version={} > {}",
-//             self.class(),
-//             hdr.vers,
-//             rvers::LEAF_I
-//         );
-//
-//         self.rvers = hdr.vers;
-//
-//         r.read_object(&mut self.tleaf)?;
-//
-//         r.read_object(&mut self.min)?;
-//         r.read_object(&mut self.max)?;
-//
-//         r.check_header(&hdr)?;
-//
-//         Ok(())
-//
-//         // todo!()
-//     }
-// }
-//
-// factory_all_for_register_impl!(LeafI, "TLeafI");
-
 #[derive(Default, Debug)]
 pub struct LeafC {
     rvers: i16,
@@ -269,6 +283,19 @@ macro_rules! make_tleaf_variant {
             min: $field_type,
             max: $field_type,
             // ptr: &i32;
+        }
+
+        impl $struct_name {
+            pub fn new(tleaf: TLeaf) -> Self {
+                // let tleaf = TLeaf::default()
+                //     .with_etype(std::mem::size_of::<$field_type>() as i32)
+                //     .with_name(name);
+                Self {
+                    tleaf,
+                    rvers: rvers::$struct_name,
+                    ..Default::default()
+                }
+            }
         }
 
         factory_all_for_register_impl!($struct_name, $root_name);

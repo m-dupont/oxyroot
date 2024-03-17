@@ -1,6 +1,7 @@
 use crate::rbytes::consts::kByteCountMask;
 use crate::rbytes::{Header, Result};
 use crate::rtypes::FactoryItem;
+use crate::Marshaler;
 use log::trace;
 use std::collections::HashMap;
 use std::mem::size_of;
@@ -81,6 +82,10 @@ impl WBuffer {
         self.w.write_array_u8(&p0.to_be_bytes())
     }
 
+    pub(crate) fn write_bool(&mut self, p0: bool) -> Result<()> {
+        self.w.write_array_u8(&(p0 as u8).to_be_bytes())
+    }
+
     pub(crate) fn write_string(&mut self, p0: &str) -> Result<()> {
         let len = p0.len() as i32;
         let bytes = p0.as_bytes();
@@ -129,6 +134,10 @@ impl WBuffer {
 
     pub(crate) fn write_object_any(&mut self, obj: &Box<dyn FactoryItem>) -> Result<()> {
         todo!()
+    }
+
+    pub(crate) fn write_object(&mut self, obj: &impl Marshaler) -> Result<i64> {
+        obj.marshal(self)
     }
 }
 
