@@ -36,7 +36,7 @@ pub struct TBranch {
     /// last basket number written
     pub(crate) write_basket: i32,
     /// current entry number (last one filled in this branch)
-    entry_number: i64,
+    pub(crate) entry_number: i64,
     /// IO features for newly-created baskets
     pub(crate) iobits: TioFeatures,
     /// offset of this branch
@@ -46,7 +46,7 @@ pub struct TBranch {
     /// branch split level
     pub(crate) split_level: i32,
     /// number of entries
-    entries: i64,
+    pub(crate) entries: i64,
     /// number of the first entry in this branch
     first_entry: i64,
     /// total number of bytes in all leaves before compression
@@ -645,7 +645,7 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
         w.write_i32(self.entry_offset_len)?;
         w.write_i32(self.write_basket)?;
-
+        trace!(";TBranch.marshal.entry_number:{:?}", self.entry_number);
         w.write_i64(self.entry_number)?;
         w.write_object(&self.iobits)?;
 

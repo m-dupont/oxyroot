@@ -23,7 +23,7 @@ fn main() {
     let mut tree = Tree::new("mytree".to_string());
     f.add_tree(&tree).unwrap();
 
-    let it32 = (0..10);
+    let it32 = (0..5);
 
     // let f = || it.next().unwrap();
     //

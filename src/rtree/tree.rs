@@ -208,14 +208,30 @@ where
         self.branches.push(WBranchwb);
     }
     pub fn write_all(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
-        // loop {
-        //     for b in self.branches.iter_mut() {
-        //         match b.write() {
-        //             None => return Ok(()),
-        //             Some(_) => {}
-        //         }
-        //     }
-        // }
+        let mut branchs_done = self.branches.iter().map(|b| false).collect::<Vec<_>>();
+        let mut branches = std::mem::take(&mut self.branches);
+        loop {
+            let mut tot = 0;
+            let mut zip = 0;
+            for (b, d) in branches.iter_mut().zip(branchs_done.iter_mut()) {
+                match b.write(self, file) {
+                    None => *d = true,
+                    Some(nbytes) => {
+                        tot += nbytes;
+                    }
+                }
+            }
+
+            self.tot_bytes += tot as i64;
+            self.zip_bytes += zip as i64;
+            if branchs_done.iter().all(|d| *d) {
+                break;
+            }
+            self.entries += 1;
+        }
+        self.branches = branches;
+
+        trace!(";WriterTree.write_all.entries:{:?}", self.entries);
 
         self.close(file)
     }

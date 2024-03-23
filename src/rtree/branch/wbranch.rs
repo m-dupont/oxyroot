@@ -11,7 +11,7 @@ use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
 use crate::{rvers, Branch, Named, Object, RootFile};
 use log::trace;
 use std::any;
-use std::fmt::Debug;
+use std::fmt::{format, Debug};
 use std::marker::PhantomData;
 
 pub struct WBranch<T>
@@ -83,12 +83,36 @@ where
         branch
     }
 
-    pub fn write(&mut self) -> Option<()> {
+    pub fn write(&mut self, tree: &WriterTree<T>, file: &mut RootFile) -> Option<i32> {
+        // trace!(";WBranch.write.call:{:?}", true);
+        let basket = self.basket.as_mut().unwrap();
+
+        let ident = format!("{}.{}", self.branch.name(), self.branch.tbranch().entries);
+        let tbranch = self.branch.tbranch_mut();
         match self.iterator.next() {
             Some(item) => {
-                trace!("WBranch.write.item:{:?}", item);
+                trace!(";WBranch.write.{ident}.item:{:?}", item);
                 // self.branch.write(item);
-                Some(())
+                tbranch.entries += 1;
+                tbranch.entry_number += 1;
+
+                let szOld = basket.wbuf.len();
+                trace!(";WBranch.write.{ident}.szOld:{:?}", szOld);
+                basket.update(szOld as i64).unwrap();
+                basket.wbuf.write_object(&item).unwrap();
+                let szNew = basket.wbuf.len();
+                trace!(";WBranch.write.{ident}.szNew:{:?}", szNew);
+                let n = (szNew - szOld) as i32;
+                if n > basket.basket.nev_size {
+                    basket.basket.nev_size = n;
+                }
+
+                if szNew + n as usize >= tbranch.basket_size as usize {
+                    self.flush(file).unwrap();
+                    self.basket = Some(self.create_new_basket(tree, file));
+                }
+
+                Some(n)
             }
             None => None,
         }

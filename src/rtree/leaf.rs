@@ -32,7 +32,7 @@ impl Marshaler for Leaf {
             // Leaf::Base(_) => {}
             // Leaf::Element(_) => {}
             Leaf::I(i) => i.marshal(w),
-            // Leaf::S(_) => {}
+            Leaf::S(i) => i.marshal(w),
             // Leaf::D(_) => {}
             // Leaf::F(_) => {}
             // Leaf::B(_) => {}
@@ -83,6 +83,9 @@ impl Leaf {
 
         let leaf = if ty == TypeId::of::<i32>() {
             let leaf = Leaf::I(LeafI::new(tleaf));
+            leaf
+        } else if ty == TypeId::of::<i16>() {
+            let leaf = Leaf::S(LeafS::new(tleaf));
             leaf
         } else {
             unimplemented!()

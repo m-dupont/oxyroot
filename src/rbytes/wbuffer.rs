@@ -317,6 +317,11 @@ impl WBuffer {
     pub(crate) fn write_object_box(&mut self, obj: Box<impl Marshaler>) -> Result<i64> {
         obj.marshal(self)
     }
+
+    pub(crate) fn clear(&mut self) {
+        self.w.p.clear();
+        self.w.c = 0;
+    }
 }
 
 impl WBuffer {

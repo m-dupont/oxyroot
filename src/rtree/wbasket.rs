@@ -19,7 +19,7 @@ where
 {
     pub(crate) basket: Basket,
     phantom: std::marker::PhantomData<T>,
-    // wbuf: WBuffer,
+    pub(crate) wbuf: WBuffer,
 }
 
 impl<T> WBasket<T>
@@ -30,8 +30,20 @@ where
         WBasket {
             basket: b,
             phantom: std::marker::PhantomData,
-            // wbuf: WBuffer::new(0),
+            wbuf: WBuffer::new(0),
         }
+    }
+
+    pub(crate) fn update(&mut self, offset: i64) -> Result<()> {
+        let beg = offset;
+        trace!(";WBranch.write.wbasket.update.{beg}.call:{:?}", true);
+        let offset = offset + self.basket.key().key_len() as i64;
+        trace!(";WBranch.write.wbasket.update.{beg}.offset:{:?}", offset);
+        if self.basket.offsets().len() > 0 {
+            unimplemented!("WBasket.update.offsets.len > 0");
+        }
+        self.basket.nev_buf += 1;
+        Ok(())
     }
 
     pub(crate) fn write_to_file(&mut self, file: &mut RootFile) -> Result<BasketBytesWritten> {
@@ -51,8 +63,8 @@ where
             ";WBasket.write_to_file.basket.key().key_len():{:?}",
             self.basket.key().key_len()
         );
-        self.basket.last = self.basket.key().key_len() as i32;
-        trace!(";WBasket.write_to_file.b.last:{:?}", adjust);
+        self.basket.last = self.basket.key().key_len() + self.wbuf.len() as i32;
+        trace!(";WBasket.write_to_file.b.last:{:?}", self.basket.last);
 
         let key = self.basket.key();
 
@@ -64,7 +76,7 @@ where
             key.title().to_string(),
             self.basket.class().to_string(),
             key.cycle() as i16,
-            Vec::new(),
+            self.wbuf.p().clone(),
             file,
         )?;
 
@@ -102,6 +114,8 @@ where
             tot_bytes: n_bytes as i64,
             zip_bytes: self.basket.key().n_bytes() as i64,
         };
+
+        self.wbuf.clear();
 
         Ok(ret)
     }

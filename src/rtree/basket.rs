@@ -13,7 +13,7 @@ use log::trace;
 #[derive(Debug)]
 pub struct Basket {
     key: crate::riofs::Key,
-    nev_buf: i32,
+    pub(crate) nev_buf: i32,
     pub(crate) last: i32,
     pub(crate) nev_size: i32,
     pub(crate) buf_size: i32,
