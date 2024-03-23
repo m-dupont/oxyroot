@@ -10,8 +10,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
-use oxyroot::rdict::streamers::DBSTREAMER;
-
 const OUT_DIR: &str = "/tmp/rust/gen_streamers";
 
 fn gen_one_cat_streamers_with_root(class: &str) -> Result<String> {
