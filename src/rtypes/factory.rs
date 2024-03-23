@@ -1,4 +1,4 @@
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{RVersioner, Unmarshaler};
 use lazy_static::lazy_static;
 use log::trace;
 // use std::any::Any;
@@ -18,18 +18,40 @@ use crate::rtypes::Error;
 use crate::rtypes::Result;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
-pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItem>;
+pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItemRead>;
 
 trait_set! {
     /// Trait of values stored in the Factory
-    pub trait FactoryItem = Any + Unmarshaler + Marshaler + traits::Named;
+    pub trait FactoryItemRead = Any + Unmarshaler + traits::Named;
+    pub trait FactoryItemWrite = Any + Marshaler + traits::Named + RVersioner ;
 }
 
-downcast!(dyn FactoryItem);
+impl Marshaler for &dyn FactoryItemWrite {
+    fn marshal(&self, w: &mut crate::rbytes::WBuffer) -> crate::rbytes::Result<i64> {
+        (*self).marshal(w)
+    }
+}
 
-impl Debug for Box<dyn FactoryItem> {
+downcast!(dyn FactoryItemRead);
+
+impl Debug for Box<dyn FactoryItemRead> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Box<dyn FactoryItem>")
+        f.debug_struct("Box<dyn FactoryItemRead>")
+            .field("class", &self.class())
+            .finish()
+    }
+}
+
+impl Debug for Box<dyn FactoryItemWrite> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Box<dyn FactoryItemWrite>")
+            .field("class", &self.class())
+            .finish()
+    }
+}
+impl<'a> Debug for &'a dyn FactoryItemWrite {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Box<dyn FactoryItemWrite>")
             .field("class", &self.class())
             .finish()
     }
@@ -60,7 +82,7 @@ macro_rules! factory_fn_register_impl {
             fn register(factory: &mut $crate::rtypes::factory::Factory) {
                 let f = || {
                     let v: Self = Self::default();
-                    let b: Box<dyn $crate::rtypes::factory::FactoryItem> = Box::new(v);
+                    let b: Box<dyn $crate::rtypes::factory::FactoryItemRead> = Box::new(v);
                     b
                 };
 
@@ -76,6 +98,16 @@ macro_rules! factory_all_for_register_impl {
         impl $crate::root::traits::Named for $t {}
 
         $crate::factory_fn_register_impl! {$t, $n}
+    };
+
+    (  $t:ty, $n:literal, $vers: expr  ) => {
+        impl $crate::rbytes::RVersioner for $t {
+            fn rversion(&self) -> i16 {
+                $vers
+            }
+        }
+
+        $crate::factory_all_for_register_impl! {$t, $n}
     };
 }
 
@@ -107,11 +139,11 @@ impl<'a> Factory<'a> {
     }
 
     #[allow(dead_code)] // used in tests
-    pub fn get_as_box(&self, s: &'a str) -> Option<Box<dyn FactoryItem>> {
+    pub fn get_as_box(&self, s: &'a str) -> Option<Box<dyn FactoryItemRead>> {
         let s = self.get(s);
         if let Ok(fct) = s {
             let v = fct();
-            let vec: Box<dyn FactoryItem> = v;
+            let vec: Box<dyn FactoryItemRead> = v;
             return Some(vec);
         }
         None
@@ -120,7 +152,7 @@ impl<'a> Factory<'a> {
     #[allow(dead_code)] // used in tests
     pub fn get_as_boxtyped<T>(&self, s: &'a str) -> Result<Box<T>>
     where
-        T: FactoryItem,
+        T: FactoryItemRead,
     {
         if let Some(boxed) = self.get_as_box(s) {
             if let Ok(v) = boxed.downcast::<T>() {
@@ -140,21 +172,21 @@ impl<'a> Factory<'a> {
 lazy_static! {
 
     pub static ref FACTORY: Factory<'static> = {
-        use crate::rcont::list::List;
-        use crate::rcont::objarray::ObjArray;
+        use crate::rcont::list::ReaderList;
+        use crate::rcont::objarray::ReaderObjArray;
         use crate::rdict::StreamerInfo;
-        use crate::rdict::StreamerBase;
-        use crate::rdict::StreamerString;
-        use crate::rdict::StreamerBasicType;
-        use crate::rdict::StreamerObject;
-        use crate::rdict::StreamerObjectPointer;
-        use crate::rdict::StreamerObjectAny;
-        use crate::rdict::StreamerBasicPointer;
+        use crate::rdict::streamers::streamer_types::StreamerBase;
+        use crate::rdict::streamers::streamer_types::StreamerString;
+        use crate::rdict::streamers::streamer_types::StreamerBasicType;
+        use crate::rdict::streamers::streamer_types::StreamerObject;
+        use crate::rdict::streamers::streamer_types::StreamerObjectPointer;
+        use crate::rdict::streamers::streamer_types::StreamerObjectAny;
+        use crate::rdict::streamers::streamer_types::StreamerBasicPointer;
 
         let mut f = Factory::new();
         // f.add(LIST::make_factory_name(), LIST::make_factory_builder());
-        List::register(&mut f);
-        ObjArray::register(&mut f);
+        ReaderList::register(&mut f);
+        ReaderObjArray::register(&mut f);
         StreamerInfo::register(&mut f);
         StreamerBase::register(&mut f);
         StreamerString::register(&mut f);
@@ -163,8 +195,8 @@ lazy_static! {
         StreamerObjectPointer::register(&mut f);
         StreamerObjectAny::register(&mut f);
         StreamerBasicPointer::register(&mut f);
-        crate::rdict::StreamerSTL::register(&mut f);
-        crate::rdict::StreamerSTLstring::register(&mut f);
+        crate::rdict::streamers::streamer_types::StreamerSTL::register(&mut f);
+        crate::rdict::streamers::streamer_types::StreamerSTLstring::register(&mut f);
         crate::rbase::ObjString::register(&mut f);
         crate::rbase::AttLine::register(&mut f);
         crate::rbase::AttFill::register(&mut f);
@@ -192,16 +224,16 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     // use crate::as_any::Downcast;
-    use crate::rcont::list::List;
+    use crate::rcont::list::ReaderList;
     use crate::root::traits::{Named, Object};
-    use crate::rtypes::factory::{Factory, FactoryItem, FACTORY};
+    use crate::rtypes::factory::{Factory, FactoryItemRead, FACTORY};
 
     #[test]
     fn gen_factory_all_steps() {
         let mut factory = Factory::new();
         let f = || {
-            let v: List = List::new();
-            let b: Box<dyn FactoryItem> = Box::new(v);
+            let v: ReaderList = ReaderList::new();
+            let b: Box<dyn FactoryItemRead> = Box::new(v);
             b
         };
         factory.add("VEC", f);
@@ -216,12 +248,12 @@ mod tests {
         let vec = fct.unwrap();
         let vec = vec();
 
-        let boxf: Box<dyn FactoryItem> = vec;
-        let vec = boxf.downcast_ref::<List>();
+        let boxf: Box<dyn FactoryItemRead> = vec;
+        let vec = boxf.downcast_ref::<ReaderList>();
 
         assert!(vec.is_ok());
 
-        let vec = boxf.downcast::<List>();
+        let vec = boxf.downcast::<ReaderList>();
         assert!(vec.is_ok());
 
         let vec = vec.unwrap();
@@ -245,10 +277,10 @@ mod tests {
         assert!(FACTORY.get("TList").is_ok());
         assert!(FACTORY.get_as_box("TList").is_some());
 
-        assert!(FACTORY.get_as_boxtyped::<List>("TList").is_ok());
+        assert!(FACTORY.get_as_boxtyped::<ReaderList>("TList").is_ok());
         // assert!(FACTORY.get_as_boxtyped::<dyn Unmarshaler2>("TList").is_ok());
 
-        if let Ok(v) = FACTORY.get_as_boxtyped::<List>("TList") {
+        if let Ok(v) = FACTORY.get_as_boxtyped::<ReaderList>("TList") {
             assert_eq!(v.class(), "TList");
             assert_eq!(v.name(), "TList");
         } else {
@@ -263,10 +295,10 @@ mod tests {
         // let b: Box<dyn traits::NAMED> = FACTORY.get_as_box("TList").unwrap();
 
         assert!((*FACTORY.get_as_box("TList").unwrap())
-            .downcast_ref::<List>()
+            .downcast_ref::<ReaderList>()
             .is_ok());
 
-        if let Ok(v) = (*FACTORY.get_as_box("TList").unwrap()).downcast_ref::<List>() {
+        if let Ok(v) = (*FACTORY.get_as_box("TList").unwrap()).downcast_ref::<ReaderList>() {
             assert_eq!(v.class(), "TList");
             assert_eq!(v.name(), "TList");
         } else {

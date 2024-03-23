@@ -8,7 +8,8 @@ use crate::riofs::utils::datetime_to_u32;
 use crate::riofs::{utils, Result};
 use crate::root::traits::{datimeSizeof, tstringSizeof, Named};
 use crate::root::{objects, traits};
-use crate::rtypes::FactoryItem;
+use crate::rtypes::factory::FactoryItemWrite;
+use crate::rtypes::FactoryItemRead;
 use crate::{rcompress, riofs, rvers};
 use crate::{rtypes, RootFile};
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -240,8 +241,9 @@ impl Key {
         buf: Vec<u8>,
         f: &mut RootFile,
     ) -> Result<Self> {
-        let indent = name.clone() + "-" + &title;
-        trace!(";Key.new_from_buffer.buf.value:{:?}", &buf);
+        let indent = name.clone() + "-" + &name;
+        trace!(";Key.new_from_buffer.{indent}.f.end:{:?}", f.end());
+        // trace!(";Key.new_from_buffer.{indent}.buf.value:{:?}", &buf);
         let key_len = key_len_for(&name, &title, &class, f);
         let obj_len = buf.len() as i32;
         let mut key = Key {
@@ -262,18 +264,27 @@ impl Key {
         }
 
         key.buffer = rcompress::compress(buf, f.compression())?;
-        trace!(
-            ";Key.new_from_buffer.buf.after_compression:{:?}",
-            key.buffer
-        );
+        // trace!(
+        //     ";Key.new_from_buffer.{indent}.buf.after_compression:{:?}",
+        //     key.buffer
+        // );
         key.n_bytes = key.key_len + key.buffer.len() as i32;
         f.set_end(key.seek_key + key.n_bytes as i64)?;
 
-        trace!(";Key.new_from_buffer.key.seek_key:{:?}", key.seek_key);
-        trace!(";Key.new_from_buffer.key.obj_len:{:?}", key.obj_len);
-        trace!(";Key.new_from_buffer.key.seek_pdir:{:?}", key.seek_pdir);
-        trace!(";Key.new_from_buffer.key.cycle:{:?}", key.cycle);
-        trace!(";Key.new_from_buffer.key.title:{:?}", key.title());
+        trace!(
+            ";Key.new_from_buffer.{indent}.key.seek_key:{:?}",
+            key.seek_key
+        );
+        trace!(
+            ";Key.new_from_buffer.{indent}.key.obj_len:{:?}",
+            key.obj_len
+        );
+        trace!(
+            ";Key.new_from_buffer.{indent}.key.seek_pdir:{:?}",
+            key.seek_pdir
+        );
+        trace!(";Key.new_from_buffer.{indent}.key.cycle:{:?}", key.cycle);
+        trace!(";Key.new_from_buffer.{indent}.key.title:{:?}", key.title());
 
         Ok(key)
     }
@@ -297,6 +308,61 @@ impl Key {
         key.n_bytes = key.key_len;
         trace!(";Key.new_key_for_basket_internal.key:{:?}", &key);
         key
+    }
+
+    pub(crate) fn new_from_object<T>(
+        name: &str,
+        title: &str,
+        class: &str,
+        obj: &T,
+        f: &mut RootFile,
+    ) -> Result<Self>
+    where
+        T: FactoryItemWrite,
+    {
+        trace!(";Key.new_from_object.name:{:?}", name);
+        trace!(";Key.new_from_object.title:{:?}", title);
+        trace!(";Key.new_from_object.class:{:?}", class);
+
+        let key_len = key_len_for(&name, &title, &class, f);
+        trace!(";Key.new_from_object.key_len:{:?}", key_len);
+
+        let mut buf = WBuffer::new(key_len as u32);
+        obj.marshal(&mut buf)?;
+        let obj_len = buf.len() as i32;
+        trace!(";Key.new_from_object.obj_len:{:?}", obj_len);
+
+        let mut key = Key {
+            n_bytes: key_len + obj_len,
+            key_len,
+            obj_len,
+            cycle: 1,
+            class: class.to_string(),
+            name: name.to_string(),
+            title: title.to_string(),
+            seek_key: f.end(),
+            seek_pdir: f.dir().seek_dir,
+
+            ..Default::default()
+        };
+
+        if f.is_big_file() {
+            key.rvers += 1000;
+        }
+        trace!(
+            ";Key.new_from_object.buf.len.before_compression:{:?}",
+            buf.len()
+        );
+        let buf = rcompress::compress(buf.buffer(), f.compression())?;
+        trace!(
+            ";Key.new_from_object.buf.len.after_compression:{:?}",
+            buf.len()
+        );
+        key.buffer = buf;
+        key.n_bytes = key.key_len + key.buffer.len() as i32;
+
+        f.set_end(key.seek_key + key.n_bytes as i64)?;
+        Ok(key)
     }
 
     pub(crate) fn set_buffer(&mut self, buffer: Vec<u8>, update_obj_len: bool) {
@@ -339,7 +405,7 @@ impl Key {
         &self,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,
-    ) -> riofs::Result<Option<Box<dyn FactoryItem>>> {
+    ) -> riofs::Result<Option<Box<dyn FactoryItemRead>>> {
         // return &self.obj;
 
         // if let Some(ref obj) = self.obj {
@@ -352,10 +418,10 @@ impl Key {
 
         let v = fct();
         //obj, ok := v.Interface().(root.OBJECT)
-        let obj: Box<dyn rtypes::FactoryItem> = v;
+        let obj: Box<dyn rtypes::FactoryItemRead> = v;
 
         // vv, ok := obj.(rbytes.Unmarshaler)
-        let mut vv: Box<dyn rtypes::FactoryItem> = obj;
+        let mut vv: Box<dyn rtypes::FactoryItemRead> = obj;
 
         // vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32))?;
         vv.unmarshal(&mut RBuffer::new(&buf, self.key_len as u32).with_info_context(ctx))?;
@@ -422,6 +488,12 @@ impl Key {
     }
     pub(crate) fn rvers(&self) -> i16 {
         self.rvers
+    }
+    pub fn class_name(&self) -> &str {
+        &self.class
+    }
+    pub fn set_cycle(&mut self, cycle: i16) {
+        self.cycle = cycle;
     }
 }
 

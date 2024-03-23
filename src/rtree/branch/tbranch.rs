@@ -1,17 +1,18 @@
 use crate::rbase::AttFill;
-use crate::rbytes::ensure_maximum_supported_version;
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rcont::objarray::ObjArray;
+use crate::rbytes::{ensure_maximum_supported_version, RVersioner};
+use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::branch::tbranch_props::TBranchProps;
+use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type;
 use crate::rtree::tree::TioFeatures;
-use crate::{factory_fn_register_impl, rbase, Branch, Marshaler, RBuffer, Unmarshaler};
+use crate::{factory_fn_register_impl, rbase, rvers, Branch, Marshaler, RBuffer, Unmarshaler};
 use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
@@ -24,10 +25,10 @@ pub(crate) const DEFAULT_MAX_BASKETS: i32 = 10;
 #[derive(Default, Debug)]
 pub struct TBranch {
     pub(crate) named: rbase::Named,
-    attfill: rbase::AttFill,
+    pub(crate) attfill: rbase::AttFill,
 
     /// compression level and algorithm
-    compress: i32,
+    pub(crate) compress: i32,
     /// initial size of BASKET buffer
     pub(crate) basket_size: i32,
     /// initial length of entryOffset table in the basket buffers
@@ -373,7 +374,7 @@ impl Unmarshaler for TBranch {
             self.zip_bytes = r.read_i64()?;
 
             {
-                let mut branches = r.read_object_into::<ObjArray>()?;
+                let mut branches = r.read_object_into::<ReaderObjArray>()?;
                 self.branches = branches
                     .take_objs()
                     .into_iter()
@@ -382,7 +383,7 @@ impl Unmarshaler for TBranch {
             }
 
             {
-                let mut leaves = r.read_object_into::<ObjArray>()?;
+                let mut leaves = r.read_object_into::<ReaderObjArray>()?;
                 if !leaves.objs.is_empty() {
                     self.leaves = leaves
                         .take_objs()
@@ -393,7 +394,7 @@ impl Unmarshaler for TBranch {
             }
 
             {
-                let mut baskets = r.read_object_into::<ObjArray>()?;
+                let mut baskets = r.read_object_into::<ReaderObjArray>()?;
                 if !baskets.objs.is_empty() {
                     self.baskets = baskets
                         .take_objs()
@@ -460,7 +461,7 @@ impl Unmarshaler for TBranch {
             );
 
             {
-                let mut branches = r.read_object_into::<ObjArray>()?;
+                let mut branches = r.read_object_into::<ReaderObjArray>()?;
                 self.branches = branches
                     .take_objs()
                     .into_iter()
@@ -475,7 +476,7 @@ impl Unmarshaler for TBranch {
             );
 
             {
-                let mut leaves = r.read_object_into::<ObjArray>()?;
+                let mut leaves = r.read_object_into::<ReaderObjArray>()?;
                 if !leaves.objs.is_empty() {
                     self.leaves = leaves
                         .take_objs()
@@ -492,7 +493,7 @@ impl Unmarshaler for TBranch {
             );
 
             {
-                let mut baskets = r.read_object_into::<ObjArray>()?;
+                let mut baskets = r.read_object_into::<ReaderObjArray>()?;
                 if !baskets.objs.is_empty() {
                     self.baskets = baskets
                         .take_objs()
@@ -618,8 +619,139 @@ impl Unmarshaler for TBranch {
 
 impl Marshaler for TBranch {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let len = w.len() - 1;
+        let beg = w.pos();
+        trace!(";TBranch.marshal.buf.pos:{:?}", w.pos());
+        let mut b_max_baskets = self.write_basket + 1;
+        if b_max_baskets < DEFAULT_MAX_BASKETS {
+            b_max_baskets = DEFAULT_MAX_BASKETS;
+        }
+        trace!(";TBranch.marshal.b_max_baskets:{:?}", b_max_baskets);
+        trace!(";TBranch.marshal.write_basket:{:?}", self.write_basket);
+        trace!(";TBranch.marshal.zip_bytes:{:?}", self.zip_bytes);
+        trace!(";TBranch.marshal.basket_size:{:?}", self.basket_size);
+        trace!(";TBranch.marshal.compress:{:?}", self.compress);
+        trace!(";TBranch.marshal.leaves.len:{:?}", self.leaves.len());
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+
+        w.write_object(&self.named)?;
+
+        w.write_object(&self.attfill)?;
+
+        w.write_i32(self.compress)?;
+        w.write_i32(self.basket_size)?;
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+        w.write_i32(self.entry_offset_len)?;
+        w.write_i32(self.write_basket)?;
+
+        w.write_i64(self.entry_number)?;
+        w.write_object(&self.iobits)?;
+
+        w.write_i32(self.offset)?;
+        w.write_i32(b_max_baskets)?;
+        w.write_i32(self.split_level)?;
+        w.write_i64(self.entries)?;
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        w.write_i64(self.first_entry)?;
+        w.write_i64(self.tot_bytes)?;
+        w.write_i64(self.zip_bytes)?;
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        trace!(";TBranch.marshal.buf.pos.before_branches:{:?}", w.pos());
+        {
+            let mut branches = WriterObjArray::new();
+            for b in self.branches.iter() {
+                trace!(";TBranch.marshal.do_branch:{:?}", b);
+                panic!("TBranch.marshal.do_branch");
+                // branches.objs.push(b);
+            }
+            w.write_object(&branches)?;
+        }
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+        trace!(";TBranch.marshal.buf.pos.before_leaves:{:?}", w.pos());
+        {
+            let mut leaves = WriterObjArray::new();
+            // let tbranches = std::mem::take()
+            for b in self.leaves.iter() {
+                trace!(";TBranch.marshal.do_leaf:{:?}", b);
+                leaves.push(b, std::ptr::addr_of!(*b) as usize);
+            }
+            w.write_object(&leaves)?;
+        }
+        trace!(";TBranch.marshal.buf.pos.after_leaves:{:?}", w.pos());
+        {
+            let mut baskets = WriterObjArray::new();
+            for b in self.baskets.iter() {
+                panic!(";TBranch.marshal.do_basket:{:?}", b);
+                // baskets.objs.push(b);
+            }
+            w.write_object(&baskets)?;
+        }
+        trace!(";TBranch.marshal.buf.pos.after_baskets:{:?}", w.pos());
+
+        {
+            let sli = &self.basket_bytes[0..self.write_basket as usize];
+            trace!(";TBranch.marshal.sli:{:?}", sli);
+            w.write_i8(1)?;
+            w.write_array_i32(sli)?;
+            let n = self.max_baskets as usize - sli.len();
+            if n > 0 {
+                let mut v = vec![0; n];
+                w.write_array_i32(&v)?;
+            }
+        }
+        trace!(
+            ";TBranch.marshal.buf.pos.after_sli_basket_bytes:{:?}",
+            w.pos()
+        );
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+        {
+            let sli = &self.basket_entry[0..(self.write_basket + 1) as usize];
+            trace!(";TBranch.marshal.sli:{:?}", sli);
+            w.write_i8(1)?;
+            w.write_array_i64(sli)?;
+            let n = self.max_baskets as usize - sli.len();
+            if n > 0 {
+                let mut v = vec![0; n];
+                w.write_array_i64(&v)?;
+            }
+        }
+        trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
+        trace!(
+            ";TBranch.marshal.buf.pos.after_sli_basket_entry:{:?}",
+            w.pos()
+        );
+
+        {
+            let sli = &self.basket_seek[0..self.write_basket as usize];
+            trace!(";TBranch.marshal.sli:{:?}", sli);
+            w.write_i8(1)?;
+            w.write_array_i64(sli)?;
+            let n = self.max_baskets as usize - sli.len();
+            if n > 0 {
+                let mut v = vec![0; n];
+                w.write_array_i64(&v)?;
+            }
+        }
+        trace!(
+            ";TBranch.marshal.buf.pos.after_sli_basket_seek:{:?}",
+            w.pos()
+        );
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        w.write_string(&self.fname)?;
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        w.set_header(hdr)?;
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
+        Ok((w.pos() - beg) as i64)
     }
 }
 
 factory_fn_register_impl!(TBranch, "TBranch");
+
+impl RVersioner for TBranch {
+    fn rversion(&self) -> i16 {
+        rvers::BRANCH
+    }
+}

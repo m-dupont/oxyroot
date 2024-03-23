@@ -31,9 +31,17 @@ pub enum Error {
     },
     RCompress(crate::rcompress::Error),
     RTypes(crate::rtypes::error::Error),
+    Rdict(crate::rdict::Error),
     FileIsOpenedWriteOnly,
     FileIsOpenedReadOnly,
     FileIsNotOpened,
+    // Writer Errors
+    NameContainsSlash(String),
+    KeyClassMismatch {
+        key: String,
+        key_class: String,
+        obj_class: String,
+    },
 }
 
 impl std::fmt::Display for Error {
@@ -65,6 +73,12 @@ impl From<crate::rcompress::Error> for Error {
 impl From<crate::rtypes::Error> for Error {
     fn from(e: crate::rtypes::Error) -> Self {
         Error::RTypes(e)
+    }
+}
+
+impl From<crate::rdict::Error> for Error {
+    fn from(e: crate::rdict::Error) -> Self {
+        Error::Rdict(e)
     }
 }
 

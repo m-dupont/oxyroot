@@ -13,7 +13,7 @@ mod error;
 pub mod rbuffer;
 pub mod wbuffer;
 
-use crate::rbytes::wbuffer::WBuffer;
+pub(crate) use crate::rbytes::wbuffer::WBuffer;
 use paste::paste;
 
 /// Header represents a type header in a ROOT buffer.
@@ -33,7 +33,7 @@ pub struct Header {
 /// RVersioner is the interface implemented by an object that
 /// can tell the ROOT system what is its current version.
 pub trait RVersioner {
-    fn rversion() -> i16;
+    fn rversion(&self) -> i16;
 }
 
 /// STREAMER_ELEMENT describes a ROOT STREAMER_ELEMENT

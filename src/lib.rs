@@ -135,7 +135,7 @@ mod rbytes;
 mod rcolors;
 mod rcompress;
 mod rcont;
-mod rdict;
+pub mod rdict;
 mod riofs;
 mod rmeta;
 mod root;

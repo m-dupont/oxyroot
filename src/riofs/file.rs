@@ -1,27 +1,35 @@
+use crate::rdict::streamers::db::streamer_info;
 use crate::riofs::consts;
 use crate::rtree::tree::{ReaderTree, WriterTree};
+use crate::utils::is_cxx_builtin;
 use itertools::cons_tuples;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
+use std::ptr::addr_of;
 use std::rc::Rc;
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, StreamerInfoContext};
-use crate::rcont::list::List;
-use crate::rdict::StreamerInfo;
+use crate::rcont::list::{ReaderList, WriterList};
+use crate::rdict::streamers::db::streamer_info_from;
+use crate::rdict::{Streamer, StreamerInfo, Visitor};
 use crate::riofs::blocks::{FreeList, FreeSegments};
 use crate::riofs::consts::kStartBigFile;
 use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::key::Key;
 use crate::riofs::{Error, Result};
+use crate::rmeta::ESTLType;
 use crate::root::traits::Named;
 use crate::rtree::tree::Tree;
-use crate::rtypes::FactoryItem;
+use crate::rtypes::factory::FactoryItemWrite;
+use crate::rtypes::FactoryItemRead;
+use crate::utils::is_core_type;
 use crate::{rcont, rvers, Object};
 use log::{debug, trace};
+use regex::Regex;
 use uuid::Uuid;
 
 const HEADER_LEN: u64 = 64;
@@ -273,6 +281,75 @@ impl RootFile {
         Ok(f)
     }
 
+    pub(crate) fn put<T>(&mut self, name: &str, obj: &T) -> Result<()>
+    where
+        T: FactoryItemWrite,
+    {
+        trace!(";TDirectoryFile.put.name:{:?}", name);
+        if name.contains('/') {
+            return Err(Error::NameContainsSlash(name.to_string()));
+        }
+
+        let name = if name.is_empty() { obj.name() } else { name };
+        let title = obj.title();
+
+        trace!(";TDirectoryFile.put.name:{:?}", name);
+        trace!(";TDirectoryFile.put.title:{:?}", title);
+
+        let mut cycle = 0;
+
+        for key in self.dir().keys().iter() {
+            if key.name() != name {
+                continue;
+            }
+            if key.class_name() != obj.class() {
+                return Err(Error::KeyClassMismatch {
+                    key: key.name().to_string(),
+                    key_class: key.class_name().to_string(),
+                    obj_class: obj.class().to_string(),
+                });
+            }
+
+            if key.cycle() > cycle {
+                cycle = key.cycle();
+            }
+        }
+
+        cycle += 1;
+        let typename = obj.class();
+        trace!(";TDirectoryFile.put.typename:{:?}", typename);
+        trace!(
+            ";TDirectoryFile.put.is_core_type:{:?}",
+            is_core_type(typename)
+        );
+
+        if !is_core_type(typename) {
+            let cxx = typename;
+            let streamer = streamer_info_from(obj, &mut self.dir)?;
+            self.add_streamer_info(streamer);
+        }
+
+        // trace!(";TDirectoryFile.put.file.sinfos:{:?}", self.sinfos);
+
+        let mut key = Key::new_from_object(name, title, obj.class(), obj, self)?;
+        key.set_cycle(cycle as i16);
+        key.write_to_file(self.writer()?)?;
+        self.dir.keys.push(key);
+        Ok(())
+    }
+
+    fn add_streamer_info(&mut self, si: StreamerInfo) {
+        if self.sinfos.list().iter().any(|s| s.name() == si.name()) {
+            return;
+        }
+
+        self.sinfos.push(si);
+        trace!(
+            ";TDirectoryFile.put.file.sinfos.len:{:?}",
+            self.sinfos.list.len()
+        );
+    }
+
     pub fn close(&mut self) -> Result<()> {
         let mut dir = self.dir().clone();
         dir.close(self)?;
@@ -280,6 +357,7 @@ impl RootFile {
         self.write_streamer_info()?;
         self.write_free_segments()?;
         self.write_header()?;
+
         Ok(())
     }
 
@@ -515,7 +593,7 @@ impl RootFile {
 
         let ogj = si_key.object(&mut reader, None)?.unwrap();
 
-        let mut objs: Box<List> = ogj.downcast::<List>().unwrap();
+        let mut objs: Box<ReaderList> = ogj.downcast::<ReaderList>().unwrap();
 
         for i in (0..objs.len()).rev() {
             let obj = objs.at(i);
@@ -524,7 +602,7 @@ impl RootFile {
                 let obj: Box<StreamerInfo> = obj.downcast::<StreamerInfo>().unwrap();
                 self.sinfos.push(*obj);
             } else {
-                let mut list: Box<List> = obj.downcast::<List>().unwrap();
+                let mut list: Box<ReaderList> = obj.downcast::<ReaderList>().unwrap();
                 for j in (0..list.len()).rev() {
                     let _jobj = list.at(j);
                     // let obj: Box<StreamerInfo> = jobj.downcast::<StreamerInfo>().unwrap();
@@ -537,9 +615,27 @@ impl RootFile {
     }
 
     fn write_streamer_info(&mut self) -> Result<()> {
+        trace!(
+            ";RootFile.write_streamer_info.f.sinfos.init.len:{}",
+            self.sinfos.list().len()
+        );
+
         self.find_deep_streamer()?;
 
-        let sinfos = List::new();
+        trace!(
+            ";RootFile.write_streamer_info.f.sinfos.after_find_deep_streamer.len:{}",
+            self.sinfos.list().len()
+        );
+
+        let mut sinfos = WriterList::new();
+        let binding = self.sinfos.list.clone();
+        for si in binding.as_ref() {
+            sinfos.push(si, addr_of!(*si) as usize);
+        }
+
+        if self.header.seek_info != 0 {
+            unimplemented!("f.seek_info != 0")
+        }
 
         trace!(
             ";RootFile.write_streamer_info.sinfos.title:{}",
@@ -565,8 +661,8 @@ impl RootFile {
         sinfos.marshal(&mut buf)?;
 
         trace!(
-            ";RootFile.write_streamer_info.buf.after_sinfos:{:?}",
-            buf.p()
+            ";RootFile.write_streamer_info.buf.after_sinfos.len:{:?}",
+            buf.p().len()
         );
 
         let key = Key::new_from_buffer(
@@ -582,11 +678,11 @@ impl RootFile {
         self.header.n_bytes_info = key.n_bytes();
 
         trace!(
-            ";RootFile.write_streamer_info.seek_info:{}",
+            ";RootFile.write_streamer_info.f.seek_info:{}",
             self.header.seek_info
         );
         trace!(
-            ";RootFile.write_streamer_info.n_bytes_info:{}",
+            ";RootFile.write_streamer_info.f.n_bytes_info:{}",
             self.header.n_bytes_info
         );
 
@@ -646,10 +742,144 @@ impl RootFile {
             ";Rootfile.find_deep_streamer.f.sinfos.len:{}",
             self.sinfos.list().len()
         );
+
+        // let mut visited = Vec::new();
+        let mut v = Vec::new();
+
+        #[derive(Debug)]
+        struct DepsType {
+            name: String,
+            vers: i16,
+        }
+
+        for (i, si) in self.sinfos.list().iter().enumerate() {
+            trace!(
+                ";Rootfile.find_deep_streamer.for_loop.{i}.si.name:{:?}",
+                si.name()
+            );
+
+            let mut visitor = Visitor::new(|depth, se| {
+                trace!(";Rootfile.find_deep_streamer.fnmut.se.name:{}", se.name());
+                let name = se.name().to_string();
+                match se {
+                    Streamer::String(o) => {
+                        let d = DepsType {
+                            name: o.element.ename.to_string(),
+                            vers: -1,
+                        };
+                        v.push(d)
+                    }
+                    Streamer::STLstring(o) => {
+                        let d = DepsType {
+                            name: o.streamer_stl.element.ename.to_string(),
+                            vers: -1,
+                        };
+                        v.push(d)
+                    }
+                    Streamer::BasicType(_) => {}
+                    Streamer::BasicPointer(_) => {}
+                    Streamer::Stl(stl) => {
+                        match &stl.vtype {
+                            ESTLType::STLvector => {
+                                let etn = se.item_type_name();
+                                let reg = Regex::new(r"vector<([A-Za-z]+)>").unwrap();
+                                let cap = reg.captures(etn).unwrap();
+                                let etn = &cap[1];
+
+                                // trace!(";StreamerInfo.visit.se.etn:{} {}", etn, depth);
+                                trace!(";Rootfile.find_deep_streamer.fnmut.etn:{}", etn);
+
+                                let d = DepsType {
+                                    name: etn.to_string(),
+                                    vers: -1,
+                                };
+                                v.push(d)
+
+                                // itt.push(Box::new(empty::<StreamerInfo>()));
+                                // todo!("Streamer::Stl");
+                            }
+                            _ => {
+                                todo!("Streamer::Stl, vtype = {:?}", &stl.vtype);
+                            }
+                        }
+                    }
+                    Streamer::Base(o) => {
+                        let d = DepsType {
+                            name: name,
+                            vers: o.vbase() as i16,
+                        };
+
+                        v.push(d);
+                    }
+                    Streamer::Object(o) => {
+                        let d = DepsType {
+                            name: o.element.ename.to_string(),
+                            vers: -1,
+                        };
+                        v.push(d)
+                    }
+                    Streamer::ObjectAny(o) => {
+                        let d = DepsType {
+                            name: o.element.ename.to_string(),
+                            vers: -1,
+                        };
+                        v.push(d)
+                    }
+                    Streamer::ObjectPointer(o) => {
+                        let tname = o.element.ename.trim_end_matches('*').to_string();
+                        let d = DepsType {
+                            name: tname,
+                            vers: -1,
+                        };
+                        v.push(d)
+                    }
+                }
+            });
+            visitor.run(0, si)?;
+        }
+
+        trace!(";Rootfile.find_deep_streamer.v.len:{}", v.len());
+        v.iter().for_each(|d| {
+            trace!(
+                ";Rootfile.find_deep_streamer.v.{}.name:{:?} {}",
+                d.name,
+                d.name,
+                d.vers
+            );
+            trace!(
+                ";Rootfile.find_deep_streamer.v.{}.is_core_type:{:?}",
+                d.name,
+                is_core_type(&d.name),
+            );
+            trace!(
+                ";Rootfile.find_deep_streamer.v.{}.is_cxx_builtin:{:?}",
+                d.name,
+                is_cxx_builtin(&d.name),
+            );
+
+            if is_core_type(&d.name) || is_cxx_builtin(&d.name) {
+                return;
+            }
+
+            let si = streamer_info(&d.name, d.vers).unwrap();
+            self.add_streamer_info(si);
+        });
+
+        // self.sinfos.extend(v);
+        //
+        // self.sinfos.list().iter().for_each(|si| {
+        //     trace!(";Rootfile.find_deep_streamer.f.sinfos.name:{:?}", si.name());
+        // });
+
+        trace!(
+            ";Rootfile.find_deep_streamer.f.sinfos.len:{}",
+            self.sinfos.list().len()
+        );
+
         Ok(())
     }
 
-    fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItem>> {
+    fn get_object(&mut self, name: &str) -> Result<Box<dyn FactoryItemRead>> {
         let mut reader = self.reader()?.clone();
         self.dir.get_object(name, &mut reader, Some(&self.sinfos))
 
@@ -689,6 +919,9 @@ impl RootFile {
     pub fn dir(&self) -> &TDirectoryFile {
         &self.dir
     }
+    pub(crate) fn mut_dir(&mut self) -> &mut TDirectoryFile {
+        &mut self.dir
+    }
 
     pub(crate) fn is_big_file(&self) -> bool {
         self.end() > consts::kStartBigFile
@@ -712,6 +945,12 @@ impl RootFileStreamerInfoContext {
         let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
         v.push(info);
     }
+
+    fn extend(&mut self, infos: Vec<StreamerInfo>) {
+        let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
+        v.extend(infos);
+    }
+
     fn list(&self) -> &Rc<Vec<StreamerInfo>> {
         &self.list
     }

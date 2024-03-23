@@ -12,7 +12,7 @@ pub const ATT_MARKER: i16 = 2;
 pub const _DATIME: i16 = 1;
 // ROOT version for TDatime
 /// ROOT version for TNamed
-pub const _NAMED: i16 = 1;
+pub const NAMED: i16 = 1;
 
 pub const OBJECT: i16 = 1;
 // ROOT version for TObject

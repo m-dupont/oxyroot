@@ -14,7 +14,7 @@ use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::{Named, Object};
 
 use crate::rtree::streamer_type::type_name_cpp_to_rust;
-use crate::rtypes::FactoryItem;
+use crate::rtypes::FactoryItemRead;
 use log::trace;
 use std::marker::PhantomData;
 
@@ -34,8 +34,8 @@ pub enum Branch {
     Element(TBranchElement),
 }
 
-impl From<Box<dyn FactoryItem>> for Branch {
-    fn from(obj: Box<dyn FactoryItem>) -> Self {
+impl From<Box<dyn FactoryItemRead>> for Branch {
+    fn from(obj: Box<dyn FactoryItemRead>) -> Self {
         match obj.class() {
             "TBranch" => Branch::Base(*obj.downcast::<TBranch>().unwrap()),
             "TBranchElement" => Branch::Element(*obj.downcast::<TBranchElement>().unwrap()),
@@ -57,10 +57,17 @@ impl From<Box<dyn FactoryItem>> for Branch {
 // }
 
 impl Branch {
-    fn tbranch(&mut self) -> &mut TBranch {
+    fn tbranch_mut(&mut self) -> &mut TBranch {
         match self {
             Branch::Base(ref mut bb) => bb,
             Branch::Element(ref mut be) => &mut be.branch,
+        }
+    }
+
+    pub(crate) fn tbranch(&self) -> &TBranch {
+        match self {
+            Branch::Base(bb) => bb,
+            Branch::Element(be) => &be.branch,
         }
     }
 

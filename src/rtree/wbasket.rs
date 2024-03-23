@@ -19,7 +19,7 @@ where
 {
     pub(crate) basket: Basket,
     phantom: std::marker::PhantomData<T>,
-    wbuf: WBuffer,
+    // wbuf: WBuffer,
 }
 
 impl<T> WBasket<T>
@@ -30,7 +30,7 @@ where
         WBasket {
             basket: b,
             phantom: std::marker::PhantomData,
-            wbuf: WBuffer::new(0),
+            // wbuf: WBuffer::new(0),
         }
     }
 
@@ -56,14 +56,20 @@ where
 
         let key = self.basket.key();
 
+        trace!(";WBasket.write_to_file.key.name:{:?}", key.name());
+        trace!(";WBasket.write_to_file.key.title:{:?}", key.title());
+
         let key = Key::new_from_buffer(
             key.name().to_string(),
             key.title().to_string(),
             self.basket.class().to_string(),
             key.cycle() as i16,
-            self.wbuf.p().clone(),
+            Vec::new(),
             file,
         )?;
+
+        let n_bytes = key.key_len() + key.obj_len();
+        trace!(";WBasket.write_to_file.n_bytes:{:?}", n_bytes);
 
         self.basket.set_key(key);
 

@@ -17,13 +17,13 @@ impl Marshaler for ObjString {
         todo!()
     }
 }
-factory_all_for_register_impl!(ObjString, "TObjString");
-
-impl RVersioner for ObjString {
-    fn rversion() -> i16 {
-        rvers::OBJ_STRING
-    }
-}
+factory_all_for_register_impl!(ObjString, "TObjString", rvers::OBJ_STRING);
+//
+// impl RVersioner for ObjString {
+//     fn rversion() -> i16 {
+//         rvers::OBJ_STRING
+//     }
+// }
 
 impl Unmarshaler for ObjString {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
@@ -33,7 +33,7 @@ impl Unmarshaler for ObjString {
             return Err(crate::rbytes::Error::VersionTooHigh {
                 class: self.class().into(),
                 version_read: hdr.vers,
-                max_expected: Self::rversion(),
+                max_expected: Self::rversion(self),
             });
         }
 

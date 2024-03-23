@@ -9,16 +9,36 @@ use crate::root::traits::Object;
 use crate::rvers;
 use log::trace;
 
-use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItem};
+use crate::rtypes::factory::{Factory, FactoryBuilder, FactoryItemRead, FactoryItemWrite};
 
 #[derive(Default)]
-pub struct List {
+pub struct ReaderList {
     name: Option<String>,
     obj: rbase::Object,
-    objs: Vec<Box<dyn FactoryItem>>,
+    objs: Vec<Box<dyn FactoryItemRead>>,
 }
 
-impl List {
+#[derive(Default, Debug)]
+pub struct WriterList<'a> {
+    name: Option<String>,
+    obj: rbase::Object,
+    objs: Vec<(&'a dyn FactoryItemWrite, usize)>,
+}
+
+impl<'a> WriterList<'a> {
+    pub fn new() -> Self {
+        Self {
+            objs: Vec::new(),
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn push(&mut self, obj: &'a dyn FactoryItemWrite, ptr: usize) {
+        self.objs.push((obj, ptr));
+    }
+}
+
+impl ReaderList {
     pub fn new() -> Self {
         Self {
             objs: Vec::new(),
@@ -30,12 +50,12 @@ impl List {
         self.objs.len()
     }
 
-    pub fn at(&mut self, i: usize) -> Box<dyn FactoryItem> {
+    pub fn at(&mut self, i: usize) -> Box<dyn FactoryItemRead> {
         self.objs.remove(i)
     }
 }
 
-impl traits::Object for List {
+impl traits::Object for ReaderList {
     fn class(&self) -> &'_ str {
         match &self.name {
             None => "TList",
@@ -44,7 +64,16 @@ impl traits::Object for List {
     }
 }
 
-impl Unmarshaler for List {
+impl traits::Object for WriterList<'_> {
+    fn class(&self) -> &'_ str {
+        match &self.name {
+            None => "TList",
+            Some(s) => s,
+        }
+    }
+}
+
+impl Unmarshaler for ReaderList {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 
@@ -77,34 +106,25 @@ impl Unmarshaler for List {
     }
 }
 
-impl Marshaler for List {
+impl Marshaler for ReaderList {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        trace!(";List.marshal.call.w.pos:{:?}", w.pos());
-        let beg = w.pos();
-
-        let hdr = w.write_header(self.class(), rvers::LIST)?;
-
-        self.obj.marshal(w)?;
-
-        w.write_string(self.name.as_ref().unwrap_or(&String::new()))?;
-
-        w.write_i32(self.objs.len() as i32)?;
-
-        for obj in &self.objs {
-            unimplemented!("List.marshal");
-            w.write_object_any(obj)?;
-        }
-
-        trace!(";List.marshal.buf.value:{:?}", w.p());
-        trace!(";List.marshal.buf.pos:{:?}", w.pos());
-
-        w.set_header(hdr)?;
-
-        Ok(w.pos() - beg)
+        todo!()
     }
 }
 
-impl traits::Named for List {
+impl traits::Named for ReaderList {
+    fn name(&self) -> &'_ str {
+        match &self.name {
+            None => "TList",
+            Some(s) => s,
+        }
+    }
+
+    fn title(&self) -> &'_ str {
+        "Doubly linked list"
+    }
+}
+impl traits::Named for WriterList<'_> {
     fn name(&self) -> &'_ str {
         match &self.name {
             None => "TList",
@@ -119,14 +139,43 @@ impl traits::Named for List {
 
 // impl FactoryItem for LIST {}
 
-impl FactoryBuilder for List {
+impl FactoryBuilder for ReaderList {
     fn register(factory: &mut Factory) {
         let f = || {
-            let v: List = List::new();
-            let b: Box<dyn FactoryItem> = Box::new(v);
+            let v: ReaderList = ReaderList::new();
+            let b: Box<dyn FactoryItemRead> = Box::new(v);
             b
         };
 
         factory.add("TList", f);
+    }
+}
+
+impl Marshaler for WriterList<'_> {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        trace!(";List.marshal.call.w.pos:{:?}", w.pos());
+        let beg = w.pos();
+
+        let hdr = w.write_header(self.class(), rvers::LIST)?;
+
+        self.obj.marshal(w)?;
+
+        w.write_string(self.name.as_ref().unwrap_or(&String::new()))?;
+
+        w.write_i32(self.objs.len() as i32)?;
+
+        trace!(";List.marshal.buf.value:{:?}", w.p());
+        for (obj, addr) in self.objs.iter() {
+            trace!(";List.marshal.buf.pos:{:?}", w.pos());
+            w.write_object_any(*obj, *addr)?;
+            w.write_string("")?;
+        }
+
+        trace!(";List.marshal.buf.value:{:?}", w.p());
+        trace!(";List.marshal.buf.pos:{:?}", w.pos());
+
+        w.set_header(hdr)?;
+
+        Ok(w.pos() - beg)
     }
 }

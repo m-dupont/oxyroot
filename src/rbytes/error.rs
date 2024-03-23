@@ -1,4 +1,5 @@
 use std::array::TryFromSliceError;
+use std::num::TryFromIntError;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -24,6 +25,7 @@ pub enum Error {
     RbufferExtractAsArrayNotPossible(TryFromSliceError),
     RMeta(crate::rmeta::Error),
     RTypes(crate::rtypes::error::Error),
+    TryFromIntError(TryFromIntError),
 }
 
 impl std::fmt::Display for Error {
@@ -49,5 +51,11 @@ impl From<crate::rmeta::Error> for Error {
 impl From<crate::rtypes::Error> for Error {
     fn from(e: crate::rtypes::Error) -> Self {
         Error::RTypes(e)
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    fn from(value: TryFromIntError) -> Self {
+        Error::TryFromIntError(value)
     }
 }

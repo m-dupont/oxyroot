@@ -13,7 +13,7 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Enum {
     Named(EnumNamed),
     Int(i32),
@@ -74,7 +74,7 @@ pub enum EnumNamed {
     /// Fixed size array
     OffsetP = 40,
     // OffsetP_3 = 43,
-    // OffsetP_16 = 56,
+    OffsetP_16 = 56,
     /// Pointer to object
     Object = 61,
     // Class  derived from TObject, or for TStreamerSTL::fCtype non-pointer elements
@@ -131,7 +131,7 @@ impl EnumNamed {
     }
 }
 
-#[derive(FromPrimitive, ToPrimitive, Default, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Default, Debug, Clone)]
 pub enum ESTLType {
     #[default]
     NotSTL = 0,

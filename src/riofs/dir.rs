@@ -12,11 +12,12 @@ use crate::rbytes::wbuffer::WBuffer;
 use crate::riofs::blocks::FreeSegments;
 use crate::riofs::{utils, Error, Result};
 use crate::root::traits;
+use crate::rtypes::factory::FactoryItemWrite;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use log::trace;
 use uuid::Uuid;
 
-use crate::rtypes::FactoryItem;
+use crate::rtypes::FactoryItemRead;
 use crate::rvers;
 
 #[derive(Clone)]
@@ -56,7 +57,7 @@ pub struct TDirectoryFile {
     pub seek_parent: i64,
     pub(crate) seek_keys: i64,
     class_name: String,
-    keys: Vec<Key>,
+    pub(crate) keys: Vec<Key>,
 }
 
 impl Default for TDirectoryFile {
@@ -202,7 +203,11 @@ impl TDirectoryFile {
 
     fn save_keys(&mut self, file: &mut RootFile) -> Result<()> {
         trace!(";TDirectoryFile.save_keys:{:?}", true);
-        trace!(";TDirectoryFile.n_bytes_keys:{:?}", self.n_bytes_keys);
+        trace!(
+            ";TDirectoryFile.save_keys.n_bytes_keys:{:?}",
+            self.n_bytes_keys
+        );
+        trace!(";TDirectoryFile.save_keys.keys.len:{:?}", self.keys.len());
 
         let mut n_bytes = 4;
 
@@ -211,8 +216,15 @@ impl TDirectoryFile {
         }
 
         for (i, key) in self.keys.iter().enumerate() {
-            trace!(";TDirectoryFile.save_keys.for_loop_keys.i:{:?}", i);
-            unimplemented!("save_keys");
+            trace!(
+                ";TDirectoryFile.save_keys.for_loop.0.{i}.name:{:?}",
+                key.name()
+            );
+            trace!(
+                ";TDirectoryFile.save_keys.for_loop.0.{i}.key_len:{:?}",
+                key.key_len()
+            );
+            n_bytes += key.key_len() as i32;
         }
 
         let mut hdr = Key::new(
@@ -227,8 +239,19 @@ impl TDirectoryFile {
         buf.write_i32(self.keys.len() as i32)?;
 
         for (i, key) in self.keys.iter().enumerate() {
-            trace!(";TDirectoryFile.save_keys.for_loop_keys.i:{:?}", i);
-            unimplemented!("save_keys");
+            trace!(
+                ";TDirectoryFile.save_keys.for_loop.1.{i}.name:{:?}",
+                key.name()
+            );
+            trace!(
+                ";TDirectoryFile.save_keys.for_loop.1.{i}.pos_before_marshal:{:?}",
+                buf.pos()
+            );
+            key.marshal(&mut buf)?;
+            trace!(
+                ";TDirectoryFile.save_keys.for_loop.1.{i}.pos_after_marshal:{:?}",
+                buf.pos()
+            );
         }
         hdr.set_buffer(buf.buffer(), false);
 
@@ -241,6 +264,7 @@ impl TDirectoryFile {
         );
 
         hdr.write_to_file(file.writer()?)?;
+        trace!(";TDirectoryFile.save_keys.f.end:{:?}", file.end());
 
         Ok(())
     }
@@ -274,7 +298,7 @@ impl TDirectoryFile {
         namecycle: &str,
         file: &mut RootFileReader,
         ctx: Option<&dyn StreamerInfoContext>,
-    ) -> Result<Box<dyn FactoryItem>> {
+    ) -> Result<Box<dyn FactoryItemRead>> {
         trace!("get_object, namecycle = {}", namecycle);
 
         let (name, cycle) = decode_name_cycle(namecycle)?;
@@ -352,13 +376,6 @@ impl TDirectoryFile {
     }
     pub(crate) fn is_big_file(&self) -> bool {
         self.dir.rvers > 1000
-    }
-
-    pub(crate) fn put<T>(&mut self, name: &str, obj: &T)
-    where
-        T: FactoryItem,
-    {
-        todo!()
     }
 }
 

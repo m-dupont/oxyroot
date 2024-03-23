@@ -51,7 +51,6 @@ impl Unmarshaler for Object {
 impl Marshaler for Object {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let n = w.pos();
-        trace!(";Object.marshal.n:{:?}", n);
         w.write_u16(rvers::OBJECT as u16)?;
 
         if self.test_bits(K_IS_REFERENCED) {
@@ -64,7 +63,7 @@ impl Marshaler for Object {
             w.write_u32(self.bits)?;
         }
 
-        trace!(";Object.marshal.buf:{:?}", w.p());
+        // trace!(";Object.marshal.buf:{:?}", w.p());
         Ok(w.pos() - n)
     }
 }

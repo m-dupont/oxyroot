@@ -1,4 +1,5 @@
-use crate::rbytes::Marshaler;
+use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{Marshaler, RVersioner};
 use crate::riofs::Result;
 use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
@@ -7,7 +8,7 @@ use crate::rtree::leaf::Leaf;
 use crate::rtree::streamer_type::rust_type_to_root_type_code;
 use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
-use crate::{Branch, RootFile};
+use crate::{rvers, Branch, Named, Object, RootFile};
 use log::trace;
 use std::any;
 use std::fmt::Debug;
@@ -20,7 +21,15 @@ where
     branch: Branch,
     iterator: Box<dyn Iterator<Item = T>>,
     basket: Option<WBasket<T>>,
-    write_basket: i32,
+}
+
+impl<T> WBranch<T>
+where
+    T: Marshaler,
+{
+    pub fn branch(&self) -> &Branch {
+        &self.branch
+    }
 }
 
 impl<T> Debug for WBranch<T>
@@ -46,7 +55,7 @@ where
     pub fn new(
         name: String,
         it: Box<dyn Iterator<Item = T>>,
-        tree: &WriterTree<T>,
+        tree: &mut WriterTree<T>,
         f: &RootFile,
     ) -> Self {
         trace!(";WBranch.new.name:{:?}", name);
@@ -54,6 +63,7 @@ where
 
         let mut branch = TBranch::new(name.clone());
         branch.iobits = tree.iobits;
+        branch.compress = f.compression();
         branch.basket_size = DEFAULT_BASKET_SIZE;
         branch.max_baskets = DEFAULT_MAX_BASKETS;
         branch.basket_entry.push(0);
@@ -66,9 +76,9 @@ where
             branch: Branch::Base(branch),
             iterator: it,
             basket: None,
-            write_basket: 0,
         };
         branch.basket = Some(branch.create_new_basket(tree, f));
+        branch.branch.tbranch_mut().leaves.push(leaf);
         trace!("WBranch.new.branch:{:?}", branch);
         branch
     }
@@ -88,19 +98,19 @@ where
         trace!(";WBranch.create_new_basket.call:{:?}", true);
         trace!(
             ";WBranch.create_new_basket.b.write_basket:{:?}",
-            self.branch.tbranch().write_basket
+            self.branch.tbranch_mut().write_basket
         );
-        let cycle = self.branch.tbranch().write_basket as i16 + 1;
-        let basket_size = self.branch.tbranch().basket_size;
+        let cycle = self.branch.tbranch_mut().write_basket as i16 + 1;
+        let basket_size = self.branch.tbranch_mut().basket_size;
         let basket = Basket::new_from_branch(&self.branch, cycle, basket_size, 0, tree, f);
         trace!(";WBranch.create_new_basket.basket:{:?}", basket);
-        let n = self.branch.tbranch().write_basket;
-        if n > self.branch.tbranch().max_baskets {
-            self.branch.tbranch().max_baskets = n;
+        let n = self.branch.tbranch_mut().write_basket;
+        if n > self.branch.tbranch_mut().max_baskets {
+            self.branch.tbranch_mut().max_baskets = n;
         }
         trace!(
             ";WBranch.create_new_basket.b.max_baskets:{:?}",
-            self.branch.tbranch().max_baskets
+            self.branch.tbranch_mut().max_baskets
         );
         WBasket::new(basket)
     }
@@ -114,37 +124,78 @@ where
             tot_bytes,
             zip_bytes,
         } = b;
-        self.branch.tbranch().tot_bytes += tot_bytes;
-        self.branch.tbranch().zip_bytes += zip_bytes;
+        self.branch.tbranch_mut().tot_bytes += tot_bytes;
+        self.branch.tbranch_mut().zip_bytes += zip_bytes;
 
         self.branch
-            .tbranch()
+            .tbranch_mut()
             .basket_bytes
             .push(basket.basket.key().n_bytes());
 
-        let n = self.branch.tbranch().entries();
-        self.branch.tbranch().basket_entry.push(n);
+        let n = self.branch.tbranch_mut().entries();
+        self.branch.tbranch_mut().basket_entry.push(n);
         self.branch
-            .tbranch()
+            .tbranch_mut()
             .basket_seek
             .push(basket.basket.key().seek_key());
 
         trace!(
             ";WBranch.flush.basket_bytes:{:?}",
-            self.branch.tbranch().basket_bytes
+            self.branch.tbranch_mut().basket_bytes
         );
 
         trace!(
             ";WBranch.flush.basket_entry:{:?}",
-            self.branch.tbranch().basket_entry
+            self.branch.tbranch_mut().basket_entry
         );
 
         trace!(
             ";WBranch.flush.basket_seek:{:?}",
-            self.branch.tbranch().basket_seek
+            self.branch.tbranch_mut().basket_seek
         );
 
-        self.write_basket += 1;
+        self.branch.tbranch_mut().write_basket += 1;
         Ok(())
+    }
+}
+
+impl<T> Marshaler for WBranch<T>
+where
+    T: Marshaler,
+{
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        let len = w.len() - 1;
+        trace!(";WBranch.marshal.buf.pos:{:?}", w.pos());
+        let b = self.branch.tbranch();
+        b.marshal(w)
+
+        // todo!()
+    }
+}
+
+impl<T> Object for WBranch<T>
+where
+    T: Marshaler,
+{
+    fn class(&self) -> &'_ str {
+        self.branch.class()
+    }
+}
+
+impl<T> Named for WBranch<T>
+where
+    T: Marshaler,
+{
+    fn name(&self) -> &'_ str {
+        self.branch.name()
+    }
+}
+
+impl<T> RVersioner for WBranch<T>
+where
+    T: Marshaler,
+{
+    fn rversion(&self) -> i16 {
+        rvers::BRANCH
     }
 }

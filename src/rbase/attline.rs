@@ -1,9 +1,9 @@
 use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
-use crate::{factory_all_for_register_impl, rcolors};
+use crate::{factory_all_for_register_impl, rcolors, Named};
 use crate::{rvers, Marshaler};
 use num_traits::ToPrimitive;
 
@@ -49,7 +49,18 @@ impl Unmarshaler for AttLine {
 
 impl Marshaler for AttLine {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        w.write_i16(self.color.to_i16())?;
+        w.write_i16(self.style)?;
+        w.write_i16(self.width)?;
+
+        w.set_header(hdr)
+    }
+}
+
+impl RVersioner for AttLine {
+    fn rversion(&self) -> i16 {
+        rvers::ATT_LINE
     }
 }
 

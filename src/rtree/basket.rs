@@ -6,7 +6,7 @@ use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::tree::{TioFeatures, WriterTree};
-use crate::rtypes::FactoryItem;
+use crate::rtypes::FactoryItemRead;
 use crate::{factory_fn_register_impl, rbytes, rvers, Branch, Marshaler, Object, RootFile};
 use log::trace;
 
@@ -45,8 +45,8 @@ impl Named for Basket {
     }
 }
 
-impl From<Box<dyn FactoryItem>> for Basket {
-    fn from(f: Box<dyn FactoryItem>) -> Self {
+impl From<Box<dyn FactoryItemRead>> for Basket {
+    fn from(f: Box<dyn FactoryItemRead>) -> Self {
         if let Ok(b) = f.downcast::<Basket>() {
             return *b;
         }
@@ -73,7 +73,7 @@ impl Basket {
         let mut basket = Basket {
             key: crate::riofs::Key::new_key_for_basket_internal(
                 b.name().to_string(),
-                tree.title().to_string(),
+                tree.name().to_string(),
                 "TBasket".to_string(),
                 cycle,
                 f,
@@ -86,6 +86,7 @@ impl Basket {
             ..Default::default()
         };
         trace!(";Basket.new_from_branch.key:{:?}", &basket);
+        trace!(";Basket.new_from_branch.tree.title:{:?}", tree.title());
         basket
     }
 

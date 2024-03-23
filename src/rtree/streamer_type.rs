@@ -101,6 +101,9 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
                     EnumNamed::CacheDelete => {}
                     EnumNamed::NeedObjectForVirtualBaseClass => {}
                     EnumNamed::Missing => {}
+                    EnumNamed::OffsetP_16 => {
+                        todo!()
+                    }
                 },
                 Enum::Int(_a) => {}
             },

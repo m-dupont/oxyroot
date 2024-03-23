@@ -1,15 +1,16 @@
-use crate::rbase::AttFill;
+use crate::rbase::{AttFill, AttLine};
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{
-    ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, Unmarshaler,
+    ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, RVersioner,
+    Unmarshaler,
 };
-use crate::rcont::objarray::ObjArray;
+use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
-use crate::{factory_all_for_register_impl, RootFile};
+use crate::{factory_all_for_register_impl, rvers, RootFile};
 use crate::{rbase, Named};
 use log::trace;
 
@@ -54,7 +55,21 @@ impl Unmarshaler for TioFeatures {
 
 impl Marshaler for TioFeatures {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+
+        if self.0 != 0 {
+            let buf = [0x1a, 0xa1, 0x2f, 0x10];
+            w.write_array_u8(&buf)?;
+        }
+        w.write_u8(self.0)?;
+
+        w.set_header(hdr)
+    }
+}
+
+impl RVersioner for TioFeatures {
+    fn rversion(&self) -> i16 {
+        rvers::ROOT_IOFEATURES
     }
 }
 
@@ -165,14 +180,14 @@ where
         Self {
             named: rbase::Named::default()
                 .with_name(name.clone())
-                .with_title(name),
+                .with_title(String::new()),
             weight: 1.0,
             scan_field: 25,
             default_entry_offset_len: 1000,
             max_entries: 1000000000000,
             max_entry_loop: 1000000000000,
             auto_save: -300000000,
-            auto_flush: -300000000,
+            auto_flush: -30000000,
             estimate: 1000000,
             branches: Vec::new(),
             ..Default::default()
@@ -217,9 +232,10 @@ where
         trace!(";WriterTree.close:{:?}", true);
         self.flush(file)?;
 
-        // file.dir().put(self.named.name(), self);
+        // let t: ReaderTree = self.into();
 
-        todo!();
+        file.put(self.named.name(), self)?;
+
         Ok(())
     }
 }
@@ -329,10 +345,88 @@ impl ReaderTree {
 
 impl<T> Marshaler for WriterTree<T>
 where
-    T: Marshaler,
+    T: Marshaler + 'static,
 {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let len = w.len();
+        let beg = w.pos();
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+
+        w.write_object(&self.named)?;
+
+        w.write_object(&self.attline)?;
+        // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
+        w.write_object(&self.attfill)?;
+        // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
+        w.write_object(&self.attmarker)?;
+
+        w.write_i64(self.entries)?;
+        w.write_i64(self.tot_bytes)?;
+        w.write_i64(self.zip_bytes)?;
+        w.write_i64(self.saved_bytes)?;
+        w.write_i64(self.flushed_bytes)?;
+        w.write_f64(self.weight)?;
+        w.write_i32(self.timer_interval)?;
+        w.write_i32(self.scan_field)?;
+        w.write_i32(self.update)?;
+        w.write_i32(self.default_entry_offset_len)?;
+
+        w.write_i32(self.clusters.ranges.len().try_into()?)?;
+
+        w.write_i64(self.max_entries)?;
+        w.write_i64(self.max_entry_loop)?;
+        w.write_i64(self.max_virtual_size)?;
+        // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
+        w.write_i64(self.auto_save)?;
+        // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
+        trace!(";WriterTree.marshal.auto_flush:{:?}", self.auto_flush);
+        trace!(";WriterTree.marshal.auto_save:{:?}", self.auto_save);
+        trace!(";WriterTree.marshal.estimate:{:?}", self.estimate);
+        w.write_i64(self.auto_flush)?;
+        w.write_i64(self.estimate)?;
+
+        w.write_i8(0)?;
+        w.write_array_i64(&self.clusters.ranges)?;
+        w.write_i8(0)?;
+        w.write_array_i64(&self.clusters.sizes)?;
+        w.write_object(&self.iobits)?;
+        trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
+
+        {
+            let mut branches = WriterObjArray::new();
+            // let tbranches = std::mem::take()
+            for b in self.branches.iter() {
+                branches.push(b, std::ptr::addr_of!(*b) as usize);
+            }
+            w.write_object(&branches)?;
+        }
+
+        trace!(";WriterTree.marshal.buf.value:{:?}", &w.p()[len..]);
+        {
+            let mut leaves = WriterObjArray::new();
+            for b in self.branches.iter() {
+                for leaf in b.branch().tbranch().leaves.iter() {
+                    leaves.push(leaf, std::ptr::addr_of!(*leaf) as usize);
+                }
+            }
+
+            w.write_object(&leaves)?;
+        }
+        {
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+            w.write_object_nil()?;
+        }
+
+        let ret = w.set_header(hdr)?;
+        trace!(";WriterTree.marshal.buf.value:{:?}", &w.p()[len..]);
+        Ok(ret)
+
+        // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
     }
 }
 
@@ -441,7 +535,7 @@ impl Unmarshaler for ReaderTree {
         trace!(";Tree.unmarshal.{}.pos_before_branch: {}", _beg, r.pos());
 
         {
-            let mut branches = r.read_object_into::<ObjArray>()?;
+            let mut branches = r.read_object_into::<ReaderObjArray>()?;
 
             self.branches = branches
                 .take_objs()
@@ -460,7 +554,7 @@ impl Unmarshaler for ReaderTree {
             r.pos()
         );
         {
-            let mut _leaves = r.read_object_into::<ObjArray>()?;
+            let mut _leaves = r.read_object_into::<ReaderObjArray>()?;
         }
 
         trace!(
@@ -529,15 +623,35 @@ impl Marshaler for ReaderTree {
     }
 }
 
-factory_all_for_register_impl!(ReaderTree, "TTree");
+factory_all_for_register_impl!(ReaderTree, "TTree", rvers::TREE);
 
 impl<T> Object for WriterTree<T>
 where
     T: Marshaler,
 {
     fn class(&self) -> &'_ str {
-        self.class()
+        "TTree"
     }
 }
 
-impl<T> Named for WriterTree<T> where T: Marshaler {}
+impl<T> Named for WriterTree<T>
+where
+    T: Marshaler,
+{
+    fn name(&self) -> &'_ str {
+        self.named.name()
+    }
+
+    fn title(&self) -> &'_ str {
+        self.named.title()
+    }
+}
+
+impl<T> RVersioner for WriterTree<T>
+where
+    T: Marshaler,
+{
+    fn rversion(&self) -> i16 {
+        rvers::TREE
+    }
+}

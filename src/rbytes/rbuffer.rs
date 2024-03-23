@@ -5,7 +5,7 @@ use crate::rbytes::Result;
 use crate::rbytes::{Header, StreamerInfoContext, Unmarshaler, UnmarshalerInto};
 use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
-use crate::rtypes::FactoryItem;
+use crate::rtypes::FactoryItemRead;
 use log::trace;
 use std::collections::HashMap;
 use std::io::Read;
@@ -261,12 +261,12 @@ impl<'a> RBuffer<'a> {
 
     pub(crate) fn read_boxed_object(
         &mut self,
-        obj: &mut Box<dyn rtypes::FactoryItem>,
+        obj: &mut Box<dyn rtypes::FactoryItemRead>,
     ) -> Result<()> {
         obj.unmarshal(self)
     }
 
-    pub(crate) fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItem>>> {
+    pub(crate) fn read_object_any_into(&mut self) -> Result<Option<Box<dyn FactoryItemRead>>> {
         let _beg = self.pos();
         // if (_beg == 868) {
         //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
@@ -369,7 +369,7 @@ impl<'a> RBuffer<'a> {
                 todo!()
             }
 
-            let mut obj: Box<dyn rtypes::FactoryItem> = fct();
+            let mut obj: Box<dyn rtypes::FactoryItemRead> = fct();
 
             let pos = self.pos();
             trace!(
@@ -413,7 +413,7 @@ impl<'a> RBuffer<'a> {
 
             let Func(fct) = fct;
 
-            let mut obj: Box<dyn rtypes::FactoryItem> = fct();
+            let mut obj: Box<dyn rtypes::FactoryItemRead> = fct();
             self.read_boxed_object(&mut obj)?;
             Ok(Some(obj))
         }

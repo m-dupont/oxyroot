@@ -1,8 +1,11 @@
-use crate::rbase;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::Unmarshaler;
-use crate::root;
+use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
+use crate::rtree::tree::WriterTree;
+use crate::{rbase, Marshaler};
+use crate::{root, rvers};
+use log::trace;
 
 /// The TNamed class is the base class for all named ROOT classes
 /// A TNamed contains the essential elements (name, title)
@@ -62,5 +65,31 @@ impl Unmarshaler for Named {
         Ok(())
 
         // todo!()
+    }
+}
+
+impl Marshaler for Named {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        let len = w.len() - 1;
+        let beg = w.pos();
+        trace!(";Named.marshal.a{beg}.beg:{}", beg);
+        trace!(";Named.marshal.a{beg}.name:{}", self.name());
+        trace!(";Named.marshal.a{beg}.title:{}", self.title());
+        trace!(";Named.marshal.a{beg}.buf.value:{:?}", &w.p()[len..]);
+        use crate::root::traits::Named;
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        trace!(";Named.marshal.a{beg}.buf.value:{:?}", &w.p()[len..]);
+        w.write_object(&self.obj)?;
+        w.write_string(self.name())?;
+        trace!(";Named.marshal.a{beg}.buf.value:{:?}", &w.p()[len..]);
+        w.write_string(self.title())?;
+        trace!(";Named.marshal.a{beg}.buf.value:{:?}", &w.p()[len..]);
+        w.set_header(hdr)
+    }
+}
+
+impl RVersioner for Named {
+    fn rversion(&self) -> i16 {
+        rvers::NAMED
     }
 }

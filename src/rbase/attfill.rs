@@ -1,5 +1,6 @@
+use crate::rbase::AttLine;
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rbytes::Unmarshaler;
+use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
 use crate::rvers;
 use crate::RBuffer;
@@ -11,7 +12,6 @@ use crate::rcolors::Color;
 pub(crate) struct AttFill {
     color: Color,
     style: i16,
-    _width: i16,
 }
 
 impl Default for AttFill {
@@ -19,7 +19,6 @@ impl Default for AttFill {
         AttFill {
             color: Color::default(),
             style: 1001,
-            _width: 0,
         }
     }
 }
@@ -48,7 +47,16 @@ impl Unmarshaler for AttFill {
 
 impl Marshaler for AttFill {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let hdr = w.write_header(self.class(), self.rversion())?;
+        w.write_i16(self.color.to_i16())?;
+        w.write_i16(self.style)?;
+        w.set_header(hdr)
+    }
+}
+
+impl RVersioner for AttFill {
+    fn rversion(&self) -> i16 {
+        rvers::ATT_FILL
     }
 }
 

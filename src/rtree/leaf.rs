@@ -1,12 +1,12 @@
 use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rbytes::{ensure_maximum_supported_version, Unmarshaler};
+use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::TBranch;
-use crate::rtypes::FactoryItem;
+use crate::rtypes::FactoryItemRead;
 use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
 use log::trace;
@@ -26,6 +26,51 @@ pub enum Leaf {
     C(LeafC),
 }
 
+impl Marshaler for Leaf {
+    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+        match &self {
+            // Leaf::Base(_) => {}
+            // Leaf::Element(_) => {}
+            Leaf::I(i) => i.marshal(w),
+            // Leaf::S(_) => {}
+            // Leaf::D(_) => {}
+            // Leaf::F(_) => {}
+            // Leaf::B(_) => {}
+            // Leaf::L(_) => {}
+            // Leaf::O(_) => {}
+            // Leaf::C(_) => {}
+            _ => {
+                todo!("Implement Leaf::marshal for {:?}", self)
+            }
+        }
+    }
+}
+
+impl Object for Leaf {
+    fn class(&self) -> &'_ str {
+        match &self {
+            Leaf::Base(_) => "TLeaf",
+            Leaf::Element(_) => "TLeafElement",
+            Leaf::I(_) => "TLeafI",
+            Leaf::S(_) => "TLeafS",
+            Leaf::D(_) => "TLeafD",
+            Leaf::F(_) => "TLeafF",
+            Leaf::B(_) => "TLeafB",
+            Leaf::L(_) => "TLeafL",
+            Leaf::O(_) => "TLeafO",
+            Leaf::C(_) => "TLeafC",
+        }
+    }
+}
+
+impl Named for Leaf {}
+
+impl RVersioner for Leaf {
+    fn rversion(&self) -> i16 {
+        todo!()
+    }
+}
+
 impl Leaf {
     pub(crate) fn new<T: 'static>(b: &TBranch) -> Self {
         let ty = TypeId::of::<T>();
@@ -33,7 +78,8 @@ impl Leaf {
         let tleaf = TLeaf::default()
             .with_etype(std::mem::size_of::<T>() as i32)
             .with_name(b.named.name.clone())
-            .with_title(b.named.name.clone());
+            .with_title(b.named.name.clone())
+            .with_len(1);
 
         let leaf = if ty == TypeId::of::<i32>() {
             let leaf = Leaf::I(LeafI::new(tleaf));
@@ -131,8 +177,8 @@ impl From<Leaf> for TLeaf {
     }
 }
 
-impl From<Box<dyn FactoryItem>> for Leaf {
-    fn from(obj: Box<dyn FactoryItem>) -> Self {
+impl From<Box<dyn FactoryItemRead>> for Leaf {
+    fn from(obj: Box<dyn FactoryItemRead>) -> Self {
         match obj.class() {
             "TLeaf" => Leaf::Base(*obj.downcast::<TLeaf>().unwrap()),
             "TLeafI" => Leaf::I(*obj.downcast::<LeafI>().unwrap()),
@@ -148,6 +194,8 @@ impl From<Box<dyn FactoryItem>> for Leaf {
         }
     }
 }
+#[derive(Debug)]
+struct LeafCount {}
 
 #[derive(Default, Debug)]
 pub struct TLeaf {
@@ -163,8 +211,9 @@ pub struct TLeaf {
     hasrange: bool,
     // whether the leaf has a range
     unsigned: bool, // whether the leaf holds unsigned data (uint8, uint16, uint32 or uint64)
-                    // count    leafCount // leaf count if variable length
-                    // branch   BRANCH    // supporting branch of this leaf
+    // leaf count if variable length
+    count: Option<LeafCount>,
+    // branch   BRANCH    // supporting branch of this leaf
 }
 
 impl TLeaf {
@@ -244,9 +293,38 @@ impl Unmarshaler for TLeaf {
 
 impl Marshaler for TLeaf {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let len = w.len() - 1;
+        trace!(";TLeaf.marshal.buf.pos:{:?}", w.pos());
+        trace!(";TLeaf.marshal.etype:{:?}", self.etype);
+        trace!(";TLeaf.marshal.offset:{:?}", self.offset);
+        trace!(";TLeaf.marshal.len:{:?}", self.len);
+        trace!(";TLeaf.marshal.buf.value:{:?}", &w.p()[len..]);
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        w.write_object(&self.named)?;
+        w.write_i32(self.len)?;
+        w.write_i32(self.etype)?;
+        w.write_i32(self.offset)?;
+        w.write_bool(self.hasrange)?;
+        w.write_bool(self.unsigned)?;
+        match &self.count {
+            None => {
+                w.write_object_nil()?;
+            }
+            Some(c) => {
+                todo!(";TLeaf.marshal.count:{:?}", c);
+            }
+        }
+        trace!(";TLeaf.marshal.buf.value:{:?}", &w.p()[len..]);
+        w.set_header(hdr)
     }
 }
+
+impl RVersioner for TLeaf {
+    fn rversion(&self) -> i16 {
+        rvers::Leaf
+    }
+}
+
 factory_fn_register_impl!(TLeaf, "TLeaf");
 
 #[derive(Default, Debug)]
@@ -313,6 +391,12 @@ macro_rules! make_tleaf_variant {
 
         factory_all_for_register_impl!($struct_name, $root_name);
 
+        impl RVersioner for $struct_name {
+            fn rversion(&self) -> i16 {
+                rvers::$struct_name
+            }
+        }
+
         impl Unmarshaler for $struct_name {
             fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
                 let hdr = r.read_header(self.class())?;
@@ -336,7 +420,13 @@ macro_rules! make_tleaf_variant {
 
         impl Marshaler for $struct_name {
             fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-                todo!()
+                let len = w.len() - 1;
+                trace!(";{}.marshal.buf.pos:{:?}", $root_name, w.pos());
+                let hdr = w.write_header(self.class(), Self::rversion(self))?;
+                w.write_object(&self.tleaf)?;
+                w.write_object(&self.min)?;
+                w.write_object(&self.max)?;
+                w.set_header(hdr)
             }
         }
     };

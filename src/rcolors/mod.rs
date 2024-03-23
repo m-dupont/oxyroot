@@ -28,12 +28,12 @@ impl Color {
         }
     }
 
-    // pub fn to_i16(&self) -> i16 {
-    //     match self {
-    //         Self::Named(o) => num::ToPrimitive::to_i16(o).unwrap(),
-    //         Self::Int(i) => *i,
-    //     }
-    // }
+    pub fn to_i16(&self) -> i16 {
+        match self {
+            Self::Named(o) => num::ToPrimitive::to_i16(o).unwrap(),
+            Self::Int(i) => *i,
+        }
+    }
 }
 
 #[derive(FromPrimitive, ToPrimitive, Default, Debug)]
