@@ -20,7 +20,7 @@ where
 {
     branch: Branch,
     iterator: Box<dyn Iterator<Item = T>>,
-    basket: Option<WBasket<T>>,
+    basket: Option<WBasket>,
 }
 
 impl<T> WBranch<T>
@@ -118,7 +118,7 @@ where
         }
     }
 
-    fn create_new_basket(&mut self, tree: &WriterTree<T>, f: &RootFile) -> WBasket<T> {
+    fn create_new_basket(&mut self, tree: &WriterTree<T>, f: &RootFile) -> WBasket {
         trace!(";WBranch.create_new_basket.call:{:?}", true);
         trace!(
             ";WBranch.create_new_basket.b.write_basket:{:?}",

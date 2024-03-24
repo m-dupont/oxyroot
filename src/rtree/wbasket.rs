@@ -13,23 +13,15 @@ pub(crate) struct BasketBytesWritten {
 }
 
 #[derive(Debug)]
-pub struct WBasket<T>
-where
-    T: Marshaler,
-{
+pub struct WBasket {
     pub(crate) basket: Basket,
-    phantom: std::marker::PhantomData<T>,
     pub(crate) wbuf: WBuffer,
 }
 
-impl<T> WBasket<T>
-where
-    T: Marshaler,
-{
+impl WBasket {
     pub(crate) fn new(b: Basket) -> Self {
         WBasket {
             basket: b,
-            phantom: std::marker::PhantomData,
             wbuf: WBuffer::new(0),
         }
     }
@@ -121,10 +113,7 @@ where
     }
 }
 
-impl<T> Marshaler for WBasket<T>
-where
-    T: Marshaler,
-{
+impl Marshaler for WBasket {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let beg = w.pos();
 
