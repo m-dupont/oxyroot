@@ -318,6 +318,9 @@ pub(crate) fn rust_type_to_root_type_code<T: 'static>() -> String {
     if ty == TypeId::of::<String>() {
         return "C".to_string();
     }
+    if ty == TypeId::of::<bool>() {
+        return "B".to_string();
+    }
 
     unimplemented!()
 }

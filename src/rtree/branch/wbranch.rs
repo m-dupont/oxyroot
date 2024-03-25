@@ -52,7 +52,7 @@ impl<T> WBranch<T>
 where
     T: Marshaler + 'static,
 {
-    pub fn new<U: 'static>(
+    pub(crate) fn new<U: 'static>(
         name: String,
         it: impl Iterator<Item = T> + 'static,
         tree: &mut WriterTree,

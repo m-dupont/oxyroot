@@ -34,6 +34,8 @@ impl Marshaler for Leaf {
             // Leaf::Element(_) => {}
             Leaf::I(i) => i.marshal(w),
             Leaf::S(i) => i.marshal(w),
+            Leaf::L(i) => i.marshal(w),
+            Leaf::B(i) => i.marshal(w),
             // Leaf::D(_) => {}
             // Leaf::F(_) => {}
             // Leaf::B(_) => {}
@@ -75,8 +77,9 @@ impl RVersioner for Leaf {
 impl Leaf {
     pub(crate) fn new<T: 'static>(b: &TBranch) -> Self {
         let ty = TypeId::of::<T>();
+        let tys = type_name::<T>();
 
-        trace!(";Leaf.new.typename:{:?}", type_name::<T>());
+        trace!(";Leaf.new.typename:{:?}", tys);
 
         let tleaf = TLeaf::default()
             .with_etype(std::mem::size_of::<T>() as i32)
@@ -84,14 +87,15 @@ impl Leaf {
             .with_title(b.named.name.clone())
             .with_len(1);
 
-        let leaf = if ty == TypeId::of::<i32>() {
-            let leaf = Leaf::I(LeafI::new(tleaf));
-            leaf
-        } else if ty == TypeId::of::<i16>() {
-            let leaf = Leaf::S(LeafS::new(tleaf));
-            leaf
-        } else {
-            unimplemented!()
+        let leaf = match tys {
+            "i32" | "u32" => Leaf::I(LeafI::new(tleaf)),
+            "i16" | "u16" => Leaf::S(LeafS::new(tleaf)),
+            "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
+            "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
+            "bool" => Leaf::L(LeafL::new(tleaf)),
+            _ => {
+                unimplemented!("ty = {}", tys)
+            }
         };
 
         trace!(";Leaf.new.leaf:{:?}", leaf);

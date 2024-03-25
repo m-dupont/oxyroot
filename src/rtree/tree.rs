@@ -177,10 +177,13 @@ pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
 trait NewTrait: Marshaler + std::fmt::Debug {}
 
 impl WriterTree {
-    pub fn new(name: String) -> Self {
+    pub fn new<S>(name: S) -> Self
+    where
+        S: AsRef<str>,
+    {
         Self {
             named: rbase::Named::default()
-                .with_name(name.clone())
+                .with_name(name.as_ref().to_string())
                 .with_title(String::new()),
             weight: 1.0,
             scan_field: 25,
@@ -196,19 +199,20 @@ impl WriterTree {
     }
 
     // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
-    pub fn new_branch<T>(&mut self, name: String, provider: impl Iterator<Item = T> + 'static)
+    pub fn new_branch<T, S>(&mut self, name: S, provider: impl Iterator<Item = T> + 'static)
     where
         T: Marshaler + 'static,
+        S: AsRef<str>,
     {
         // let b: Box<dyn Iterator<Item = dyn Marshaler>> =
         //     Box::new(provider.map(|x| Box::new(x) as Box<dyn Marshaler>));
         // let branch = WBranch::new(name, b);
         // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
-        let WBranchwb = WBranch::new::<T>(name, it, self);
+        let WBranchwb = WBranch::new::<T>(name.as_ref().to_string(), it, self);
         self.branches.push(WBranchwb);
     }
-    pub fn write_all(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
+    pub fn write(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
         let mut branchs_done = self.branches.iter().map(|b| false).collect::<Vec<_>>();
         let mut branches = std::mem::take(&mut self.branches);
         loop {
