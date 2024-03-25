@@ -62,12 +62,12 @@ pub(crate) enum BasketData {
 }
 
 impl Basket {
-    pub(crate) fn new_from_branch<T: rbytes::Marshaler + std::fmt::Debug>(
+    pub(crate) fn new_from_branch(
         b: &Branch,
         cycle: i16,
         buf_size: i32,
         offset_len: i32,
-        tree: &WriterTree<T>,
+        tree: &WriterTree,
         f: &RootFile,
     ) -> Self {
         let mut basket = Basket {

@@ -50,16 +50,16 @@ where
 
 impl<T> WBranch<T>
 where
-    T: Marshaler + Debug + 'static,
+    T: Marshaler + 'static,
 {
-    pub fn new(
+    pub fn new<U: 'static>(
         name: String,
-        it: Box<dyn Iterator<Item = T>>,
-        tree: &mut WriterTree<T>,
+        it: impl Iterator<Item = T> + 'static,
+        tree: &mut WriterTree,
         f: &RootFile,
     ) -> Self {
         trace!(";WBranch.new.name:{:?}", name);
-        trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<T>());
+        trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<U>());
 
         let mut branch = TBranch::new(name.clone());
         branch.iobits = tree.iobits;
@@ -67,14 +67,14 @@ where
         branch.basket_size = DEFAULT_BASKET_SIZE;
         branch.max_baskets = DEFAULT_MAX_BASKETS;
         branch.basket_entry.push(0);
-        let leaf = Leaf::new::<T>(&branch);
-        branch.named.title = format!("{}/{}", name, rust_type_to_root_type_code::<T>());
+        let leaf = Leaf::new::<U>(&branch);
+        branch.named.title = format!("{}/{}", name, rust_type_to_root_type_code::<U>());
 
         trace!("WBranch.new.leaf:{:?}", leaf);
 
         let mut branch = Self {
             branch: Branch::Base(branch),
-            iterator: it,
+            iterator: Box::new(it),
             basket: None,
         };
         branch.basket = Some(branch.create_new_basket(tree, f));
@@ -83,7 +83,7 @@ where
         branch
     }
 
-    pub fn write(&mut self, tree: &WriterTree<T>, file: &mut RootFile) -> Option<i32> {
+    pub fn write(&mut self, tree: &WriterTree, file: &mut RootFile) -> Option<i32> {
         // trace!(";WBranch.write.call:{:?}", true);
         let basket = self.basket.as_mut().unwrap();
 
@@ -91,7 +91,7 @@ where
         let tbranch = self.branch.tbranch_mut();
         match self.iterator.next() {
             Some(item) => {
-                trace!(";WBranch.write.{ident}.item:{:?}", item);
+                // trace!(";WBranch.write.{ident}.item:{:?}", item);
                 // self.branch.write(item);
                 tbranch.entries += 1;
                 tbranch.entry_number += 1;
@@ -118,7 +118,7 @@ where
         }
     }
 
-    fn create_new_basket(&mut self, tree: &WriterTree<T>, f: &RootFile) -> WBasket {
+    fn create_new_basket(&mut self, tree: &WriterTree, f: &RootFile) -> WBasket {
         trace!(";WBranch.create_new_basket.call:{:?}", true);
         trace!(
             ";WBranch.create_new_basket.b.write_basket:{:?}",

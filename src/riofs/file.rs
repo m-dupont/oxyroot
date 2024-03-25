@@ -900,10 +900,7 @@ impl RootFile {
         Ok(objet)
     }
 
-    pub fn add_tree<T>(&mut self, tree: &WriterTree<T>) -> Result<()>
-    where
-        T: Marshaler + Debug,
-    {
+    pub fn add_tree(&mut self, tree: &WriterTree) -> Result<()> {
         // let mut writer = self.writer()?;
         // tree.write_to_file(&mut writer)
         Ok(())

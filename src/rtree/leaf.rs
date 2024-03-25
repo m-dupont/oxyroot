@@ -9,8 +9,9 @@ use crate::rtree::branch::TBranch;
 use crate::rtypes::FactoryItemRead;
 use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
+use downcast::Any;
 use log::trace;
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 
 #[derive(Debug)]
 pub enum Leaf {
@@ -74,6 +75,8 @@ impl RVersioner for Leaf {
 impl Leaf {
     pub(crate) fn new<T: 'static>(b: &TBranch) -> Self {
         let ty = TypeId::of::<T>();
+
+        trace!(";Leaf.new.typename:{:?}", type_name::<T>());
 
         let tleaf = TLeaf::default()
             .with_etype(std::mem::size_of::<T>() as i32)

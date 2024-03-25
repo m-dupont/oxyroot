@@ -1,5 +1,5 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{RootFile, Slice, Tree};
+use oxyroot::{Marshaler, RootFile, Slice, Tree};
 use std::io::Write;
 
 fn main() {
@@ -24,10 +24,12 @@ fn main() {
     f.add_tree(&tree).unwrap();
 
     let it32 = (0..5);
+    let it16 = (0..5).map(|x| x as i16);
 
     // let f = || it.next().unwrap();
     //
     tree.new_branch("I32".to_string(), it32, &f);
+    tree.new_branch("I16".to_string(), it16, &f);
 
     // let it64 = (0..10).map(|x| x as i64);
     //

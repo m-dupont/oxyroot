@@ -13,6 +13,7 @@ use crate::rtree::branch::Branch;
 use crate::{factory_all_for_register_impl, rvers, RootFile};
 use crate::{rbase, Named};
 use log::trace;
+use std::fmt::Debug;
 
 #[derive(Default)]
 pub struct Clusters {
@@ -170,12 +171,12 @@ impl<B> Default for Tree<B> {
 }
 
 pub type ReaderTree = Tree<Branch>;
-pub type WriterTree<T> = Tree<WBranch<T>>;
+// pub type WriterTree<T> = Tree<WBranch<T>>;
+pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
 
-impl<T> WriterTree<T>
-where
-    T: Marshaler + std::fmt::Debug + 'static,
-{
+trait NewTrait: Marshaler + std::fmt::Debug {}
+
+impl WriterTree {
     pub fn new(name: String) -> Self {
         Self {
             named: rbase::Named::default()
@@ -195,16 +196,20 @@ where
     }
 
     // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
-    pub fn new_branch<I>(&mut self, name: String, provider: I, f: &RootFile)
-    where
-        I: Iterator<Item = T> + 'static,
+    pub fn new_branch<T>(
+        &mut self,
+        name: String,
+        provider: impl Iterator<Item = T> + 'static,
+        f: &RootFile,
+    ) where
+        T: Marshaler + 'static,
     {
         // let b: Box<dyn Iterator<Item = dyn Marshaler>> =
         //     Box::new(provider.map(|x| Box::new(x) as Box<dyn Marshaler>));
         // let branch = WBranch::new(name, b);
         // self.branches.push(branch);
-        let b = Box::new(provider);
-        let WBranchwb = WBranch::new(name, b, self, f);
+        let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
+        let WBranchwb = WBranch::new::<T>(name, it, self, f);
         self.branches.push(WBranchwb);
     }
     pub fn write_all(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
@@ -359,10 +364,7 @@ impl ReaderTree {
     }
 }
 
-impl<T> Marshaler for WriterTree<T>
-where
-    T: Marshaler + 'static,
-{
+impl Marshaler for WriterTree {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let len = w.len();
         let beg = w.pos();
@@ -446,10 +448,7 @@ where
     }
 }
 
-impl<T> Unmarshaler for WriterTree<T>
-where
-    T: Unmarshaler + Marshaler,
-{
+impl Unmarshaler for WriterTree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         todo!()
     }
@@ -641,19 +640,13 @@ impl Marshaler for ReaderTree {
 
 factory_all_for_register_impl!(ReaderTree, "TTree", rvers::TREE);
 
-impl<T> Object for WriterTree<T>
-where
-    T: Marshaler,
-{
+impl Object for WriterTree {
     fn class(&self) -> &'_ str {
         "TTree"
     }
 }
 
-impl<T> Named for WriterTree<T>
-where
-    T: Marshaler,
-{
+impl Named for WriterTree {
     fn name(&self) -> &'_ str {
         self.named.name()
     }
@@ -663,10 +656,7 @@ where
     }
 }
 
-impl<T> RVersioner for WriterTree<T>
-where
-    T: Marshaler,
-{
+impl RVersioner for WriterTree {
     fn rversion(&self) -> i16 {
         rvers::TREE
     }

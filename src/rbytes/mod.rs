@@ -61,6 +61,13 @@ pub trait Marshaler {
     fn marshal(&self, w: &mut WBuffer) -> Result<i64>;
 }
 
+/// Used by WBranch to marshal objects into a ROOT buffer.
+impl Marshaler for Box<dyn Marshaler> {
+    fn marshal(&self, w: &mut WBuffer) -> Result<i64> {
+        self.as_ref().marshal(w)
+    }
+}
+
 macro_rules! impl_marshalers_primitive {
     ($ftype:ty, $buffer_read_fn:ident, $buffer_write_fn:ident) => {
         impl Unmarshaler for $ftype {
