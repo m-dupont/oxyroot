@@ -900,12 +900,6 @@ impl RootFile {
         Ok(objet)
     }
 
-    pub fn add_tree(&mut self, tree: &WriterTree) -> Result<()> {
-        // let mut writer = self.writer()?;
-        // tree.write_to_file(&mut writer)
-        Ok(())
-    }
-
     pub fn keys_name(&self) -> impl Iterator<Item = &str> {
         self.dir.keys().iter().map(|e| e.name())
     }

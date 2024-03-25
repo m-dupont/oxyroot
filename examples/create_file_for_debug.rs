@@ -21,19 +21,14 @@ fn main() {
     let file = "/tmp/g.root";
     let mut f = RootFile::create(file).unwrap();
     let mut tree = Tree::new("mytree".to_string());
-    f.add_tree(&tree).unwrap();
 
     let it32 = (0..5);
     let it16 = (0..5).map(|x| x as i16);
 
     // let f = || it.next().unwrap();
     //
-    tree.new_branch("I32".to_string(), it32, &f);
-    tree.new_branch("I16".to_string(), it16, &f);
-
-    // let it64 = (0..10).map(|x| x as i64);
-    //
-    // tree.new_branch("i64".to_string(), it64, &f);
+    tree.new_branch("I32".to_string(), it32);
+    tree.new_branch("I16".to_string(), it16);
 
     tree.write_all(&mut f).unwrap();
 

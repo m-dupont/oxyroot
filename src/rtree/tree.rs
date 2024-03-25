@@ -196,12 +196,8 @@ impl WriterTree {
     }
 
     // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
-    pub fn new_branch<T>(
-        &mut self,
-        name: String,
-        provider: impl Iterator<Item = T> + 'static,
-        f: &RootFile,
-    ) where
+    pub fn new_branch<T>(&mut self, name: String, provider: impl Iterator<Item = T> + 'static)
+    where
         T: Marshaler + 'static,
     {
         // let b: Box<dyn Iterator<Item = dyn Marshaler>> =
@@ -209,7 +205,7 @@ impl WriterTree {
         // let branch = WBranch::new(name, b);
         // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
-        let WBranchwb = WBranch::new::<T>(name, it, self, f);
+        let WBranchwb = WBranch::new::<T>(name, it, self);
         self.branches.push(WBranchwb);
     }
     pub fn write_all(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {

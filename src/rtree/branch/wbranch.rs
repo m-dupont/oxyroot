@@ -56,14 +56,13 @@ where
         name: String,
         it: impl Iterator<Item = T> + 'static,
         tree: &mut WriterTree,
-        f: &RootFile,
     ) -> Self {
         trace!(";WBranch.new.name:{:?}", name);
         trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<U>());
 
         let mut branch = TBranch::new(name.clone());
         branch.iobits = tree.iobits;
-        branch.compress = f.compression();
+        // branch.compress = f.compression();
         branch.basket_size = DEFAULT_BASKET_SIZE;
         branch.max_baskets = DEFAULT_MAX_BASKETS;
         branch.basket_entry.push(0);
@@ -77,7 +76,7 @@ where
             iterator: Box::new(it),
             basket: None,
         };
-        branch.basket = Some(branch.create_new_basket(tree, f));
+        // branch.basket = Some(branch.create_new_basket(tree, None));
         branch.branch.tbranch_mut().leaves.push(leaf);
         trace!("WBranch.new.branch:{:?}", branch);
         branch
@@ -85,7 +84,13 @@ where
 
     pub fn write(&mut self, tree: &WriterTree, file: &mut RootFile) -> Option<i32> {
         // trace!(";WBranch.write.call:{:?}", true);
-        let basket = self.basket.as_mut().unwrap();
+        let basket = match &mut self.basket {
+            None => {
+                self.basket = Some(self.create_new_basket(tree, file));
+                self.basket.as_mut().unwrap() // safe because we juste created it
+            }
+            Some(b) => b,
+        };
 
         let ident = format!("{}.{}", self.branch.name(), self.branch.tbranch().entries);
         let tbranch = self.branch.tbranch_mut();
