@@ -1,10 +1,10 @@
 [package]
 name = "oxyroot"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
 exclude = ["*test_data/", "*.root", "*.C"]
-description = "Another attempt to make library reading of `.root` binary files which are commonly used in particle physics"
+description = "Another attempt to make library reading and writing of `.root` binary files which are commonly used in particle physics"
 license = "MIT OR Apache-2.0"
 readme = "readme.md"
 repository = "https://github.com/m-dupont/oxyroot"
