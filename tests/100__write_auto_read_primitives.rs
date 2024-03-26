@@ -14,7 +14,7 @@ macro_rules! write_branch {
         fs::create_dir_all(&out_dir)?;
         let out_file = format!("{}/{Ns}.root", out_dir);
         fn gen_it() -> impl Iterator<Item = $ty> {
-            (0..$N)
+            (0..$N).map(|x| x as $ty)
         }
 
         {
@@ -73,6 +73,11 @@ fn write_i32_branch() -> Result<()> {
     write_branch!(u32, 15);
     Ok(())
 }
+#[test]
+fn write_f32_branch() -> Result<()> {
+    write_branch!(f32, 5);
+    Ok(())
+}
 
 #[test]
 fn write_i16_branch() -> Result<()> {
@@ -93,6 +98,13 @@ fn write_i64_branch() -> Result<()> {
     write_branch!(u64, 5);
     Ok(())
 }
+
+#[test]
+fn write_f64_branch() -> Result<()> {
+    write_branch!(f64, 5);
+    Ok(())
+}
+
 #[test]
 fn write_bool_branch() -> Result<()> {
     let ty = "bool";
