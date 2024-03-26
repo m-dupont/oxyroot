@@ -18,22 +18,42 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let file = "/tmp/g.root";
-    let mut f = RootFile::create(file).unwrap();
-    let mut tree = Tree::new("mytree".to_string());
+    let N = 15;
+    fn make_string(n: i32) -> String {
+        let mut s = String::new();
+        for i in 0..(n * 30) {
+            for j in 0..10 {
+                s.push_str(&format!("string{},{} ", i, j));
+            }
+        }
+        s
+        //format!("evt-{}", 10_i32.pow(n as u32))
+    }
 
-    let it = (0..5).map(|x| format!("evt-{}", x));
-    // let it = (0..5);
+    {
+        let file = "/tmp/g.root";
+        let mut f = RootFile::create(file).unwrap();
+        let mut tree = Tree::new("mytree".to_string());
+        let it = (0..N).map(|x| make_string(x));
+        //
+        tree.new_branch("Str".to_string(), it);
 
-    // let f = || it.next().unwrap();
-    //
-    tree.new_branch("Str".to_string(), it);
+        tree.write(&mut f).unwrap();
 
-    tree.write(&mut f).unwrap();
+        f.close().unwrap();
 
-    f.close().unwrap();
+        std::fs::rename(file, "/tmp/a.root").unwrap();
+    }
 
-    std::fs::rename(file, "/tmp/a.root").unwrap();
+    let mut f = oxyroot::RootFile::open("/tmp/a.root").unwrap();
+    let tree = f.get_tree("mytree").unwrap();
+    let mut b = tree.branch("Str").unwrap().as_iter::<String>();
+
+    let it = (0..N).map(make_string);
+
+    for (i, (r, w)) in b.zip(it).enumerate() {
+        assert_eq!(r, w);
+    }
 
     // println!("tree = {:?}", tree);
     // assert_eq!(Photon_E.count(), 2421);

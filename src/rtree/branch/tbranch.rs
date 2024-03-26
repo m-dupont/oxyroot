@@ -693,10 +693,15 @@ impl Marshaler for TBranch {
 
         {
             let sli = &self.basket_bytes[0..self.write_basket as usize];
-            trace!(";TBranch.marshal.sli:{:?}", sli);
+            trace!(";TBranch.marshal.sli.basket_bytes.value:{:?}", sli);
+            trace!(";TBranch.marshal.sli.basket_bytes.len:{:?}", sli.len());
+            trace!(
+                ";TBranch.marshal.sli.basket_bytes.max_baskets:{:?}",
+                b_max_baskets
+            );
             w.write_i8(1)?;
             w.write_array_i32(sli)?;
-            let n = self.max_baskets as usize - sli.len();
+            let n = b_max_baskets as usize - sli.len();
             if n > 0 {
                 let mut v = vec![0; n];
                 w.write_array_i32(&v)?;
@@ -709,10 +714,10 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
         {
             let sli = &self.basket_entry[0..(self.write_basket + 1) as usize];
-            trace!(";TBranch.marshal.sli:{:?}", sli);
+            trace!(";TBranch.marshal.sli.basket_entry.value:{:?}", sli);
             w.write_i8(1)?;
             w.write_array_i64(sli)?;
-            let n = self.max_baskets as usize - sli.len();
+            let n = b_max_baskets as usize - sli.len();
             if n > 0 {
                 let mut v = vec![0; n];
                 w.write_array_i64(&v)?;
@@ -726,10 +731,10 @@ impl Marshaler for TBranch {
 
         {
             let sli = &self.basket_seek[0..self.write_basket as usize];
-            trace!(";TBranch.marshal.sli:{:?}", sli);
+            trace!(";TBranch.marshal.sli.basket_seek.value:{:?}", sli);
             w.write_i8(1)?;
             w.write_array_i64(sli)?;
-            let n = self.max_baskets as usize - sli.len();
+            let n = b_max_baskets as usize - sli.len();
             if n > 0 {
                 let mut v = vec![0; n];
                 w.write_array_i64(&v)?;
