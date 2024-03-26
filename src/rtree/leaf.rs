@@ -6,6 +6,7 @@ use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::TBranch;
+use crate::rtree::streamer_type::{rust_type_to_kind, Kind};
 use crate::rtypes::FactoryItemRead;
 use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
@@ -41,7 +42,7 @@ impl Marshaler for Leaf {
             // Leaf::B(_) => {}
             // Leaf::L(_) => {}
             // Leaf::O(_) => {}
-            // Leaf::C(_) => {}
+            Leaf::C(i) => i.marshal(w),
             _ => {
                 todo!("Implement Leaf::marshal for {:?}", self)
             }
@@ -93,9 +94,21 @@ impl Leaf {
             "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
             "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
             "bool" => Leaf::L(LeafL::new(tleaf)),
-            _ => {
-                unimplemented!("ty = {}", tys)
-            }
+            _ => match rust_type_to_kind::<T>() {
+                Kind::Primitive => {
+                    panic!("should not happen")
+                }
+                Kind::Array => {
+                    unimplemented!("ty = {}", tys)
+                }
+                Kind::Slice => {
+                    unimplemented!("ty = {}", tys)
+                }
+                Kind::String => Leaf::C(LeafC::new(tleaf)),
+                Kind::Struct => {
+                    unimplemented!("ty = {}", tys)
+                }
+            },
         };
 
         trace!(";Leaf.new.leaf:{:?}", leaf);
@@ -149,6 +162,29 @@ impl Leaf {
             }),
             Leaf::O(_) => Some("bool"),
             Leaf::C(_) => Some("char*"),
+        }
+    }
+
+    pub(crate) fn write_to_buffer(
+        &mut self,
+        w: &mut WBuffer,
+        value: &impl Marshaler,
+    ) -> crate::rbytes::Result<i64> {
+        match self {
+            Leaf::Base(_) => {
+                todo!()
+            }
+            Leaf::Element(_) => {
+                todo!()
+            }
+            Leaf::I(l) => w.write_object(value),
+            Leaf::S(_) => w.write_object(value),
+            Leaf::D(_) => w.write_object(value),
+            Leaf::F(_) => w.write_object(value),
+            Leaf::B(_) => w.write_object(value),
+            Leaf::L(_) => w.write_object(value),
+            Leaf::O(_) => w.write_object(value),
+            Leaf::C(l) => l.write_to_buffer(w, value),
         }
     }
 }
@@ -346,6 +382,33 @@ pub struct LeafC {
     // ptr: &i32;
 }
 
+impl LeafC {
+    pub fn new(tleaf: TLeaf) -> Self {
+        Self {
+            tleaf,
+            rvers: rvers::LEAF_C,
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn write_to_buffer(
+        &mut self,
+        w: &mut WBuffer,
+        value: &impl Marshaler,
+    ) -> crate::rbytes::Result<i64> {
+        // TODO: implement LeafC::write_to_buffer from groot  ? needed ?
+        let sz = w.write_object(value)?;
+        if sz >= self.max as i64 {
+            self.max = sz as i32;
+        }
+        if sz >= self.tleaf.len as i64 {
+            self.tleaf.len = sz as i32;
+        }
+        trace!(";TLeafC.write_to_buffer.sz:{:?}", sz);
+        Ok(sz)
+    }
+}
+
 impl Unmarshaler for LeafC {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
@@ -369,7 +432,21 @@ impl Unmarshaler for LeafC {
 
 impl Marshaler for LeafC {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let len = w.len() - 1;
+        trace!(";T{}.marshal.buf.pos:{:?}", "LeafC", w.pos());
+        trace!(";T{}.marshal.min:{:?}", "LeafC", self.min);
+        trace!(";T{}.marshal.max:{:?}", "LeafC", self.max);
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        w.write_object(&self.tleaf)?;
+        w.write_object(&self.min)?;
+        w.write_object(&self.max)?;
+        w.set_header(hdr)
+    }
+}
+
+impl RVersioner for LeafC {
+    fn rversion(&self) -> i16 {
+        rvers::LEAF_C
     }
 }
 
@@ -432,6 +509,8 @@ macro_rules! make_tleaf_variant {
             fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
                 let len = w.len() - 1;
                 trace!(";{}.marshal.buf.pos:{:?}", $root_name, w.pos());
+                trace!(";{}.marshal.min:{:?}", $root_name, self.min);
+                trace!(";{}.marshal.max:{:?}", $root_name, self.max);
                 let hdr = w.write_header(self.class(), Self::rversion(self))?;
                 w.write_object(&self.tleaf)?;
                 w.write_object(&self.min)?;

@@ -313,6 +313,7 @@ macro_rules! read_primitive_branch {
 fn read_tree_into_i32() -> Result<()> {
     read_primitive_branch!(i32, "Int_t");
     read_primitive_branch!(i32, "int");
+    read_primitive_branch!(i32, "signed");
     Ok(())
 }
 
@@ -323,13 +324,11 @@ fn read_tree_into_u32() -> Result<()> {
 }
 
 // #[test]
-// fn read_tree_into_i64() {
-//     read_primitive_branch!(i64, "Long_t");
-// }
-// #[test]
-// fn read_tree_into_u64() {
+// fn read_tree_into_u64() -> Result<()> {
 //     read_primitive_branch!(u64, "ULong_t");
+//     Ok(())
 // }
+
 #[test]
 fn read_tree_into_f32() -> Result<()> {
     read_primitive_branch!(f32, "Float_t");

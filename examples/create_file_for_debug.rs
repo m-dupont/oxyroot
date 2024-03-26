@@ -20,15 +20,14 @@ fn main() {
 
     let file = "/tmp/g.root";
     let mut f = RootFile::create(file).unwrap();
-    let mut tree = Tree::new("lop".to_string());
+    let mut tree = Tree::new("mytree".to_string());
 
-    let it32 = (0..5);
-    let it16 = (0..5).map(|x| x as i16);
+    let it = (0..5).map(|x| format!("evt-{}", x));
+    // let it = (0..5);
 
     // let f = || it.next().unwrap();
     //
-    tree.new_branch("I32".to_string(), it32);
-    tree.new_branch("I16".to_string(), it16);
+    tree.new_branch("Str".to_string(), it);
 
     tree.write(&mut f).unwrap();
 

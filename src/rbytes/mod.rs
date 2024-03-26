@@ -122,6 +122,14 @@ impl Unmarshaler for String {
     }
 }
 
+impl Marshaler for String {
+    fn marshal(&self, w: &mut WBuffer) -> Result<i64> {
+        let beg = w.pos();
+        w.write_string(self)?;
+        Ok(w.pos() - beg)
+    }
+}
+
 impl<T> Unmarshaler for Vec<T>
 where
     T: UnmarshalerInto<Item = T>,

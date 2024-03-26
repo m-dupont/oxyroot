@@ -31,10 +31,33 @@ impl WBasket {
         trace!(";WBranch.write.wbasket.update.{beg}.call:{:?}", true);
         let offset = offset + self.basket.key().key_len() as i64;
         trace!(";WBranch.write.wbasket.update.{beg}.offset:{:?}", offset);
-        if self.basket.offsets().len() > 0 {
-            unimplemented!("WBasket.update.offsets.len > 0");
+        let b = &mut self.basket;
+        if b.offsets().len() > 0 {
+            if b.nev_buf + 1 >= b.nev_size {
+                let mut nev_size = 10;
+                if nev_size < 2 * b.nev_size {
+                    nev_size = 2 * b.nev_size;
+                }
+                b.nev_size = nev_size;
+                let mut delta = b.offsets().len() as i32 - nev_size;
+                if delta < 0 {
+                    delta = -delta;
+                }
+                for _ in 0..delta {
+                    b.offsets.push(0);
+                }
+            }
+            b.offsets[b.nev_buf as usize] = offset as i32;
         }
         self.basket.nev_buf += 1;
+        trace!(
+            ";WBranch.write.wbasket.update.{beg}.nev_buf:{:?}",
+            self.basket.nev_buf
+        );
+        trace!(
+            ";WBranch.write.wbasket.update.{beg}.offsets:{:?}",
+            self.basket.offsets
+        );
         Ok(())
     }
 
@@ -52,14 +75,33 @@ impl WBasket {
         let adjust = !(self.basket.key().rvers() > 1000) && file.is_big_file();
         trace!(";WBasket.write_to_file.adjust:{:?}", adjust);
         trace!(
+            ";WBasket.write_to_file.key.rvers:{:?}",
+            self.basket.key().rvers()
+        );
+        trace!(
+            ";WBasket.write_to_file.file.is_big_file:{:?}",
+            file.is_big_file()
+        );
+        trace!(
             ";WBasket.write_to_file.basket.key().key_len():{:?}",
             self.basket.key().key_len()
         );
         self.basket.last = self.basket.key().key_len() + self.wbuf.len() as i32;
         trace!(";WBasket.write_to_file.b.last:{:?}", self.basket.last);
 
-        let key = self.basket.key();
+        if self.basket.offsets.len() > 0 {
+            if adjust {
+                for v in self.basket.offsets.iter_mut() {
+                    *v += 8;
+                }
+            }
+            self.wbuf.write_i32(self.basket.nev_buf as i32 + 1)?;
+            self.wbuf
+                .write_array_i32(&self.basket.offsets[0..self.basket.nev_buf as usize])?;
+            self.wbuf.write_i32(0)?;
+        }
 
+        let key = self.basket.key();
         trace!(";WBasket.write_to_file.key.name:{:?}", key.name());
         trace!(";WBasket.write_to_file.key.title:{:?}", key.title());
 

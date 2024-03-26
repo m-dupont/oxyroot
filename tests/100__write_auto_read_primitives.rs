@@ -100,9 +100,8 @@ fn write_bool_branch() -> Result<()> {
     fs::create_dir_all(&out_dir)?;
     let out_file = format!("{}/{N}.root", out_dir);
 
-    let it = (0..N).map(|x| x.is_even());
-
     {
+        let it = (0..N).map(|x| x.is_even());
         let mut f = oxyroot::RootFile::create(&out_file)?;
         let mut tree = oxyroot::Tree::new("mytree");
 
@@ -123,17 +122,54 @@ fn write_bool_branch() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn write_string_branch() -> Result<()> {
+    let ty = "String";
+    let N = 5;
+    let out_dir = format!("{}/{ty}", OUT_DIR);
+    fs::create_dir_all(&out_dir)?;
+    let out_file = format!("{}/{N}.root", out_dir);
+
+    {
+        let it = (0..N).map(|x| format!("string{}", x));
+        let mut f = oxyroot::RootFile::create(&out_file)?;
+        let mut tree = oxyroot::Tree::new("mytree");
+
+        tree.new_branch(ty, it);
+        tree.write(&mut f)?;
+        f.close()?;
+    }
+
+    let mut f = oxyroot::RootFile::open(out_file)?;
+    let tree = f.get_tree("mytree")?;
+    let mut b = tree.branch(ty).unwrap().as_iter::<String>();
+
+    let it = (0..N).map(|x| format!("string{}", x));
+
+    for (i, (r, w)) in b.zip(it).enumerate() {
+        assert_eq!(r, w);
+    }
+    Ok(())
+}
+
 // #[test]
-// fn write_string_branch() -> Result<()> {
+// fn write_variable_lenght_string_branch() -> Result<()> {
 //     let ty = "String";
 //     let N = 5;
 //     let out_dir = format!("{}/{ty}", OUT_DIR);
 //     fs::create_dir_all(&out_dir)?;
 //     let out_file = format!("{}/{N}.root", out_dir);
 //
-//     let it = (0..N).map(|x| format!("string{}", x));
+//     fn make_string(n: i32) -> String {
+//         let mut s = String::new();
+//         for i in 0..n {
+//             s.push_str(&format!("string{}", i));
+//         }
+//         s
+//     }
 //
 //     {
+//         let it = (0..N).map(|x| make_string(x));
 //         let mut f = oxyroot::RootFile::create(&out_file)?;
 //         let mut tree = oxyroot::Tree::new("mytree");
 //
@@ -146,7 +182,7 @@ fn write_bool_branch() -> Result<()> {
 //     let tree = f.get_tree("mytree")?;
 //     let mut b = tree.branch(ty).unwrap().as_iter::<String>();
 //
-//     let it = (0..N).map(|x| x.is_even());
+//     let it = (0..N).map(|x| format!("string{}", x));
 //
 //     for (i, (r, w)) in b.zip(it).enumerate() {
 //         assert_eq!(r, w);

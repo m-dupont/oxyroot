@@ -5,7 +5,7 @@ use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
 use crate::rtree::branch::TBranch;
 use crate::rtree::leaf::Leaf;
-use crate::rtree::streamer_type::rust_type_to_root_type_code;
+use crate::rtree::streamer_type::{rust_type_to_kind, rust_type_to_root_type_code, Kind};
 use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
 use crate::{rvers, Branch, Named, Object, RootFile};
@@ -61,16 +61,36 @@ where
         trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<U>());
 
         let mut branch = TBranch::new(name.clone());
+
         branch.iobits = tree.iobits;
         // branch.compress = f.compression();
         branch.basket_size = DEFAULT_BASKET_SIZE;
         branch.max_baskets = DEFAULT_MAX_BASKETS;
         branch.basket_entry.push(0);
-        let leaf = Leaf::new::<U>(&branch);
+
         branch.named.title = format!("{}/{}", name, rust_type_to_root_type_code::<U>());
 
-        trace!("WBranch.new.leaf:{:?}", leaf);
+        match rust_type_to_kind::<U>() {
+            Kind::Primitive => {}
+            Kind::Array => {
+                todo!()
+            }
+            Kind::Slice => {
+                todo!()
+            }
+            Kind::String => branch.entry_offset_len = 1000,
+            Kind::Struct => {
+                todo!()
+            }
+        }
 
+        trace!(
+            ";WBranch.new.rust_type_to_kind:{:?}",
+            rust_type_to_kind::<U>()
+        );
+        trace!(";WBranch.new.title:{:?}", branch.named.title);
+        let leaf = Leaf::new::<U>(&branch);
+        trace!("WBranch.new.leaf:{:?}", leaf);
         let mut branch = Self {
             branch: Branch::Base(branch),
             iterator: Box::new(it),
@@ -92,7 +112,7 @@ where
             Some(b) => b,
         };
 
-        let ident = format!("{}.{}", self.branch.name(), self.branch.tbranch().entries);
+        let ident = format!("{}.a{}", self.branch.name(), self.branch.tbranch().entries);
         let tbranch = self.branch.tbranch_mut();
         match self.iterator.next() {
             Some(item) => {
@@ -104,7 +124,14 @@ where
                 let szOld = basket.wbuf.len();
                 trace!(";WBranch.write.{ident}.szOld:{:?}", szOld);
                 basket.update(szOld as i64).unwrap();
-                basket.wbuf.write_object(&item).unwrap();
+
+                assert_eq!(tbranch.leaves.len(), 1);
+
+                for leave in tbranch.leaves.iter_mut() {
+                    leave.write_to_buffer(&mut basket.wbuf, &item).unwrap();
+                }
+
+                // basket.wbuf.write_object(&item).unwrap();
                 let szNew = basket.wbuf.len();
                 trace!(";WBranch.write.{ident}.szNew:{:?}", szNew);
                 let n = (szNew - szOld) as i32;
@@ -131,7 +158,8 @@ where
         );
         let cycle = self.branch.tbranch_mut().write_basket as i16 + 1;
         let basket_size = self.branch.tbranch_mut().basket_size;
-        let basket = Basket::new_from_branch(&self.branch, cycle, basket_size, 0, tree, f);
+        let offset_len = self.branch.tbranch_mut().entry_offset_len;
+        let basket = Basket::new_from_branch(&self.branch, cycle, basket_size, offset_len, tree, f);
         trace!(";WBranch.create_new_basket.basket:{:?}", basket);
         let n = self.branch.tbranch_mut().write_basket;
         if n > self.branch.tbranch_mut().max_baskets {

@@ -17,7 +17,7 @@ pub struct Basket {
     pub(crate) last: i32,
     pub(crate) nev_size: i32,
     pub(crate) buf_size: i32,
-    offsets: Vec<i32>,
+    pub(crate) offsets: Vec<i32>,
     header: bool,
     pub(crate) rvers: i16,
     pub(crate) iobits: TioFeatures,
@@ -83,9 +83,23 @@ impl Basket {
             nev_size: offset_len,
             buf_size,
             header: true,
+            offsets: Vec::with_capacity(1000),
             ..Default::default()
         };
-        trace!(";Basket.new_from_branch.key:{:?}", &basket);
+        // trace!(";Basket.new_from_branch.basket.value:{:?}", &basket);
+        trace!(
+            ";Basket.new_from_branch.basket.nev_size:{:?}",
+            basket.nev_size
+        );
+        trace!(
+            ";Basket.new_from_branch.basket.offsets:{:?}",
+            basket.offsets
+        );
+        basket.offsets.resize(basket.nev_size as usize, 0);
+        trace!(
+            ";Basket.new_from_branch.basket.offsets:{:?}",
+            basket.offsets
+        );
         trace!(";Basket.new_from_branch.tree.title:{:?}", tree.title());
         basket
     }

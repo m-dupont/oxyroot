@@ -32,7 +32,7 @@ pub struct TBranch {
     /// initial size of BASKET buffer
     pub(crate) basket_size: i32,
     /// initial length of entryOffset table in the basket buffers
-    entry_offset_len: i32,
+    pub(crate) entry_offset_len: i32,
     /// last basket number written
     pub(crate) write_basket: i32,
     /// current entry number (last one filled in this branch)
