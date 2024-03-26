@@ -1,11 +1,11 @@
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rbytes::{Marshaler, RVersioner};
+use crate::rbytes::{Marshaler, MarshallerKind, RVersioner};
 use crate::riofs::Result;
 use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
 use crate::rtree::branch::TBranch;
 use crate::rtree::leaf::Leaf;
-use crate::rtree::streamer_type::{rust_type_to_kind, rust_type_to_root_type_code, Kind};
+use crate::rtree::streamer_type::rust_type_to_root_type_code;
 use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
 use crate::{rvers, Branch, Named, Object, RootFile};
@@ -56,7 +56,10 @@ where
         name: String,
         it: impl Iterator<Item = T> + 'static,
         tree: &mut WriterTree,
-    ) -> Self {
+    ) -> Self
+    where
+        U: Marshaler,
+    {
         trace!(";WBranch.new.name:{:?}", name);
         trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<U>());
 
@@ -70,24 +73,21 @@ where
 
         branch.named.title = format!("{}/{}", name, rust_type_to_root_type_code::<U>());
 
-        match rust_type_to_kind::<U>() {
-            Kind::Primitive => {}
-            Kind::Array => {
+        match U::kind() {
+            MarshallerKind::Primitive => {}
+            MarshallerKind::Array => {
                 todo!()
             }
-            Kind::Slice => {
+            MarshallerKind::Slice => {
                 todo!()
             }
-            Kind::String => branch.entry_offset_len = 1000,
-            Kind::Struct => {
+            MarshallerKind::String => branch.entry_offset_len = 1000,
+            MarshallerKind::Struct => {
                 todo!()
             }
         }
 
-        trace!(
-            ";WBranch.new.rust_type_to_kind:{:?}",
-            rust_type_to_kind::<U>()
-        );
+        trace!(";WBranch.new.rust_type_to_kind:{:?}", U::kind());
         trace!(";WBranch.new.title:{:?}", branch.named.title);
         let leaf = Leaf::new::<U>(&branch);
         trace!("WBranch.new.leaf:{:?}", leaf);

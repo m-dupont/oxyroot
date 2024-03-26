@@ -1,6 +1,7 @@
 use crate::rdict::StreamerInfo;
 use crate::{root, Object};
 use rbuffer::RBuffer;
+use std::any::type_name;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -57,8 +58,22 @@ pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
 }
 
+#[derive(Debug)]
+pub(crate) enum MarshallerKind {
+    Primitive,
+    Array,
+    Slice,
+    String,
+    Struct,
+}
 pub trait Marshaler {
     fn marshal(&self, w: &mut WBuffer) -> Result<i64>;
+    fn kind() -> MarshallerKind
+    where
+        Self: Sized,
+    {
+        unimplemented!("Marshaler.rust_type_to_kind for {}", type_name::<Self>())
+    }
 }
 
 /// Used by WBranch to marshal objects into a ROOT buffer.
@@ -82,6 +97,13 @@ macro_rules! impl_marshalers_primitive {
                 let beg = w.pos();
                 w.$buffer_write_fn(*self)?;
                 Ok(w.pos() - beg)
+            }
+
+            fn kind() -> MarshallerKind
+            where
+                Self: Sized,
+            {
+                MarshallerKind::Primitive
             }
         }
     };
@@ -127,6 +149,10 @@ impl Marshaler for String {
         let beg = w.pos();
         w.write_string(self)?;
         Ok(w.pos() - beg)
+    }
+
+    fn kind() -> MarshallerKind {
+        MarshallerKind::String
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::rbytes::MarshallerKind;
 use crate::rdict::Streamer;
 use crate::rmeta::{EReadWrite, Enum, EnumNamed};
 use lazy_static::lazy_static;
@@ -323,36 +324,6 @@ pub(crate) fn rust_type_to_root_type_code<T: 'static>() -> String {
     }
 
     unimplemented!()
-}
-
-#[derive(Debug)]
-pub(crate) enum Kind {
-    Primitive,
-    Array,
-    Slice,
-    String,
-    Struct,
-}
-
-pub(crate) fn rust_type_to_kind<T>() -> Kind {
-    let tys = type_name::<T>();
-    match tys {
-        "i32" | "u32" | "i8" | "u8" | "i16" | "u16" | "i64" | "u64" | "f32" | "f64" | "bool" => {
-            Kind::Primitive
-        }
-        _ => {
-            if tys.starts_with("alloc") {
-                let tys = tys.rsplit_once("::").unwrap().1;
-                if tys == "String" {
-                    Kind::String
-                } else {
-                    unimplemented!()
-                }
-            } else {
-                unimplemented!()
-            }
-        }
-    }
 }
 
 #[cfg(test)]

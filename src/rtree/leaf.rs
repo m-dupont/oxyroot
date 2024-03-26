@@ -1,12 +1,11 @@
 use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
-use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
+use crate::rbytes::{ensure_maximum_supported_version, MarshallerKind, RVersioner, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::TBranch;
-use crate::rtree::streamer_type::{rust_type_to_kind, Kind};
 use crate::rtypes::FactoryItemRead;
 use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
@@ -76,7 +75,7 @@ impl RVersioner for Leaf {
 }
 
 impl Leaf {
-    pub(crate) fn new<T: 'static>(b: &TBranch) -> Self {
+    pub(crate) fn new<T: 'static + Marshaler>(b: &TBranch) -> Self {
         let ty = TypeId::of::<T>();
         let tys = type_name::<T>();
 
@@ -94,18 +93,18 @@ impl Leaf {
             "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
             "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
             "bool" => Leaf::L(LeafL::new(tleaf)),
-            _ => match rust_type_to_kind::<T>() {
-                Kind::Primitive => {
+            _ => match T::kind() {
+                MarshallerKind::Primitive => {
                     panic!("should not happen")
                 }
-                Kind::Array => {
+                MarshallerKind::Array => {
                     unimplemented!("ty = {}", tys)
                 }
-                Kind::Slice => {
+                MarshallerKind::Slice => {
                     unimplemented!("ty = {}", tys)
                 }
-                Kind::String => Leaf::C(LeafC::new(tleaf)),
-                Kind::Struct => {
+                MarshallerKind::String => Leaf::C(LeafC::new(tleaf)),
+                MarshallerKind::Struct => {
                     unimplemented!("ty = {}", tys)
                 }
             },

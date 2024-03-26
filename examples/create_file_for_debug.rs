@@ -19,14 +19,14 @@ fn main() {
         .init();
 
     let N = 15;
-    fn make_string(n: i32) -> String {
+    fn make_string(n: i32) -> i32 {
         let mut s = String::new();
         for i in 0..(n * 30) {
             for j in 0..10 {
                 s.push_str(&format!("string{},{} ", i, j));
             }
         }
-        s
+        n
         //format!("evt-{}", 10_i32.pow(n as u32))
     }
 
@@ -47,7 +47,7 @@ fn main() {
 
     let mut f = oxyroot::RootFile::open("/tmp/a.root").unwrap();
     let tree = f.get_tree("mytree").unwrap();
-    let mut b = tree.branch("Str").unwrap().as_iter::<String>();
+    let mut b = tree.branch("Str").unwrap().as_iter::<i32>();
 
     let it = (0..N).map(make_string);
 
