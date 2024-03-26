@@ -5,7 +5,6 @@ use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
 use crate::rtree::branch::TBranch;
 use crate::rtree::leaf::Leaf;
-use crate::rtree::streamer_type::rust_type_to_root_type_code;
 use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
 use crate::{rvers, Branch, Named, Object, RootFile};
@@ -61,7 +60,7 @@ where
         U: Marshaler,
     {
         trace!(";WBranch.new.name:{:?}", name);
-        trace!(";WBranch.new.code:{:?}", rust_type_to_root_type_code::<U>());
+        trace!(";WBranch.new.code:{:?}", U::root_code());
 
         let mut branch = TBranch::new(name.clone());
 
@@ -71,13 +70,11 @@ where
         branch.max_baskets = DEFAULT_MAX_BASKETS;
         branch.basket_entry.push(0);
 
-        branch.named.title = format!("{}/{}", name, rust_type_to_root_type_code::<U>());
+        branch.named.title = format!("{}/{}", name, U::root_code());
 
         match U::kind() {
             MarshallerKind::Primitive => {}
-            MarshallerKind::Array => {
-                todo!()
-            }
+
             MarshallerKind::Slice => {
                 todo!()
             }
@@ -85,6 +82,7 @@ where
             MarshallerKind::Struct => {
                 todo!()
             }
+            MarshallerKind::Array { .. } => {}
         }
 
         trace!(";WBranch.new.rust_type_to_kind:{:?}", U::kind());

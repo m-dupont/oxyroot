@@ -1,13 +1,12 @@
 use crate::rdict::StreamerInfo;
 use crate::{root, Object};
+pub use error::Error;
+pub use error::Result;
 use rbuffer::RBuffer;
-use std::any::type_name;
+use std::any::{type_name, TypeId};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
-
-pub use error::Error;
-pub use error::Result;
 
 pub mod consts;
 mod error;
@@ -61,7 +60,7 @@ pub trait Unmarshaler {
 #[derive(Debug)]
 pub(crate) enum MarshallerKind {
     Primitive,
-    Array,
+    Array { shape: Vec<i32>, tys: String },
     Slice,
     String,
     Struct,
@@ -73,6 +72,13 @@ pub trait Marshaler {
         Self: Sized,
     {
         unimplemented!("Marshaler.rust_type_to_kind for {}", type_name::<Self>())
+    }
+
+    fn root_code() -> String
+    where
+        Self: Sized,
+    {
+        unimplemented!("Marshaler.root_code for {}", type_name::<Self>())
     }
 }
 
@@ -105,6 +111,56 @@ macro_rules! impl_marshalers_primitive {
             {
                 MarshallerKind::Primitive
             }
+
+            fn root_code() -> String {
+                // TODO: use a macro to generate this
+                let ty = TypeId::of::<Self>();
+                if ty == TypeId::of::<i8>() {
+                    return "B".to_string();
+                }
+
+                if ty == TypeId::of::<u8>() {
+                    return "b".to_string();
+                }
+
+                if ty == TypeId::of::<i16>() {
+                    return "S".to_string();
+                }
+
+                if ty == TypeId::of::<u16>() {
+                    return "s".to_string();
+                }
+
+                if ty == TypeId::of::<i32>() {
+                    return "I".to_string();
+                }
+
+                if ty == TypeId::of::<u32>() {
+                    return "i".to_string();
+                }
+
+                if ty == TypeId::of::<i64>() {
+                    return "L".to_string();
+                }
+
+                if ty == TypeId::of::<u64>() {
+                    return "l".to_string();
+                }
+
+                if ty == TypeId::of::<f32>() {
+                    return "F".to_string();
+                }
+
+                if ty == TypeId::of::<f64>() {
+                    return "D".to_string();
+                }
+
+                if ty == TypeId::of::<bool>() {
+                    return "B".to_string();
+                }
+
+                unimplemented!("Marshaler.root_code for {}", type_name::<Self>())
+            }
         }
     };
 
@@ -124,6 +180,7 @@ macro_rules! impl_marshalers_primitive {
 }
 
 impl_marshalers_primitive!(i8);
+
 impl_marshalers_primitive!(u8);
 impl_marshalers_primitive!(i16);
 impl_marshalers_primitive!(u16);
@@ -153,6 +210,10 @@ impl Marshaler for String {
 
     fn kind() -> MarshallerKind {
         MarshallerKind::String
+    }
+
+    fn root_code() -> String {
+        "string".to_string()
     }
 }
 
@@ -244,6 +305,30 @@ where
             item.unmarshal(r).unwrap();
         }
         Ok(())
+    }
+}
+
+impl<T, const N: usize> Marshaler for [T; N]
+where
+    T: Marshaler,
+{
+    fn marshal(&self, w: &mut WBuffer) -> Result<i64> {
+        let beg = w.pos();
+        for item in self.iter().take(N) {
+            item.marshal(w)?;
+        }
+        Ok(w.pos() - beg)
+    }
+
+    fn kind() -> MarshallerKind {
+        MarshallerKind::Array {
+            shape: vec![N as i32],
+            tys: type_name::<T>().to_string(),
+        }
+    }
+
+    fn root_code() -> String {
+        format!("[{}]/{}", N, T::root_code())
     }
 }
 

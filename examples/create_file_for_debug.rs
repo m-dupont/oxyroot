@@ -19,15 +19,8 @@ fn main() {
         .init();
 
     let N = 15;
-    fn make_string(n: i32) -> i32 {
-        let mut s = String::new();
-        for i in 0..(n * 30) {
-            for j in 0..10 {
-                s.push_str(&format!("string{},{} ", i, j));
-            }
-        }
-        n
-        //format!("evt-{}", 10_i32.pow(n as u32))
+    fn make_string(n: i32) -> [i32; 5] {
+        [n, n + 1, n + 2, n + 3, n + 4]
     }
 
     {
@@ -36,7 +29,7 @@ fn main() {
         let mut tree = Tree::new("mytree".to_string());
         let it = (0..N).map(|x| make_string(x));
         //
-        tree.new_branch("Str".to_string(), it);
+        tree.new_branch("ArrF64".to_string(), it);
 
         tree.write(&mut f).unwrap();
 
@@ -47,9 +40,13 @@ fn main() {
 
     let mut f = oxyroot::RootFile::open("/tmp/a.root").unwrap();
     let tree = f.get_tree("mytree").unwrap();
-    let mut b = tree.branch("Str").unwrap().as_iter::<i32>();
+    let mut b = tree.branch("ArrF64").unwrap().as_iter::<[i32; 5]>();
 
-    let it = (0..N).map(make_string);
+    fn make_string2(n: i32) -> [i32; 5] {
+        [n, n + 2, n + 2, n + 3, n + 4]
+    }
+
+    let it = (0..N).map(make_string2);
 
     for (i, (r, w)) in b.zip(it).enumerate() {
         assert_eq!(r, w);

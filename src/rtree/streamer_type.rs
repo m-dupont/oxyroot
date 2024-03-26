@@ -273,59 +273,6 @@ pub(crate) fn type_name_cpp_to_rust(ty: &str) -> String {
     ret.replace("char*", "String")
 }
 
-pub(crate) fn rust_type_to_root_type_code<T: 'static>() -> String {
-    let ty = TypeId::of::<T>();
-
-    if ty == TypeId::of::<i8>() {
-        return "B".to_string();
-    }
-
-    if ty == TypeId::of::<u8>() {
-        return "b".to_string();
-    }
-
-    if ty == TypeId::of::<i16>() {
-        return "S".to_string();
-    }
-
-    if ty == TypeId::of::<u16>() {
-        return "s".to_string();
-    }
-
-    if ty == TypeId::of::<i32>() {
-        return "I".to_string();
-    }
-
-    if ty == TypeId::of::<u32>() {
-        return "i".to_string();
-    }
-
-    if ty == TypeId::of::<i64>() {
-        return "L".to_string();
-    }
-
-    if ty == TypeId::of::<u64>() {
-        return "l".to_string();
-    }
-
-    if ty == TypeId::of::<f32>() {
-        return "F".to_string();
-    }
-
-    if ty == TypeId::of::<f64>() {
-        return "D".to_string();
-    }
-
-    if ty == TypeId::of::<String>() {
-        return "C".to_string();
-    }
-    if ty == TypeId::of::<bool>() {
-        return "B".to_string();
-    }
-
-    unimplemented!()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
