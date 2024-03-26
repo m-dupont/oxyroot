@@ -19,7 +19,7 @@ use paste::paste;
 /// Header represents a type header in a ROOT buffer.
 ///
 #[derive(Default, Debug)]
-pub struct Header {
+pub(crate) struct Header {
     /// name of the type being guarded by this header.
     _name: String,
     /// version of the type being guarded by this header.
@@ -32,12 +32,12 @@ pub struct Header {
 
 /// RVersioner is the interface implemented by an object that
 /// can tell the ROOT system what is its current version.
-pub trait RVersioner {
+pub(crate) trait RVersioner {
     fn rversion(&self) -> i16;
 }
 
 /// STREAMER_ELEMENT describes a ROOT STREAMER_ELEMENT
-pub trait StreamerElement: root::traits::Named {}
+pub(crate) trait StreamerElement: root::traits::Named {}
 
 /// StreamerInfoContext defines the protocol to retrieve a ROOT STREAMER_INFO
 /// metadata type by name.
@@ -65,6 +65,12 @@ pub(crate) enum MarshallerKind {
     String,
     Struct,
 }
+
+/// Trait that permits writing a type to an ROOT file.
+///
+/// Examples of types that implement this:
+///
+/// * Primitive integers, floats, etc
 pub trait Marshaler {
     fn marshal(&self, w: &mut WBuffer) -> Result<i64>;
     fn kind() -> MarshallerKind

@@ -1,5 +1,5 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{Marshaler, RootFile, Slice, Tree};
+use oxyroot::{Marshaler, ReaderTree, RootFile, Slice, WriterTree};
 use std::io::Write;
 
 fn main() {
@@ -26,10 +26,10 @@ fn main() {
     {
         let file = "/tmp/g.root";
         let mut f = RootFile::create(file).unwrap();
-        let mut tree = Tree::new("mytree".to_string());
+        let mut tree = WriterTree::new("mytree");
         let it = (0..N).map(|x| make_string(x));
         //
-        tree.new_branch("ArrF64".to_string(), it);
+        tree.new_branch("ArrF64", it);
 
         tree.write(&mut f).unwrap();
 

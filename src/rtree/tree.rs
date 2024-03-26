@@ -75,9 +75,7 @@ impl RVersioner for TioFeatures {
 }
 
 factory_all_for_register_impl!(TioFeatures, "TIOFeatures");
-/// Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
-///
-/// Mainly used to retrieve [crate::Branch] ant iterate over them
+
 pub struct Tree<B> {
     rvers: i16,
     named: rbase::Named,
@@ -170,11 +168,30 @@ impl<B> Default for Tree<B> {
     }
 }
 
+/// Read only Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
+///
+/// Mainly used to retrieve [`Branch`](crate::Branch) and iterate on data.
 pub type ReaderTree = Tree<Branch>;
 // pub type WriterTree<T> = Tree<WBranch<T>>;
-pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
 
-trait NewTrait: Marshaler + std::fmt::Debug {}
+/// Write only Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
+///
+/// Mainly used to create [crate::Branch] with name with a provider of data.
+///
+/**
+```
+use oxyroot::RootFile;
+use oxyroot::WriterTree;
+let s = "/tmp/simple.root";
+let mut file = RootFile::create(s).expect("Can not create file");
+let mut tree = WriterTree::new("mytree");
+let it = (0..15);
+tree.new_branch("it", it);
+tree.write(&mut file).expect("Can not write tree");
+file.close().expect("Can not close file");
+```
+ */
+pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
 
 impl WriterTree {
     pub fn new<S>(name: S) -> Self

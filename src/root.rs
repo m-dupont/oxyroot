@@ -29,8 +29,6 @@ pub mod traits {
             tstringSizeof(self.name()) + tstringSizeof(self.title())
         }
     }
-
-    pub trait List: Object {}
 }
 
 pub mod objects {

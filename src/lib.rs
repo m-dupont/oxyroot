@@ -1,8 +1,16 @@
 /*!
-This crate aims to provide a way to open data saved in [ROOT](https://root.cern.ch/) file format
+This crate aims to provide a way to open and write  data in [ROOT](https://root.cern.ch/) file format
 and particularly `Tree` and `Branch` inside `Tree`.
 This crate is in fact a port of [groot](https://pkg.go.dev/go-hep.org/x/hep/groot) written
 in Go and  [uproot](https://github.com/scikit-hep/uproot5) written in Python.
+
+To read from a branch and write to a branch, the API used is iterator based :
+- [`as_iter`](enum.Branch.html#method.as_iter) to read from a branch. The type to read is provided as a type parameter.
+This type has to implement `Unmarshaler` trait.
+- [`new_branch`](type.WriterTree.html#method.new_branch) from [`WriterTree`](type.WriterTree.html) to write to a branch. The method
+[`write`](type.WriterTree.html#method.write) from [`WriterTree`](crate::WriterTree) is used
+to write the data to the file by exhausting provided iterators. The type to write has to implement
+`Marshaler` trait. The type is deduced from the iterator.
 
 # Example: Show branches from a tree
 
@@ -31,6 +39,19 @@ let s = "examples/from_uproot/data/simple.root";
 let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
 let one = tree.branch("one").unwrap().as_iter::<i32>();
 one.for_each(|v| println!("v = {v}"));
+```
+
+# Example: Write i32 values in a branch
+
+```rust
+use oxyroot::{RootFile, WriterTree};
+let s = "/tmp/simple.root";
+let mut file = RootFile::create(s).expect("Can not create file");
+let mut tree = WriterTree::new("mytree");
+let it = (0..15);
+tree.new_branch("it", it);
+tree.write(&mut file).expect("Can not write tree");
+file.close().expect("Can not close file");
 ```
 
 # Example: Iter over a branch tree containing `Vec<i32>`  (aka `std::vector<int32_t>`) values
@@ -135,7 +156,7 @@ mod rbytes;
 mod rcolors;
 mod rcompress;
 mod rcont;
-pub mod rdict;
+mod rdict;
 mod riofs;
 mod rmeta;
 mod root;
@@ -148,7 +169,8 @@ mod utils;
 pub use riofs::file::RootFile;
 pub use rtree::branch::Branch;
 pub use rtree::tree::ReaderTree;
-pub use rtree::tree::Tree;
+pub use rtree::tree::WriterTree;
+// pub use rtree::tree::Tree;
 
 pub use rbytes::rbuffer::RBuffer;
 pub use rbytes::Unmarshaler;

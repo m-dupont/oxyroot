@@ -1,6 +1,6 @@
 use chrono::Local;
 use clap::Parser;
-use oxyroot::{Branch, RBuffer, ReaderTree, SizedSlice, Tree, Unmarshaler, UnmarshalerInto};
+use oxyroot::{Branch, RBuffer, ReaderTree, SizedSlice, Unmarshaler, UnmarshalerInto};
 use oxyroot::{RootFile, Slice};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};

@@ -18,7 +18,7 @@ use crate::rtypes::Error;
 use crate::rtypes::Result;
 
 /// Types of values stored in the Factory. There are fonction able to instantiate one type of `Box<dyn FactoryItem>`
-pub type FactoryBuilderValue = fn() -> Box<dyn FactoryItemRead>;
+pub(crate) type FactoryBuilderValue = fn() -> Box<dyn FactoryItemRead>;
 
 trait_set! {
     /// Trait of values stored in the Factory
@@ -116,13 +116,13 @@ pub struct Factory<'a> {
 }
 
 impl<'a> Factory<'a> {
-    pub fn new() -> Factory<'a> {
+    fn new() -> Factory<'a> {
         Factory {
             map: HashMap::new(),
         }
     }
 
-    pub fn add(&mut self, s: &'a str, f: FactoryBuilderValue) {
+    pub(crate) fn add(&mut self, s: &'a str, f: FactoryBuilderValue) {
         trace!("FACTORY: add: {}", s);
         let ret = self.map.insert(s, f);
 
@@ -131,7 +131,7 @@ impl<'a> Factory<'a> {
         }
     }
 
-    pub fn get(&self, s: &'a str) -> Result<&FactoryBuilderValue> {
+    pub(crate) fn get(&self, s: &'a str) -> Result<&FactoryBuilderValue> {
         trace!("get: {}", s);
         self.map
             .get(s)

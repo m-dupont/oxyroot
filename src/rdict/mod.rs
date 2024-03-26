@@ -476,7 +476,7 @@ where
 }
 
 #[derive(Default, Debug)]
-pub struct StreamerElement {
+pub(crate) struct StreamerElement {
     named: rbase::Named,
     etype: rmeta::Enum,
     // element type

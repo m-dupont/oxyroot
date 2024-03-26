@@ -19,7 +19,7 @@ macro_rules! write_branch {
 
         {
             let mut f = oxyroot::RootFile::create(&out_file)?;
-            let mut tree = oxyroot::Tree::new("mytree");
+            let mut tree = oxyroot::WriterTree::new("mytree");
 
             tree.new_branch(tys, gen_it());
             tree.write(&mut f)?;
@@ -116,7 +116,7 @@ fn write_bool_branch() -> Result<()> {
     {
         let it = (0..N).map(|x| x.is_even());
         let mut f = oxyroot::RootFile::create(&out_file)?;
-        let mut tree = oxyroot::Tree::new("mytree");
+        let mut tree = oxyroot::WriterTree::new("mytree");
 
         tree.new_branch(ty, it);
         tree.write(&mut f)?;
@@ -147,7 +147,7 @@ fn write_string_branch() -> Result<()> {
     {
         let it = (0..N).map(|x| format!("string{}", x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
-        let mut tree = oxyroot::Tree::new("mytree");
+        let mut tree = oxyroot::WriterTree::new("mytree");
 
         tree.new_branch(ty, it);
         tree.write(&mut f)?;
@@ -186,7 +186,7 @@ fn write_variable_lenght_string_branch() -> Result<()> {
     {
         let it = (0..N).map(|x| make_string(x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
-        let mut tree = oxyroot::Tree::new("mytree");
+        let mut tree = oxyroot::WriterTree::new("mytree");
 
         tree.new_branch(ty, it);
         tree.write(&mut f)?;
@@ -221,7 +221,7 @@ fn write_array_branch() -> Result<()> {
     {
         let it = (0..N).map(|x| make_string(x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
-        let mut tree = oxyroot::Tree::new("mytree");
+        let mut tree = oxyroot::WriterTree::new("mytree");
         tree.new_branch(ty, it);
         tree.write(&mut f)?;
         f.close()?;
