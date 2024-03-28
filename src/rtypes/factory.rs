@@ -132,7 +132,7 @@ impl<'a> Factory<'a> {
     }
 
     pub(crate) fn get(&self, s: &'a str) -> Result<&FactoryBuilderValue> {
-        trace!("get: {}", s);
+        trace!(";factory:get: {}", s);
         self.map
             .get(s)
             .ok_or_else(|| Error::ClassNameNotRegisteredInFactory(s.into()))

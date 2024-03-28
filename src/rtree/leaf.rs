@@ -31,7 +31,7 @@ impl Marshaler for Leaf {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         match &self {
             // Leaf::Base(_) => {}
-            // Leaf::Element(_) => {}
+            Leaf::Element(i) => i.marshal(w),
             Leaf::I(i) => i.marshal(w),
             Leaf::S(i) => i.marshal(w),
             Leaf::L(i) => i.marshal(w),
@@ -87,8 +87,22 @@ impl Leaf {
             .with_title(b.named.name.clone())
             .with_len(1);
 
-        let (tleaf, tys) = match T::kind() {
-            MarshallerKind::Primitive => (tleaf, tys.to_string()),
+        fn make_leaf(tleaf: TLeaf, tys: &str) -> Leaf {
+            match tys {
+                "i32" | "u32" => Leaf::I(LeafI::new(tleaf)),
+                "i16" | "u16" => Leaf::S(LeafS::new(tleaf)),
+                "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
+                "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
+                "f32" => Leaf::F(LeafF::new(tleaf)),
+                "f64" => Leaf::D(LeafD::new(tleaf)),
+                "bool" => Leaf::L(LeafL::new(tleaf)),
+                "String" => Leaf::C(LeafC::new(tleaf)),
+                _ => unimplemented!("ty = {}", tys),
+            }
+        }
+
+        let leaf = match T::kind() {
+            MarshallerKind::Primitive => make_leaf(tleaf, tys),
             MarshallerKind::Array { shape, tys: t } => {
                 let mut nelems = 1;
                 for s in &shape {
@@ -100,27 +114,16 @@ impl Leaf {
                     .with_len(nelems)
                     .with_etype(etype)
                     .with_title(format!("{}[{}]", &b.named.name, nelems));
-                (tleaf, t)
+                make_leaf(tleaf, &t)
             }
-            MarshallerKind::Slice => {
-                unimplemented!("ty = {}", tys)
+            MarshallerKind::Slice { .. } => {
+                let tleaf = tleaf.with_etype(0);
+                Leaf::Element(LeafElement::new(tleaf))
             }
-            MarshallerKind::String => (tleaf, "String".to_string()),
+            MarshallerKind::String => make_leaf(tleaf, "String"),
             MarshallerKind::Struct => {
                 unimplemented!("ty = {}", tys)
             }
-        };
-
-        let leaf = match tys.as_str() {
-            "i32" | "u32" => Leaf::I(LeafI::new(tleaf)),
-            "i16" | "u16" => Leaf::S(LeafS::new(tleaf)),
-            "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
-            "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
-            "f32" => Leaf::F(LeafF::new(tleaf)),
-            "f64" => Leaf::D(LeafD::new(tleaf)),
-            "bool" => Leaf::L(LeafL::new(tleaf)),
-            "String" => Leaf::C(LeafC::new(tleaf)),
-            _ => unimplemented!("ty = {}", tys),
         };
 
         trace!(";Leaf.new.leaf:{:?}", leaf);
@@ -186,9 +189,7 @@ impl Leaf {
             Leaf::Base(_) => {
                 todo!()
             }
-            Leaf::Element(_) => {
-                todo!()
-            }
+            Leaf::Element(_) => w.write_object(value),
             Leaf::I(l) => w.write_object(value),
             Leaf::S(_) => w.write_object(value),
             Leaf::D(_) => w.write_object(value),
@@ -342,6 +343,15 @@ impl Unmarshaler for TLeaf {
         if self.len == 0 {
             self.len = 1;
         }
+
+        trace!(";TLeaf.unmarshal.buf.pos:{:?}", r.pos());
+        trace!(";TLeaf.unmarshal.etype:{:?}", self.etype);
+        trace!(";TLeaf.unmarshal.offset:{:?}", self.offset);
+        trace!(";TLeaf.unmarshal.len:{:?}", self.len);
+        trace!(";TLeaf.unmarshal.count:{:?}", self.count);
+        trace!(";TLeaf.unmarshal.name:{:?}", self.named.name());
+        trace!(";TLeaf.unmarshal.title:{:?}", self.named.title());
+        // trace!(";TLeaf.marshal.buf.value:{:?}", &w.p()[len..]);
 
         r.check_header(&hdr)?;
 
@@ -517,6 +527,7 @@ macro_rules! make_tleaf_variant {
 
         impl Unmarshaler for $struct_name {
             fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+                trace!(";{}.unmarshal.buf.pos:{:?}", $root_name, r.pos());
                 let hdr = r.read_header(self.class())?;
 
                 ensure_maximum_supported_version(hdr.vers, rvers::$struct_name, self.class())?;
@@ -573,9 +584,21 @@ pub struct LeafElement {
     // ptr: &i32;
 }
 
+impl LeafElement {
+    pub fn new(tleaf: TLeaf) -> Self {
+        Self {
+            tleaf,
+            rvers: rvers::LeafElement,
+            id: -1,
+            ltype: -1,
+        }
+    }
+}
+
 impl Unmarshaler for LeafElement {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
+        trace!(";LeafElement.unmarshal.buf.pos:{:?}", r.pos());
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::LeafElement, self.class())?;
 
@@ -586,6 +609,8 @@ impl Unmarshaler for LeafElement {
         r.read_object(&mut self.id)?;
         r.read_object(&mut self.ltype)?;
 
+        trace!(";LeafElement.unmarshal.self.id:{:?}", self.id);
+        trace!(";LeafElement.unmarshal.self.ltype:{:?}", self.ltype);
         r.check_header(&hdr)?;
 
         Ok(())
@@ -596,7 +621,20 @@ impl Unmarshaler for LeafElement {
 
 impl Marshaler for LeafElement {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let len = w.len() - 1;
+        trace!(";LeafElement.marshal.buf.pos:{:?}", w.pos());
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        w.write_object(&self.tleaf)?;
+        w.write_i32(self.id)?;
+        w.write_i32(self.ltype)?;
+        w.set_header(hdr)
     }
 }
+
+impl RVersioner for LeafElement {
+    fn rversion(&self) -> i16 {
+        rvers::LeafElement
+    }
+}
+
 factory_all_for_register_impl!(LeafElement, "TLeafElement");

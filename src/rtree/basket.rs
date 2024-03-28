@@ -171,8 +171,9 @@ impl Unmarshaler for Basket {
         //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
         // }
         trace!(";Basket.unmarshal.beg: {}", _beg);
-        trace!(";Basket.unmarshal.{}.beg: {}", _beg, _beg);
+        trace!(";Basket.unmarshal.{}.pos.before.key: {}", _beg, r.pos());
         r.read_object(&mut self.key)?;
+        trace!(";Basket.unmarshal.{}.beg.key: {:?}", _beg, self.key);
 
         if self.class() != "TBasket" {
             return Err(Error::WrongClass {

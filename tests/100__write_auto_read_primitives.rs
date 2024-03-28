@@ -3,6 +3,7 @@ use num::Integer;
 use oxyroot;
 use oxyroot::{Marshaler, Unmarshaler};
 use std::fs;
+use test_log::test;
 
 const OUT_DIR: &str = "/tmp/rust/write/";
 

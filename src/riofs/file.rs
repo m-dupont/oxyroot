@@ -338,7 +338,7 @@ impl RootFile {
         Ok(())
     }
 
-    fn add_streamer_info(&mut self, si: StreamerInfo) {
+    pub(crate) fn add_streamer_info(&mut self, si: StreamerInfo) {
         if self.sinfos.list().iter().any(|s| s.name() == si.name()) {
             return;
         }
@@ -630,6 +630,7 @@ impl RootFile {
         let mut sinfos = WriterList::new();
         let binding = self.sinfos.list.clone();
         for si in binding.as_ref() {
+            trace!(";RootFile.write_streamer_info.for_loop.add:{:?}", si.name());
             sinfos.push(si, addr_of!(*si) as usize);
         }
 
@@ -932,7 +933,13 @@ pub(crate) struct RootFileStreamerInfoContext {
 }
 
 impl RootFileStreamerInfoContext {
-    fn push(&mut self, info: StreamerInfo) {
+    pub(crate) fn new() -> Self {
+        Self {
+            list: Rc::new(Vec::new()),
+        }
+    }
+
+    pub(crate) fn push(&mut self, info: StreamerInfo) {
         let v = Rc::get_mut(&mut self.list).expect("Do not panic ! ");
         v.push(info);
     }
@@ -942,7 +949,7 @@ impl RootFileStreamerInfoContext {
         v.extend(infos);
     }
 
-    fn list(&self) -> &Rc<Vec<StreamerInfo>> {
+    pub(crate) fn list(&self) -> &Rc<Vec<StreamerInfo>> {
         &self.list
     }
 

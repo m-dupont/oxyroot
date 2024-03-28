@@ -6,6 +6,7 @@ use crate::rbytes::{
     Unmarshaler,
 };
 use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
+use crate::rdict::{Streamer, StreamerInfo};
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
@@ -211,8 +212,14 @@ impl WriterTree {
             auto_flush: -30000000,
             estimate: 1000000,
             branches: Vec::new(),
+            sinfos: Some(RootFileStreamerInfoContext::new()),
             ..Default::default()
         }
+    }
+
+    pub fn add_streamer(&mut self, si: StreamerInfo) {
+        let sis = self.sinfos.as_mut().unwrap();
+        sis.push(si);
     }
 
     // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
@@ -274,6 +281,14 @@ impl WriterTree {
 
         file.put(self.named.name(), self)?;
 
+        let sis = self.sinfos.take().unwrap();
+
+        for si in sis.list().iter() {
+            file.add_streamer_info(si.clone());
+        }
+
+        // for sis in self.sinfos.take() {}
+
         Ok(())
     }
 }
@@ -324,7 +339,6 @@ impl ReaderTree {
         let mut v = Vec::new();
 
         for b in self.branches() {
-            trace!("ADD {:?}", b);
             v.push(b);
             for bb in b.branches_r() {
                 v.push(bb);
@@ -385,13 +399,31 @@ impl Marshaler for WriterTree {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let len = w.len();
         let beg = w.pos();
+        trace!(
+            ";WriterTree.marshal.a{beg}.auto_flush:{:?}",
+            self.auto_flush
+        );
         let hdr = w.write_header(self.class(), Self::rversion(self))?;
 
+        trace!(";WriterTree.marshal.a{beg}.pos.before.named:{:?}", w.pos());
         w.write_object(&self.named)?;
+        trace!(
+            ";WriterTree.marshal.a{beg}.pos.before.attline:{:?}",
+            w.pos()
+        );
 
         w.write_object(&self.attline)?;
+        trace!(
+            ";WriterTree.marshal.a{beg}.pos.before.attfill:{:?}",
+            w.pos()
+        );
+
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
         w.write_object(&self.attfill)?;
+        trace!(
+            ";WriterTree.marshal.a{beg}.pos.before.attmarker:{:?}",
+            w.pos()
+        );
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
         w.write_object(&self.attmarker)?;
 
@@ -478,7 +510,6 @@ impl Unmarshaler for ReaderTree {
         //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
         // }
         trace!(";Tree.unmarshal.beg: {}", _beg);
-        trace!(";Tree.unmarshal.{}.beg: {}", _beg, _beg);
 
         let hdr = r.read_header(self.class())?;
 
@@ -486,8 +517,12 @@ impl Unmarshaler for ReaderTree {
 
         self.rvers = hdr.vers;
         r.read_object(&mut self.named)?;
+        trace!(";Tree.unmarshal.{_beg}.pos.before.attline: {}", r.pos());
         r.read_object(&mut self.attline)?;
+        trace!(";Tree.unmarshal.{_beg}.pos.before.attfill: {}", r.pos());
+
         r.read_object(&mut self.attfill)?;
+        trace!(";Tree.unmarshal.{_beg}.pos.before.attmarker: {}", r.pos());
         r.read_object(&mut self.attmarker)?;
 
         ensure_minimum_supported_version(hdr.vers, 4, self.class())?;

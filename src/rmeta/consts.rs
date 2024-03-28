@@ -25,6 +25,12 @@ impl Default for Enum {
     }
 }
 
+impl From<EnumNamed> for Enum {
+    fn from(e: EnumNamed) -> Self {
+        Self::Named(e)
+    }
+}
+
 impl Enum {
     pub fn from_i32(i: i32) -> Self {
         match EnumNamed::from_i32(i) {
@@ -128,6 +134,14 @@ impl EnumNamed {
 
     pub fn to_i32(self) -> Result<i32> {
         num::ToPrimitive::to_i32(&self).ok_or(Error::CantMakeIntegerFromEnumNamed(self))
+    }
+
+    pub fn from_string(s: &str) -> Result<Self> {
+        match s {
+            "int" => Ok(EnumNamed::Int),
+            "float" => Ok(EnumNamed::Float),
+            _ => unimplemented!("{} not implemented", s),
+        }
     }
 }
 

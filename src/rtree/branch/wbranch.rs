@@ -1,9 +1,10 @@
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, MarshallerKind, RVersioner};
+use crate::rdict::streamers::make_streamer_for_marshaler_type;
 use crate::riofs::Result;
 use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
-use crate::rtree::branch::TBranch;
+use crate::rtree::branch::{TBranch, TBranchElement};
 use crate::rtree::leaf::Leaf;
 use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
@@ -62,35 +63,48 @@ where
         trace!(";WBranch.new.name:{:?}", name);
         trace!(";WBranch.new.code:{:?}", U::root_code());
 
-        let mut branch = TBranch::new(name.clone());
+        let mut tbanch = TBranch::new(name.clone());
 
-        branch.iobits = tree.iobits;
+        tbanch.iobits = tree.iobits;
         // branch.compress = f.compression();
-        branch.basket_size = DEFAULT_BASKET_SIZE;
-        branch.max_baskets = DEFAULT_MAX_BASKETS;
-        branch.basket_entry.push(0);
+        tbanch.basket_size = DEFAULT_BASKET_SIZE;
+        tbanch.max_baskets = DEFAULT_MAX_BASKETS;
+        tbanch.basket_entry.push(0);
 
-        branch.named.title = format!("{}/{}", name, U::root_code());
+        tbanch.named.title = format!("{}/{}", name, U::root_code());
 
-        match U::kind() {
-            MarshallerKind::Primitive => {}
+        let leaf = Leaf::new::<U>(&tbanch);
+        trace!("WBranch.new.leaf:{:?}", leaf);
+        trace!(";WBranch.new.title:{:?}", &tbanch.named.title);
 
-            MarshallerKind::Slice => {
-                todo!()
+        let branch = match U::kind() {
+            MarshallerKind::Primitive => Branch::Base(tbanch),
+
+            MarshallerKind::Slice { .. } => {
+                tbanch.entry_offset_len = 40;
+                let class_name = U::class_name();
+                trace!(";WBranch.new.class_name:{:?}", U::class_name());
+                let streamer = make_streamer_for_marshaler_type::<U>();
+                tree.add_streamer(streamer);
+
+                let branch = TBranchElement::new(class_name, tbanch);
+
+                Branch::Element(branch)
             }
-            MarshallerKind::String => branch.entry_offset_len = 1000,
+            MarshallerKind::String => {
+                tbanch.entry_offset_len = 1000;
+                Branch::Base(tbanch)
+            }
             MarshallerKind::Struct => {
                 todo!()
             }
-            MarshallerKind::Array { .. } => {}
-        }
+            MarshallerKind::Array { .. } => Branch::Base(tbanch),
+        };
 
         trace!(";WBranch.new.rust_type_to_kind:{:?}", U::kind());
-        trace!(";WBranch.new.title:{:?}", branch.named.title);
-        let leaf = Leaf::new::<U>(&branch);
-        trace!("WBranch.new.leaf:{:?}", leaf);
+
         let mut branch = Self {
-            branch: Branch::Base(branch),
+            branch: branch,
             iterator: Box::new(it),
             basket: None,
         };
@@ -221,8 +235,10 @@ where
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let len = w.len() - 1;
         trace!(";WBranch.marshal.buf.pos:{:?}", w.pos());
-        let b = self.branch.tbranch();
-        b.marshal(w)
+        match &self.branch {
+            Branch::Base(tb) => tb.marshal(w),
+            Branch::Element(te) => te.marshal(w),
+        }
 
         // todo!()
     }

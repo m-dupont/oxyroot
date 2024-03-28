@@ -1,10 +1,10 @@
-use crate::rbase::AttFill;
-use crate::rbytes::ensure_maximum_supported_version;
+use crate::rbase::{AttFill, Object};
 use crate::rbytes::wbuffer::WBuffer;
+use crate::rbytes::{ensure_maximum_supported_version, RVersioner};
 use crate::rdict::Streamer;
 use crate::rmeta::EReadWrite;
 use crate::root::traits::Named;
-use crate::root::traits::Object;
+use crate::root::traits::Object as TraitObject;
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::branch::tbranch_props::TBranchProps;
 use crate::rtree::branch::{BranchChunks, TBranch};
@@ -42,8 +42,6 @@ pub struct TBranchElement {
 
     max: i32,
     // maximum entries for a TClonesArray or variable array
-    stltyp: i32,
-    // STL container type
     // bcount1: *tbranchElement // pointer to primary branchcount branch
     // bcount2: *tbranchElement // pointer to secondary branchcount branch
     pub(crate) props: TBranchProps,
@@ -56,6 +54,16 @@ impl Named for TBranchElement {
 }
 
 impl TBranchElement {
+    pub fn new(class_name: String, tbranch: TBranch) -> Self {
+        TBranchElement {
+            class_name,
+            branch: tbranch,
+            stype: -1,
+            id: -1,
+            ..Default::default()
+        }
+    }
+
     pub fn streamer_type(&self) -> i32 {
         self.stype
     }
@@ -201,10 +209,6 @@ impl TBranchElement {
         RE.captures(self.name()).unwrap().get(2).unwrap().as_str()
     }
 
-    pub fn stl_type(&self) -> i32 {
-        self.stltyp
-    }
-
     pub(crate) fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
         let mut size_leaves = self
             .branch
@@ -328,10 +332,9 @@ impl TBranchElement {
             }
 
             trace!(
-                "classname = {} streamer_type = {}, stl_type = {}",
+                "classname = {} streamer_type = {}",
                 self.class_name(),
                 self.streamer_type(),
-                self.stl_type()
             );
 
             match b.raw_data(&mut reader) {
@@ -391,13 +394,20 @@ impl TBranchElement {
 
 impl Unmarshaler for TBranchElement {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let beg = r.pos();
+        trace!(";TBranchElement.unmarshal.{beg}.call:{:?}", true);
         let hdr = r.read_header(self.class())?;
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::BRANCH_ELEMENT, self.class())?;
 
+        trace!(
+            ";TBranchElement.unmarshal.{beg}.pos.before.branch:{:?}",
+            r.pos()
+        );
         r.read_object(&mut self.branch)?;
 
         self.class_name = r.read_string()?.to_string();
+        trace!(";TBranchElement.unmarshal.class_name:{:?}", self.class_name);
 
         // trace!("class = {}", self.class);
 
@@ -412,9 +422,15 @@ impl Unmarshaler for TBranchElement {
             self.clsver = r.read_u32()? as i16;
         }
 
+        trace!(";TBranchElement.unmarshal.hdr.vers:{:?}", hdr.vers);
+
         self.id = r.read_i32()?;
         self.btype = r.read_i32()?;
         self.stype = r.read_i32()?;
+
+        trace!(";TBranchElement.unmarshal.id:{:?}", self.id);
+        trace!(";TBranchElement.unmarshal.btype:{:?}", self.btype);
+        trace!(";TBranchElement.unmarshal.stype:{:?}", self.stype);
 
         if hdr.vers > 1 {
             self.max = r.read_i32()?;
@@ -442,7 +458,41 @@ impl Unmarshaler for TBranchElement {
 
 impl Marshaler for TBranchElement {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
+        let beg = w.pos();
+        let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        trace!(
+            ";TBranchElement.marshal.{beg}.pos.before.branch:{:?}",
+            w.pos()
+        );
+        w.write_object(&self.branch)?;
+        w.write_string(&self.class_name)?;
+        trace!(";TBranchElement.marshal.{beg}.class:{:?}", self.class());
+        trace!(";TBranchElement.marshal.class_name:{:?}", self.class_name);
+        trace!(";TBranchElement.marshal.chksum:{:?}", self.chksum);
+        trace!(";TBranchElement.marshal.id:{:?}", self.id);
+        trace!(";TBranchElement.marshal.btype:{:?}", self.btype);
+        trace!(";TBranchElement.marshal.stype:{:?}", self.stype);
+        w.write_string(&self.parent)?;
+        w.write_string(&self.clones)?;
+        w.write_i32(self.chksum)?;
+        w.write_u16(self.clsver as u16)?;
+        w.write_i32(self.id)?;
+        w.write_i32(self.btype)?;
+        w.write_i32(self.stype)?;
+        w.write_i32(self.max)?;
+        let obj = Object::default();
+        // w.write_object_any(&obj)?;
+        // w.write_object_any(&obj)?;
+        w.write_object_nil()?;
+        w.write_object_nil()?;
+        w.set_header(hdr)?;
+        Ok((w.pos() - beg))
+    }
+}
+
+impl RVersioner for TBranchElement {
+    fn rversion(&self) -> i16 {
+        crate::rvers::BRANCH_ELEMENT
     }
 }
 

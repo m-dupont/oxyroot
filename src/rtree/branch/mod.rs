@@ -82,8 +82,10 @@ impl Branch {
     }
 
     pub fn class(&self) -> &str {
-        let b: &TBranch = self.into();
-        b.class()
+        match &self {
+            Branch::Base(b) => b.class(),
+            Branch::Element(e) => e.class(),
+        }
     }
 
     /// C++ type contained in this branch.

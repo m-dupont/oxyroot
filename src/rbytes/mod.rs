@@ -7,6 +7,7 @@ use std::any::{type_name, TypeId};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 pub mod consts;
 mod error;
@@ -56,12 +57,16 @@ pub trait StreamerInfoContext {
 pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
 }
+#[derive(Debug)]
+pub(crate) enum MarshallerKindStd {
+    Vector { class_name: String },
+}
 
 #[derive(Debug)]
 pub(crate) enum MarshallerKind {
     Primitive,
     Array { shape: Vec<i32>, tys: String },
-    Slice,
+    Slice { std: MarshallerKindStd },
     String,
     Struct,
 }
@@ -85,6 +90,13 @@ pub trait Marshaler {
         Self: Sized,
     {
         unimplemented!("Marshaler.root_code for {}", type_name::<Self>())
+    }
+
+    fn class_name() -> String
+    where
+        Self: Sized,
+    {
+        unimplemented!("Marshaler.class_name for {}", type_name::<Self>())
     }
 }
 
@@ -116,6 +128,18 @@ macro_rules! impl_marshalers_primitive {
                 Self: Sized,
             {
                 MarshallerKind::Primitive
+            }
+
+            fn class_name() -> String
+            where
+                Self: Sized,
+            {
+                let tys = type_name::<Self>();
+                let ret = match tys {
+                    "i32" => "int",
+                    _ => unimplemented!("Marshaler.class_name for {}", type_name::<Self>()),
+                };
+                ret.to_string()
             }
 
             fn root_code() -> String {
@@ -240,6 +264,39 @@ where
         }
 
         Ok(())
+    }
+}
+
+impl<T> Marshaler for Vec<T>
+where
+    T: Marshaler,
+{
+    fn marshal(&self, w: &mut WBuffer) -> Result<i64> {
+        let beg = w.pos();
+        w.write_i32(self.len() as i32)?;
+        for item in self.iter() {
+            item.marshal(w)?;
+        }
+        Ok(w.pos() - beg)
+    }
+
+    fn kind() -> MarshallerKind {
+        MarshallerKind::Slice {
+            std: MarshallerKindStd::Vector {
+                class_name: T::class_name(),
+            },
+        }
+    }
+
+    fn root_code() -> String {
+        format!("vector<{}>", T::root_code())
+    }
+
+    fn class_name() -> String
+    where
+        Self: Sized,
+    {
+        format!("vector<{}>", T::class_name())
     }
 }
 

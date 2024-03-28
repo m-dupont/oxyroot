@@ -342,7 +342,7 @@ impl Named for TBranch {
 impl Unmarshaler for TBranch {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let _beg = r.pos();
-        trace!(";tBranch.unmarshal.{}.beg: {}", _beg, _beg);
+        trace!(";TBranch.unmarshal.{_beg}.beg: {}", _beg);
         let hdr = r.read_header(self.class())?;
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::BRANCH, self.class())?;
@@ -352,18 +352,38 @@ impl Unmarshaler for TBranch {
             r.read_object(&mut self.attfill)?;
             self.compress = r.read_i32()?;
             self.basket_size = r.read_i32()?;
+            trace!(
+                ";TBranch.unmarshal.{_beg}.basket_size: {}",
+                self.basket_size
+            );
             self.entry_offset_len = r.read_i32()?;
-            trace!(";tBranch.unmarshal.{}.beg: {}", _beg, _beg);
+            trace!(
+                ";TBranch.unmarshal.{_beg}.entry_offset_len: {}",
+                self.entry_offset_len
+            );
             self.write_basket = r.read_i32()?;
             self.entry_number = r.read_i64()?;
+            trace!(
+                ";TBranch.unmarshal.{_beg}.write_basket: {}",
+                self.write_basket
+            );
+            trace!(
+                ";TBranch.unmarshal.{_beg}.entry_number: {}",
+                self.entry_number
+            );
 
             if hdr.vers >= 13 {
                 r.read_object(&mut self.iobits)?;
             }
 
             self.offset = r.read_i32()?;
+            trace!(";TBranch.unmarshal.{_beg}.offset: {}", self.offset);
             self.max_baskets = r.read_i32()?;
             self.split_level = r.read_i32()?;
+            trace!(
+                ";TBranch.unmarshal.{_beg}.split_level: {}",
+                self.split_level
+            );
             self.entries = r.read_i64()?;
 
             if hdr.vers >= 11 {
@@ -372,6 +392,8 @@ impl Unmarshaler for TBranch {
 
             self.tot_bytes = r.read_i64()?;
             self.zip_bytes = r.read_i64()?;
+            trace!(";TBranch.unmarshal.{_beg}.tot_bytes: {}", self.tot_bytes);
+            trace!(";TBranch.unmarshal.{_beg}.zip_bytes: {}", self.zip_bytes);
 
             {
                 let mut branches = r.read_object_into::<ReaderObjArray>()?;
@@ -390,6 +412,10 @@ impl Unmarshaler for TBranch {
                         .into_iter()
                         .map(|obj| obj.into())
                         .collect();
+                }
+
+                for leaf in self.leaves.iter() {
+                    trace!(";TBranch.unmarshal.do_leaf:{:?}", leaf);
                 }
             }
 
@@ -631,19 +657,27 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.zip_bytes:{:?}", self.zip_bytes);
         trace!(";TBranch.marshal.basket_size:{:?}", self.basket_size);
         trace!(";TBranch.marshal.compress:{:?}", self.compress);
+        trace!(";TBranch.marshal.compress:{:?}", self.compress);
         trace!(";TBranch.marshal.leaves.len:{:?}", self.leaves.len());
         let hdr = w.write_header(self.class(), Self::rversion(self))?;
+        trace!(";TBranch.marshal.hdr.vers:{:?}", hdr.vers);
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
 
         w.write_object(&self.named)?;
 
+        trace!(";TBranch.marshal.buf..value:{:?}", &w.p()[len..]);
         w.write_object(&self.attfill)?;
+        trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
 
         w.write_i32(self.compress)?;
         w.write_i32(self.basket_size)?;
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
         w.write_i32(self.entry_offset_len)?;
+        trace!(
+            ";TBranch.marshal.entry_offset_len:{:?}",
+            self.entry_offset_len
+        );
         w.write_i32(self.write_basket)?;
         trace!(";TBranch.marshal.entry_number:{:?}", self.entry_number);
         w.write_i64(self.entry_number)?;
@@ -652,11 +686,15 @@ impl Marshaler for TBranch {
         w.write_i32(self.offset)?;
         w.write_i32(b_max_baskets)?;
         w.write_i32(self.split_level)?;
+        trace!(";TBranch.marshal.split_level:{:?}", self.split_level);
+        trace!(";TBranch.marshal.split_level:{:?}", self.split_level);
         w.write_i64(self.entries)?;
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
         w.write_i64(self.first_entry)?;
         w.write_i64(self.tot_bytes)?;
         w.write_i64(self.zip_bytes)?;
+
+        trace!(";TBranch.marshal.tot_bytes:{:?}", self.tot_bytes);
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
         trace!(";TBranch.marshal.buf.pos.before_branches:{:?}", w.pos());

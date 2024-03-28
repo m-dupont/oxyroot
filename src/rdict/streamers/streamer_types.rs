@@ -485,6 +485,7 @@ impl Marshaler for StreamerSTL {
         let beg = w.pos();
         trace!(";StreamerSTL.marshal.a{}.beg:{}", beg, beg);
         trace!(";StreamerSTL.marshal.a{}.vtype:{:?}", beg, self.vtype);
+
         trace!(
             ";StreamerSTL.marshal.a{}.vtype_i32:{:?}",
             beg,

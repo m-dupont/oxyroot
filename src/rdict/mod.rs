@@ -263,6 +263,13 @@ impl StreamerInfo {
     pub fn clsver(&self) -> i32 {
         self.clsver
     }
+
+    pub(crate) fn new_from_streamerq(name: String, elems: Vec<Streamer>) -> Self {
+        let mut s = StreamerInfo::default();
+        s.named = s.named.with_name(name);
+        s.elems.list = elems;
+        s
+    }
 }
 
 impl Named for StreamerInfo {

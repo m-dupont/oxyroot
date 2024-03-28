@@ -83,6 +83,8 @@ impl Default for Key {
 
 impl Unmarshaler for Key {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
+        let _beg = r.pos();
+        trace!(";Key.unmarshal.a{_beg}.beg: {}", _beg);
         let n_bytes = r.read_i32()?;
 
         if n_bytes < 0 {
@@ -97,7 +99,11 @@ impl Unmarshaler for Key {
         let key_len = r.read_i16()? as i32;
         let cycle = r.read_i16()?;
 
+        trace!(";Key.unmarshal.a{_beg}.key_len: {}", key_len);
+        trace!(";Key.unmarshal.a{_beg}.key_len: {}", key_len);
+
         let is_big_file = rvers > 1000;
+        trace!(";Key.unmarshal.a{_beg}.is_big_file: {}", is_big_file);
         let seek_key = if is_big_file {
             r.read_i64()?
         } else {
