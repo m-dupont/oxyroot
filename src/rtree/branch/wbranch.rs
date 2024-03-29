@@ -81,7 +81,7 @@ where
             MarshallerKind::Primitive => Branch::Base(tbanch),
 
             MarshallerKind::Slice { .. } => {
-                tbanch.entry_offset_len = 40;
+                tbanch.entry_offset_len = 1000;
                 let class_name = U::class_name();
                 trace!(";WBranch.new.class_name:{:?}", U::class_name());
                 let streamer = make_streamer_for_marshaler_type::<U>();

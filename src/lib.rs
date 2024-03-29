@@ -140,7 +140,15 @@ for i in -10..10 {
 }
 ```
 
+# Which types can be written to a branch?
 
+## Primitives and C++ STL standards
+
+oxyroot can iterate over  branch which contains :
+- primitive types like i32, f64, bool...
+- String (will appear as a char*)
+- Vec (to std::vector)
+- HashMap (not yet implemented)
 
 
  */

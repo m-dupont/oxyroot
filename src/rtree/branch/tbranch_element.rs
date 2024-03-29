@@ -210,6 +210,7 @@ impl TBranchElement {
     }
 
     pub(crate) fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+        trace!(";TBranchElement.get_baskets_buffer.call:{:?}", true);
         let mut size_leaves = self
             .branch
             .leaves
@@ -217,11 +218,21 @@ impl TBranchElement {
             .map(|e| e.etype())
             .collect::<Vec<_>>();
 
+        trace!(
+            ";TBranchElement.get_baskets_buffer.size_leaves:{:?}",
+            size_leaves
+        );
+
         if size_leaves.len() != self.branch.basket_seek.len() {
             for _i in 1..self.branch.basket_seek.len() {
                 size_leaves.push(size_leaves[0]);
             }
         }
+
+        trace!(
+            ";TBranchElement.get_baskets_buffer.size_leaves:{:?}",
+            size_leaves
+        );
 
         let leaves = if self.branch.leaves.len() == 1 {
             let mut v = Vec::new();
@@ -238,6 +249,11 @@ impl TBranchElement {
         } else {
             unimplemented!();
         };
+
+        trace!(
+            ";TBranchElement.get_baskets_buffer.size_leaves:{:?}",
+            size_leaves
+        );
 
         let embedded_basket = if !self.branch.baskets.is_empty() {
             assert_eq!(self.branch.baskets.len(), 1);
@@ -304,6 +320,19 @@ impl TBranchElement {
             None
         };
 
+        trace!(
+            ";TBranchElement.get_baskets_buffer.before_zip.basket_seek:{:?}",
+            self.branch.basket_seek
+        );
+        trace!(
+            ";TBranchElement.get_baskets_buffer.before_zip.basket_bytes:{:?}",
+            self.branch.basket_bytes
+        );
+        trace!(
+            ";TBranchElement.get_baskets_buffer.before_zip.leaves:{:?}",
+            leaves
+        );
+
         let ret = izip!(
             &self.branch.basket_seek,
             &self.branch.basket_bytes,
@@ -330,7 +359,11 @@ impl TBranchElement {
                 }
                 _ => {}
             }
-
+            trace!(
+                "chunk_size = {}, b.entry_size() = {}",
+                chunk_size,
+                b.entry_size()
+            );
             trace!(
                 "classname = {} streamer_type = {}",
                 self.class_name(),
@@ -351,13 +384,22 @@ impl TBranchElement {
                     Leaf::Element(_) => {
                         let element = self.streamer();
 
+                        trace!(
+                            ";TBranchElement.get_baskets_buffer.UnTrustNEntries.element:{:?}",
+                            element
+                        );
+                        trace!(
+                            ";TBranchElement.get_baskets_buffer.UnTrustNEntries.streamer_type:{:?}",
+                            self.streamer_type()
+                        );
+
                         let header_bytes = streamer_type::header_bytes_from_type(
                             self.streamer_type(),
                             element,
                             self.class_name(),
                         );
 
-                        trace!("header_bytes = {}", header_bytes);
+                        trace!(";TBranchElement.get_baskets_buffer.UnTrustNEntries.header_bytes:{}", header_bytes);
                         // trace!("buf = {:?}", buf);
 
                         let byte_offsets = byte_offsets.iter().zip(byte_offsets.iter().skip(1));
@@ -371,6 +413,16 @@ impl TBranchElement {
                                 b.to_vec()
                             })
                             .collect();
+
+                        trace!(
+                            ";TBranchElement.get_baskets_buffer.UnTrustNEntries.data.value:{:?}",
+                            data
+                        );                        trace!(
+                            ";TBranchElement.get_baskets_buffer.UnTrustNEntries.data.len:{:?}",
+                            data.len()
+                        );
+
+
 
                         // trace!("data = {:?}", data);
 

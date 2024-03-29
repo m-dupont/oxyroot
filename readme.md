@@ -19,8 +19,8 @@ To make this library :
 
 For now:
 
-- only writing of primitive types is supported (i.e. `i32`, `f64`, `bool`, `String`, Fixed length arrays). Containers
-  will be added.
+- only writing of primitive types is supported (i.e. `i32`, `f64`, `bool`, `String`, Fixed length arrays). `Vec` is also
+  supported.
 - can only write uncompressed file
 
 ## See also

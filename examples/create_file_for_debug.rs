@@ -49,20 +49,17 @@ fn main() {
         std::fs::rename(file, "/tmp/a.root").unwrap();
     }
 
-    let mut f = oxyroot::RootFile::open("/tmp/a.root").unwrap();
-    let tree = f.get_tree("tree").unwrap();
-    let mut b = tree.branch("vector_int32").unwrap().as_iter::<Vec<i32>>();
-
-    fn make_string2(n: i32) -> Vec<i32> {
-        (0..n).map(|x| x).collect()
-    }
-
-    let it = (0..N).map(make_string2);
-
-    for (i, (r, w)) in b.zip(it).enumerate() {
-        assert_eq!(r, w);
-    }
-
-    // println!("tree = {:?}", tree);
-    // assert_eq!(Photon_E.count(), 2421);
+    // let mut f = oxyroot::RootFile::open("/tmp/a.root").unwrap();
+    // let tree = f.get_tree("tree").unwrap();
+    // let mut b = tree.branch("vector_int32").unwrap().as_iter::<Vec<i32>>();
+    //
+    // fn make_string2(n: i32) -> Vec<i32> {
+    //     (0..n).map(|x| x).collect()
+    // }
+    //
+    // let it = (0..N).map(make_string2);
+    //
+    // for (i, (r, w)) in b.zip(it).enumerate() {
+    //     assert_eq!(r, w);
+    // }
 }

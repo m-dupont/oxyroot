@@ -138,6 +138,7 @@ impl TBranch {
     }
 
     pub(crate) fn get_baskets_buffer(&self) -> Box<dyn Iterator<Item = BranchChunks> + '_> {
+        trace!(";TBranch.get_baskets_buffer.call:{:?}", true);
         trace!("We are in branch = {}", self.name());
         let mut size_leaves = self.leaves.iter().map(|e| e.etype()).collect::<Vec<_>>();
 
@@ -456,6 +457,19 @@ impl Unmarshaler for TBranch {
                 self.basket_seek
                     .extend_from_slice(&b.as_slice()[..self.write_basket as usize]);
             }
+
+            trace!(
+                ";TBranch.unmarshal.baskets.basket_bytes:{:?}",
+                self.basket_bytes
+            );
+            trace!(
+                ";TBranch.unmarshal.baskets.basket_entry:{:?}",
+                self.basket_entry
+            );
+            trace!(
+                ";TBranch.unmarshal.baskets.basket_seek:{:?}",
+                self.basket_seek
+            );
 
             self.fname = r.read_string()?.to_string();
         } else if hdr.vers >= 6 {

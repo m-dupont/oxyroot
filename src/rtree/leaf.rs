@@ -193,7 +193,7 @@ impl Leaf {
             Leaf::Base(_) => {
                 todo!()
             }
-            Leaf::Element(_) => w.write_object(value),
+            Leaf::Element(l) => l.write_to_buffer(w, value),
             Leaf::I(l) => w.write_object(value),
             Leaf::S(_) => w.write_object(value),
             Leaf::D(_) => w.write_object(value),
@@ -370,6 +370,7 @@ impl Unmarshaler for TLeaf {
         trace!(";TLeaf.unmarshal.count:{:?}", self.count);
         trace!(";TLeaf.unmarshal.name:{:?}", self.named.name());
         trace!(";TLeaf.unmarshal.title:{:?}", self.named.title());
+        trace!(";TLeaf.unmarshal.shape:{:?}", self.shape);
         // trace!(";TLeaf.marshal.buf.value:{:?}", &w.p()[len..]);
 
         r.check_header(&hdr)?;
@@ -611,6 +612,19 @@ impl LeafElement {
             id: -1,
             ltype: -1,
         }
+    }
+
+    pub(crate) fn write_to_buffer(
+        &mut self,
+        w: &mut WBuffer,
+        value: &impl Marshaler,
+    ) -> crate::rbytes::Result<i64> {
+        let beg = w.pos();
+
+        let hdr = w.write_header(self.class(), rvers::STREAMER_INFO)?;
+        // w.write_array_u8(&a)?;
+        w.write_object(value)?;
+        w.set_header(hdr)
     }
 }
 

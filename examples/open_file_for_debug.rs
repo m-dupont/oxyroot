@@ -38,7 +38,7 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let file = "stl_containers_simple.root";
+    let file = "/tmp/r.root";
     let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
     let mut Photon_E = tree.branch("vector_int32").unwrap().as_iter::<Vec<i32>>();
     let v = Photon_E.collect::<Vec<_>>();

@@ -94,6 +94,7 @@ impl Unmarshaler for Key {
         }
 
         let rvers = r.read_i16()?;
+        trace!(";Key.unmarshal.a{_beg}.rvers: {}", rvers);
         let obj_len = r.read_i32()?;
         let datetime = DateTime::from_timestamp(r.read_u32()? as i64, 0).unwrap();
         let key_len = r.read_i16()? as i32;
@@ -109,6 +110,7 @@ impl Unmarshaler for Key {
         } else {
             r.read_i32()? as i64
         };
+        trace!(";Key.unmarshal.a{_beg}.seek_key:{:?}", seek_key);
         let seek_pdir = if is_big_file {
             r.read_i64()?
         } else {
@@ -142,6 +144,7 @@ impl Marshaler for Key {
         let beg = w.pos();
         trace!(";Key.marshal.{beg}.beg:{:?}", beg);
         trace!(";Key.marshal.{beg}.n_bytes:{:?}", self.n_bytes);
+        trace!(";Key.marshal.{beg}.seek_key:{:?}", self.seek_key);
         w.write_i32(self.n_bytes)?;
 
         if self.n_bytes < 0 {
@@ -230,7 +233,7 @@ impl Key {
             key.seek_key = eof;
             f.set_end(key.seek_key + key.n_bytes as i64)?;
         }
-        if f.end() > kStartBigFile {
+        if f.is_big_file() {
             key.rvers += 1000
         }
 
@@ -312,6 +315,11 @@ impl Key {
             ..Default::default()
         };
         key.n_bytes = key.key_len;
+
+        if f.is_big_file() {
+            key.rvers += 1000;
+        }
+
         trace!(";Key.new_key_for_basket_internal.key:{:?}", &key);
         key
     }
@@ -504,28 +512,9 @@ impl Key {
 }
 
 fn key_len_for(name: &str, title: &str, class: &str, f: &RootFile) -> i32 {
-    // 	nbytes := int32(22)
-    // 	if dir.isBigFile() || eof > kStartBigFile {
-    // 		nbytes += 8
-    // 	}
-    // 	nbytes += datimeSizeof()
-    // 	nbytes += tstringSizeof(class)
-    // 	nbytes += tstringSizeof(name)
-    // 	nbytes += tstringSizeof(title)
-    // 	if class == "TBasket" {
-    // 		nbytes += 2 // version
-    // 		nbytes += 4 // bufsize
-    // 		nbytes += 4 // nevsize
-    // 		nbytes += 4 // nevbuf
-    // 		nbytes += 4 // last
-    // 		nbytes += 1 // flag
-    // 	}
-    // 	return nbytes
-    // }
-
     let mut nbytes = 22;
 
-    if f.dir().is_big_file() || f.end() > kStartBigFile {
+    if f.dir().is_big_file() || f.is_big_file() {
         nbytes += 8;
     }
 

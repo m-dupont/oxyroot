@@ -240,3 +240,108 @@ fn write_array_branch() -> Result<()> {
     }
     Ok(())
 }
+
+macro_rules! write_branch_vector {
+    ($ty_item:ty, $N:expr) => {{
+        let ty = "vector";
+        let ty_item = stringify!($ty_item);
+        let N = $N;
+        let out_dir = format!("{}/{ty}/{ty_item}", OUT_DIR);
+        fs::create_dir_all(&out_dir)?;
+        let out_file = format!("{}/{N}.root", out_dir);
+
+        fn make_vector(n: i32) -> Vec<$ty_item> {
+            let mut ret = Vec::new();
+            for i in 0..n {
+                ret.push(i as $ty_item);
+            }
+            ret
+        }
+
+        {
+            let it = (0..N).map(|x| make_vector(x));
+            let mut f = oxyroot::RootFile::create(&out_file)?;
+            let mut tree = oxyroot::WriterTree::new("mytree");
+            tree.new_branch(ty, it);
+            tree.write(&mut f)?;
+            f.close()?;
+        }
+
+        let mut f = oxyroot::RootFile::open(out_file)?;
+        let tree = f.get_tree("mytree")?;
+        assert_eq!(tree.entries(), N.into());
+        let mut b = tree.branch(ty).unwrap().as_iter::<Vec<$ty_item>>();
+
+        let it = (0..N).map(|x| make_vector(x));
+
+        for (i, (r, w)) in b.zip(it).enumerate() {
+            assert_eq!(r, w);
+        }
+    }};
+}
+
+#[test]
+fn write_vector_i32_5() -> Result<()> {
+    write_branch_vector!(i32, 5);
+    Ok(())
+}
+
+#[test]
+fn write_vector_i32_100() -> Result<()> {
+    write_branch_vector!(i32, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_i16_100() -> Result<()> {
+    write_branch_vector!(i16, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_i8_100() -> Result<()> {
+    write_branch_vector!(i8, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_i64_100() -> Result<()> {
+    write_branch_vector!(i64, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_u32_100() -> Result<()> {
+    write_branch_vector!(u32, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_u16_100() -> Result<()> {
+    write_branch_vector!(u16, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_u8_100() -> Result<()> {
+    write_branch_vector!(u8, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_u64_100() -> Result<()> {
+    write_branch_vector!(u64, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_f32_100() -> Result<()> {
+    write_branch_vector!(f32, 100);
+    Ok(())
+}
+
+#[test]
+fn write_vector_f64_100() -> Result<()> {
+    write_branch_vector!(f64, 100);
+    Ok(())
+}

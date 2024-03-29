@@ -783,7 +783,7 @@ impl RootFile {
                         match &stl.vtype {
                             ESTLType::STLvector => {
                                 let etn = se.item_type_name();
-                                let reg = Regex::new(r"vector<([A-Za-z]+)>").unwrap();
+                                let reg = Regex::new(r"vector<([A-Za-z_0123456789]+)>").unwrap();
                                 let cap = reg.captures(etn).unwrap();
                                 let etn = &cap[1];
 

@@ -209,6 +209,12 @@ impl Branch {
                             v
                         }
                         BranchChunks::IrregularSized((_n, data_chuncked, header_bytes)) => {
+                            trace!(";Branch.get_baskets.unzip.IrregularSized.call:{:?}", true);
+                            trace!(
+                                ";Branch.get_baskets.unzip.IrregularSized.start.header_bytes:{:?}",
+                                header_bytes
+                            );
+
                             data_chuncked
                                 .iter()
                                 .map(|buf| {
@@ -216,6 +222,12 @@ impl Branch {
                                     // if buf.is_empty() {
                                     //     return T::default();
                                     // }
+
+                                    trace!(
+                                        ";Branch.get_baskets.unzip.IrregularSized.map.buf:{:?}",
+                                        buf
+                                    );
+
                                     let mut r = RBuffer::new(buf, 0);
                                     r.set_skip_header(Some(header_bytes));
 

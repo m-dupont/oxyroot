@@ -136,7 +136,16 @@ macro_rules! impl_marshalers_primitive {
             {
                 let tys = type_name::<Self>();
                 let ret = match tys {
-                    "i32" => "int",
+                    "i32" => "int32_t",
+                    "u32" => "uint32_t",
+                    "i64" => "int64_t",
+                    "u64" => "uint64_t",
+                    "i16" => "int16_t",
+                    "u16" => "uint16_t",
+                    "i8" => "int8_t",
+                    "u8" => "uint8_t",
+                    "f32" => "float",
+                    "f64" => "double",
                     _ => unimplemented!("Marshaler.class_name for {}", type_name::<Self>()),
                 };
                 ret.to_string()

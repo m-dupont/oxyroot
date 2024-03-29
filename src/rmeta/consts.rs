@@ -139,7 +139,24 @@ impl EnumNamed {
     pub fn from_string(s: &str) -> Result<Self> {
         match s {
             "int" => Ok(EnumNamed::Int),
+            "Int_t" => Ok(EnumNamed::Int),
+            "int32_t" => Ok(EnumNamed::Int),
+            "uint32_t" => Ok(EnumNamed::UInt),
+            "int8_t" => Ok(EnumNamed::Char),
+            "uint8_t" => Ok(EnumNamed::UChar),
+            "unsigned int" => Ok(EnumNamed::UInt),
+            "UInt_t" => Ok(EnumNamed::UInt),
+            "short" => Ok(EnumNamed::Short),
+            "Short_t" => Ok(EnumNamed::Short),
+            "int16_t" => Ok(EnumNamed::Short),
+            "unsigned short" => Ok(EnumNamed::UShort),
+            "UShort_t" => Ok(EnumNamed::UShort),
+            "unsigned short" => Ok(EnumNamed::UShort),
+            "uint16_t" => Ok(EnumNamed::UShort),
+            "int64_t" => Ok(EnumNamed::Long64),
+            "uint64_t" => Ok(EnumNamed::ULong64),
             "float" => Ok(EnumNamed::Float),
+            "double" => Ok(EnumNamed::Double),
             _ => unimplemented!("{} not implemented", s),
         }
     }
