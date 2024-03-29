@@ -89,10 +89,14 @@ impl Leaf {
 
         fn make_leaf(tleaf: TLeaf, tys: &str) -> Leaf {
             match tys {
-                "i32" | "u32" => Leaf::I(LeafI::new(tleaf)),
-                "i16" | "u16" => Leaf::S(LeafS::new(tleaf)),
-                "i8" | "u8" => Leaf::S(LeafS::new(tleaf)),
-                "i64" | "u64" => Leaf::L(LeafL::new(tleaf)),
+                "i32" => Leaf::I(LeafI::new(tleaf)),
+                "u32" => Leaf::I(LeafI::new(tleaf.with_unsigned(true))),
+                "i16" => Leaf::S(LeafS::new(tleaf)),
+                "u16" => Leaf::S(LeafS::new(tleaf.with_unsigned(true))),
+                "i8" => Leaf::B(LeafB::new(tleaf)),
+                "u8" => Leaf::B(LeafB::new(tleaf.with_unsigned(true))),
+                "i64" => Leaf::L(LeafL::new(tleaf)),
+                "u64" => Leaf::L(LeafL::new(tleaf.with_unsigned(true))),
                 "f32" => Leaf::F(LeafF::new(tleaf)),
                 "f64" => Leaf::D(LeafD::new(tleaf)),
                 "bool" => Leaf::L(LeafL::new(tleaf)),
@@ -298,6 +302,21 @@ impl TLeaf {
 
     pub(crate) fn with_etype(mut self, etype: i32) -> Self {
         self.etype = etype;
+        self
+    }
+
+    pub(crate) fn with_offset(mut self, offset: i32) -> Self {
+        self.offset = offset;
+        self
+    }
+
+    pub(crate) fn with_hasrange(mut self, hasrange: bool) -> Self {
+        self.hasrange = hasrange;
+        self
+    }
+
+    pub(crate) fn with_unsigned(mut self, unsigned: bool) -> Self {
+        self.unsigned = unsigned;
         self
     }
 }

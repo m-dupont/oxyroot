@@ -55,7 +55,7 @@ impl TemplateWriter {
         trace!("outdir = {:?}", self.out_dir.clone());
         let mut macro_path = self.out_dir.clone();
         macro_path.push("gen.C");
-        trace!("write to {:?}", macro_path);
+        println!("write to {:?}", macro_path);
 
         let macro_content = format!(
             r#"{{
@@ -90,7 +90,7 @@ impl TemplateWriter {
         trace!("outdir = {:?}", self.out_dir.clone());
         let mut macro_path = self.out_dir.clone();
         macro_path.push("gen.C");
-        trace!("write to {:?}", macro_path);
+        println!("write macro to {:?}", macro_path);
         fs::write(macro_path, m)?;
         Ok(())
     }
@@ -102,6 +102,7 @@ impl TemplateWriter {
             .arg("gen.C")
             .current_dir(&self.out_dir)
             .output()?;
+        assert!(out.status.success());
         trace!("{}", String::from_utf8(out.stdout)?);
         Ok(())
     }

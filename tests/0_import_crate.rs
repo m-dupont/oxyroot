@@ -7,7 +7,7 @@ use oxyroot::RBuffer;
 #[test]
 fn read_i32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/i32")?
+        .with_outdir("/tmp/rust/i32/int")?
         .with_value_type("int")?;
 
     temp.write_root_macro()?;
@@ -32,7 +32,7 @@ fn read_i32_branch() -> Result<()> {
 #[test]
 fn read_u32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/u32")?
+        .with_outdir("/tmp/rust/u32/UInt_t")?
         .with_value_type("UInt_t")?;
 
     temp.write_root_macro()?;
@@ -57,7 +57,7 @@ fn read_u32_branch() -> Result<()> {
 #[test]
 fn read_i16_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/i16")?
+        .with_outdir("/tmp/rust/i16/short")?
         .with_value_type("short")?;
 
     temp.write_root_macro()?;
@@ -82,7 +82,7 @@ fn read_i16_branch() -> Result<()> {
 #[test]
 fn read_u16_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/u16")?
+        .with_outdir("/tmp/rust/u16/short")?
         .with_value_type("short")?;
 
     temp.write_root_macro()?;
@@ -107,7 +107,7 @@ fn read_u16_branch() -> Result<()> {
 #[test]
 fn read_i8_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/i8")?
+        .with_outdir("/tmp/rust/i8/Char_t")?
         .with_value_type("Char_t")?;
 
     temp.write_root_macro()?;
@@ -132,7 +132,7 @@ fn read_i8_branch() -> Result<()> {
 #[test]
 fn read_i64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/i64")?
+        .with_outdir("/tmp/rust/i64/Long64_t")?
         .with_value_type("Long64_t")?;
 
     temp.write_root_macro()?;
@@ -157,7 +157,7 @@ fn read_i64_branch() -> Result<()> {
 #[test]
 fn read_u64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/u64")?
+        .with_outdir("/tmp/rust/u64/ULong64_t")?
         .with_value_type("ULong64_t")?;
 
     temp.write_root_macro()?;
@@ -183,7 +183,7 @@ fn read_u64_branch() -> Result<()> {
 #[test]
 fn read_f32_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/float")?
+        .with_outdir("/tmp/rust/f32/float")?
         .with_value_type("float")?;
 
     temp.write_root_macro()?;
@@ -208,7 +208,7 @@ fn read_f32_branch() -> Result<()> {
 #[test]
 fn read_f64_branch() -> Result<()> {
     let temp = TemplateWriter::default()
-        .with_outdir("/tmp/rust/f64")?
+        .with_outdir("/tmp/rust/f64/double")?
         .with_value_type("double")?;
 
     temp.write_root_macro()?;
@@ -310,33 +310,54 @@ macro_rules! read_primitive_branch {
 }
 
 #[test]
-fn read_tree_into_i32() -> Result<()> {
+fn read_tree_into_i8_Char_t() -> Result<()> {
+    read_primitive_branch!(i8, "Char_t");
+    Ok(())
+}
+
+#[test]
+fn read_tree_into_u8_Char_t() -> Result<()> {
+    read_primitive_branch!(u8, "UChar_t");
+    Ok(())
+}
+
+#[test]
+fn read_tree_into_i32_Int_t() -> Result<()> {
     read_primitive_branch!(i32, "Int_t");
+    Ok(())
+}
+
+#[test]
+fn read_tree_into_i32_int() -> Result<()> {
     read_primitive_branch!(i32, "int");
+    Ok(())
+}
+
+#[test]
+fn read_tree_into_i32_signed() -> Result<()> {
     read_primitive_branch!(i32, "signed");
     Ok(())
 }
 
 #[test]
-fn read_tree_into_u32() -> Result<()> {
+fn read_tree_into_u32_UInt_t() -> Result<()> {
     read_primitive_branch!(u32, "UInt_t");
     Ok(())
 }
-
-// #[test]
-// fn read_tree_into_u64() -> Result<()> {
-//     read_primitive_branch!(u64, "ULong_t");
-//     Ok(())
-// }
+#[test]
+fn read_tree_into_u32_uint32_t() -> Result<()> {
+    read_primitive_branch!(u32, "uint32_t");
+    Ok(())
+}
 
 #[test]
-fn read_tree_into_f32() -> Result<()> {
+fn read_tree_into_f32_Float_t() -> Result<()> {
     read_primitive_branch!(f32, "Float_t");
     Ok(())
 }
 
 #[test]
-fn read_tree_into_f64() -> Result<()> {
+fn read_tree_into_f64_Double_t() -> Result<()> {
     read_primitive_branch!(f64, "Double_t");
     Ok(())
 }

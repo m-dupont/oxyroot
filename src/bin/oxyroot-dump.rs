@@ -157,6 +157,8 @@ impl<'a> ZipperDumperItem<'a> {
             "Vec<Vec<i32>>" => make_box_branch_for_type::<Vec<Vec<i32>>>(branch),
             "Slice<i32>" => make_box_branch_for_type::<Slice<i32>>(branch),
             "u32" => make_box_branch_for_type::<u32>(branch),
+            "u64" => make_box_branch_for_type::<u64>(branch),
+            "i64" => make_box_branch_for_type::<i64>(branch),
             "Vec<u32>" => make_box_branch_for_type::<Vec<u32>>(branch),
             "Vec<Vec<u32>>" => make_box_branch_for_type::<Vec<Vec<u32>>>(branch),
             "Slice<u32>" => make_box_branch_for_type::<Slice<u32>>(branch),
