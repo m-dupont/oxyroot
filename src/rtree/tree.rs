@@ -242,7 +242,7 @@ impl WriterTree {
             let mut tot = 0;
             let zip = 0;
             for (b, d) in branches.iter_mut().zip(branchs_done.iter_mut()) {
-                match b.write(self, file) {
+                match b.write(self, file)? {
                     None => *d = true,
                     Some(nbytes) => {
                         tot += nbytes;

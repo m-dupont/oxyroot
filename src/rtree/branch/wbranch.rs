@@ -108,7 +108,11 @@ where
         branch
     }
 
-    pub fn write(&mut self, tree: &WriterTree, file: &mut RootFile) -> Option<i32> {
+    pub fn write(
+        &mut self,
+        tree: &WriterTree,
+        file: &mut RootFile,
+    ) -> crate::riofs::Result<Option<i32>> {
         // trace!(";WBranch.write.call:{:?}", true);
         let basket = match &mut self.basket {
             None => {
@@ -120,7 +124,7 @@ where
 
         let ident = format!("{}.a{}", self.branch.name(), self.branch.tbranch().entries);
         let tbranch = self.branch.tbranch_mut();
-        match self.iterator.next() {
+        let ret = match self.iterator.next() {
             Some(item) => {
                 // trace!(";WBranch.write.{ident}.item:{:?}", item);
                 // self.branch.write(item);
@@ -129,12 +133,12 @@ where
 
                 let sz_old = basket.wbuf.len();
                 trace!(";WBranch.write.{ident}.sz_old:{:?}", sz_old);
-                basket.update(sz_old as i64).unwrap();
+                basket.update(sz_old as i64)?;
 
                 assert_eq!(tbranch.leaves.len(), 1);
 
                 for leave in tbranch.leaves.iter_mut() {
-                    leave.write_to_buffer(&mut basket.wbuf, &item).unwrap();
+                    leave.write_to_buffer(&mut basket.wbuf, &item)?;
                 }
 
                 // basket.wbuf.write_object(&item).unwrap();
@@ -146,14 +150,15 @@ where
                 }
 
                 if sz_new + n as usize >= tbranch.basket_size as usize {
-                    self.flush(file).unwrap();
+                    self.flush(file)?;
                     self.basket = Some(self.create_new_basket(tree, file));
                 }
 
                 Some(n)
             }
             None => None,
-        }
+        };
+        Ok(ret)
     }
 
     fn create_new_basket(&mut self, tree: &WriterTree, f: &RootFile) -> WBasket {
