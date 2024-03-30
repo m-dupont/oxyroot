@@ -1,7 +1,6 @@
 use anyhow::Result;
 use num::Integer;
 use oxyroot;
-use oxyroot::{Marshaler, Unmarshaler};
 use std::fs;
 use test_log::test;
 
@@ -10,10 +9,10 @@ const OUT_DIR: &str = "/tmp/rust/write/";
 macro_rules! write_branch {
     ($ty:ty, $N:expr) => {{
         let tys = stringify!($ty);
-        let Ns = stringify!($N);
+        let ns = stringify!($N);
         let out_dir = format!("{}/{}", OUT_DIR, tys);
         fs::create_dir_all(&out_dir)?;
-        let out_file = format!("{}/{Ns}.root", out_dir);
+        let out_file = format!("{}/{ns}.root", out_dir);
         fn gen_it() -> impl Iterator<Item = $ty> {
             (0..$N).map(|x| x as $ty)
         }
@@ -30,9 +29,9 @@ macro_rules! write_branch {
         let mut f = oxyroot::RootFile::open(out_file)?;
         let tree = f.get_tree("mytree")?;
         assert_eq!(tree.entries(), $N.into());
-        let mut b = tree.branch(tys).unwrap().as_iter::<$ty>();
+        let b = tree.branch(tys).unwrap().as_iter::<$ty>();
 
-        for (i, (r, w)) in b.zip(gen_it()).enumerate() {
+        for (_i, (r, w)) in b.zip(gen_it()).enumerate() {
             assert_eq!(r, w);
         }
     }};
@@ -109,13 +108,13 @@ fn write_f64_branch() -> Result<()> {
 #[test]
 fn write_bool_branch() -> Result<()> {
     let ty = "bool";
-    let N = 5;
+    let n = 5;
     let out_dir = format!("{}/{ty}", OUT_DIR);
     fs::create_dir_all(&out_dir)?;
-    let out_file = format!("{}/{N}.root", out_dir);
+    let out_file = format!("{}/{n}.root", out_dir);
 
     {
-        let it = (0..N).map(|x| x.is_even());
+        let it = (0..n).map(|x| x.is_even());
         let mut f = oxyroot::RootFile::create(&out_file)?;
         let mut tree = oxyroot::WriterTree::new("mytree");
 
@@ -126,10 +125,10 @@ fn write_bool_branch() -> Result<()> {
 
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
-    assert_eq!(tree.entries(), N.into());
+    assert_eq!(tree.entries(), n.into());
     let mut b = tree.branch(ty).unwrap().as_iter::<bool>();
 
-    let it = (0..N).map(|x| x.is_even());
+    let it = (0..n).map(|x| x.is_even());
 
     for (i, (r, w)) in b.zip(it).enumerate() {
         assert_eq!(r, w);
@@ -140,13 +139,13 @@ fn write_bool_branch() -> Result<()> {
 #[test]
 fn write_string_branch() -> Result<()> {
     let ty = "String";
-    let N = 5;
+    let n = 5;
     let out_dir = format!("{}/{ty}", OUT_DIR);
     fs::create_dir_all(&out_dir)?;
-    let out_file = format!("{}/{N}.root", out_dir);
+    let out_file = format!("{}/{n}.root", out_dir);
 
     {
-        let it = (0..N).map(|x| format!("string{}", x));
+        let it = (0..n).map(|x| format!("string{}", x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
         let mut tree = oxyroot::WriterTree::new("mytree");
 
@@ -157,12 +156,12 @@ fn write_string_branch() -> Result<()> {
 
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
-    assert_eq!(tree.entries(), N.into());
-    let mut b = tree.branch(ty).unwrap().as_iter::<String>();
+    assert_eq!(tree.entries(), n.into());
+    let b = tree.branch(ty).unwrap().as_iter::<String>();
 
-    let it = (0..N).map(|x| format!("string{}", x));
+    let it = (0..n).map(|x| format!("string{}", x));
 
-    for (i, (r, w)) in b.zip(it).enumerate() {
+    for (_i, (r, w)) in b.zip(it).enumerate() {
         assert_eq!(r, w);
     }
     Ok(())
@@ -171,10 +170,10 @@ fn write_string_branch() -> Result<()> {
 #[test]
 fn write_variable_lenght_string_branch() -> Result<()> {
     let ty = "String_l";
-    let N = 500;
+    let n = 500;
     let out_dir = format!("{}/{ty}", OUT_DIR);
     fs::create_dir_all(&out_dir)?;
-    let out_file = format!("{}/{N}.root", out_dir);
+    let out_file = format!("{}/{n}.root", out_dir);
 
     fn make_string(n: i32) -> String {
         let mut s = String::new();
@@ -185,7 +184,7 @@ fn write_variable_lenght_string_branch() -> Result<()> {
     }
 
     {
-        let it = (0..N).map(|x| make_string(x));
+        let it = (0..n).map(|x| make_string(x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
         let mut tree = oxyroot::WriterTree::new("mytree");
 
@@ -196,12 +195,12 @@ fn write_variable_lenght_string_branch() -> Result<()> {
 
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
-    assert_eq!(tree.entries(), N.into());
-    let mut b = tree.branch(ty).unwrap().as_iter::<String>();
+    assert_eq!(tree.entries(), n.into());
+    let b = tree.branch(ty).unwrap().as_iter::<String>();
 
-    let it = (0..N).map(|x| make_string(x));
+    let it = (0..n).map(|x| make_string(x));
 
-    for (i, (r, w)) in b.zip(it).enumerate() {
+    for (_i, (r, w)) in b.zip(it).enumerate() {
         assert_eq!(r, w);
     }
     Ok(())
@@ -210,17 +209,17 @@ fn write_variable_lenght_string_branch() -> Result<()> {
 #[test]
 fn write_array_branch() -> Result<()> {
     let ty = "array";
-    let N = 15;
+    let n = 15;
     let out_dir = format!("{}/{ty}", OUT_DIR);
     fs::create_dir_all(&out_dir)?;
-    let out_file = format!("{}/{N}.root", out_dir);
+    let out_file = format!("{}/{n}.root", out_dir);
 
     fn make_string(n: i32) -> [i32; 5] {
         [n, n + 1, n + 2, n + 3, n + 4]
     }
 
     {
-        let it = (0..N).map(|x| make_string(x));
+        let it = (0..n).map(|x| make_string(x));
         let mut f = oxyroot::RootFile::create(&out_file)?;
         let mut tree = oxyroot::WriterTree::new("mytree");
         tree.new_branch(ty, it);
@@ -230,12 +229,12 @@ fn write_array_branch() -> Result<()> {
 
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
-    assert_eq!(tree.entries(), N.into());
-    let mut b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>();
+    assert_eq!(tree.entries(), n.into());
+    let b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>();
 
-    let it = (0..N).map(|x| make_string(x));
+    let it = (0..n).map(|x| make_string(x));
 
-    for (i, (r, w)) in b.zip(it).enumerate() {
+    for (_i, (r, w)) in b.zip(it).enumerate() {
         assert_eq!(r, w);
     }
     Ok(())
@@ -245,10 +244,10 @@ macro_rules! write_branch_vector {
     ($ty_item:ty, $N:expr) => {{
         let ty = "vector";
         let ty_item = stringify!($ty_item);
-        let N = $N;
+        let n = $N;
         let out_dir = format!("{}/{ty}/{ty_item}", OUT_DIR);
         fs::create_dir_all(&out_dir)?;
-        let out_file = format!("{}/{N}.root", out_dir);
+        let out_file = format!("{}/{n}.root", out_dir);
 
         fn make_vector(n: i32) -> Vec<$ty_item> {
             let mut ret = Vec::new();
@@ -259,7 +258,7 @@ macro_rules! write_branch_vector {
         }
 
         {
-            let it = (0..N).map(|x| make_vector(x));
+            let it = (0..n).map(|x| make_vector(x));
             let mut f = oxyroot::RootFile::create(&out_file)?;
             let mut tree = oxyroot::WriterTree::new("mytree");
             tree.new_branch(ty, it);
@@ -269,12 +268,12 @@ macro_rules! write_branch_vector {
 
         let mut f = oxyroot::RootFile::open(out_file)?;
         let tree = f.get_tree("mytree")?;
-        assert_eq!(tree.entries(), N.into());
-        let mut b = tree.branch(ty).unwrap().as_iter::<Vec<$ty_item>>();
+        assert_eq!(tree.entries(), n.into());
+        let b = tree.branch(ty).unwrap().as_iter::<Vec<$ty_item>>();
 
-        let it = (0..N).map(|x| make_vector(x));
+        let it = (0..n).map(|x| make_vector(x));
 
-        for (i, (r, w)) in b.zip(it).enumerate() {
+        for (_i, (r, w)) in b.zip(it).enumerate() {
             assert_eq!(r, w);
         }
     }};

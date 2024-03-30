@@ -310,18 +310,21 @@ macro_rules! read_primitive_branch {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_i8_Char_t() -> Result<()> {
     read_primitive_branch!(i8, "Char_t");
     Ok(())
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_u8_Char_t() -> Result<()> {
     read_primitive_branch!(u8, "UChar_t");
     Ok(())
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_i32_Int_t() -> Result<()> {
     read_primitive_branch!(i32, "Int_t");
     Ok(())
@@ -340,6 +343,7 @@ fn read_tree_into_i32_signed() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_u32_UInt_t() -> Result<()> {
     read_primitive_branch!(u32, "UInt_t");
     Ok(())
@@ -351,12 +355,14 @@ fn read_tree_into_u32_uint32_t() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_f32_Float_t() -> Result<()> {
     read_primitive_branch!(f32, "Float_t");
     Ok(())
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn read_tree_into_f64_Double_t() -> Result<()> {
     read_primitive_branch!(f64, "Double_t");
     Ok(())

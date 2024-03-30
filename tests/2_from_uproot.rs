@@ -2,9 +2,10 @@ use anyhow::Result;
 use log::trace;
 use oxyroot::{RBuffer, RootFile, SizedSlice, Slice, Unmarshaler, UnmarshalerInto};
 use std::fmt::Debug;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[test]
+#[allow(non_snake_case)]
 fn open_nested() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
 
@@ -21,16 +22,16 @@ fn open_nested() -> Result<()> {
         "Slice<f32>"
     );
 
-    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<Slice<f32>>();
+    let Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<Slice<f32>>();
     assert_eq!(Jet_Py.count(), 2421);
 
-    let mut NElectron = tree.branch("NElectron").unwrap().as_iter::<i32>();
-    assert_eq!(NElectron.count(), 2421);
+    let nelectron = tree.branch("NElectron").unwrap().as_iter::<i32>();
+    assert_eq!(nelectron.count(), 2421);
 
-    let mut Photon_E = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>();
-    assert_eq!(Photon_E.count(), 2421);
+    let photon_e = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>();
+    assert_eq!(photon_e.count(), 2421);
 
-    let mut Electron_Px = tree.branch("Electron_Px").unwrap().as_iter::<Slice<f32>>();
+    let Electron_Px = tree.branch("Electron_Px").unwrap().as_iter::<Slice<f32>>();
     assert_eq!(Electron_Px.count(), 2421);
 
     Ok(())
@@ -570,7 +571,7 @@ where
             assert_eq!(val.len(), i % 10);
             val.iter()
                 .enumerate()
-                .map(|(j, v)| {
+                .map(|(_j, v)| {
                     let calcul = i as u8;
                     let calcul = T::try_from(calcul).unwrap();
                     assert_eq!(*v, calcul);
@@ -985,6 +986,7 @@ fn open_sample_ai4_sizedslice() -> Result<()> {
     Ok(())
 }
 
+#[allow(non_snake_case)]
 fn open_sample_Ab_impl<P>(path: P) -> Result<()>
 where
     P: AsRef<Path>,
@@ -1043,6 +1045,7 @@ where
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn open_sample_Ab() -> Result<()> {
     for s in SAMPLE_PATH {
         open_sample_Ab_impl(s)?;

@@ -1,9 +1,8 @@
-use chrono::Local;
 use clap::Parser;
 use oxyroot::{Branch, RBuffer, ReaderTree, SizedSlice, Unmarshaler, UnmarshalerInto};
 use oxyroot::{RootFile, Slice};
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -114,16 +113,6 @@ struct ZipperDumperItem<'a> {
 impl<'a> ZipperDumperItem<'a> {
     pub fn new(branch: &'a Branch) -> Option<ZipperDumperItem> {
         // define heare to have branch in scope
-        macro_rules! make_box_branch_for_type {
-            ($ftype: ty) => {{
-                let bo: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a> = Box::new(
-                    branch
-                        .as_iter::<$ftype>()
-                        .map(|x| Box::new(x) as Box<dyn Dumpable>),
-                );
-                bo
-            }};
-        }
 
         macro_rules! make_box_branch_for_sized_slice {
             ($ftype: ty, $n: expr) => {{

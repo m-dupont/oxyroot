@@ -4,6 +4,7 @@ use oxyroot::RootFile;
 use std::collections::{HashMap, HashSet};
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -31,6 +32,7 @@ fn tree_with_stl_containers__string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__tstring() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -58,6 +60,7 @@ fn tree_with_stl_containers__tstring() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_int32() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -101,6 +104,7 @@ fn tree_with_stl_containers__vector_int32() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -143,6 +147,7 @@ fn tree_with_stl_containers__vector_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_tstring() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -185,6 +190,7 @@ fn tree_with_stl_containers__vector_tstring() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -236,6 +242,7 @@ fn tree_with_stl_containers__vector_vector_i32() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -296,6 +303,7 @@ fn tree_with_stl_containers__vector_vector_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -357,6 +365,7 @@ fn tree_with_stl_containers__vector_vector_tstring() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -408,6 +417,7 @@ fn tree_with_stl_containers__vector_set_int32() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__vector_set_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -479,6 +489,7 @@ fn tree_with_stl_containers__vector_set_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__set_int32() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -521,6 +532,7 @@ fn tree_with_stl_containers__set_int32() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__set_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -563,6 +575,7 @@ fn tree_with_stl_containers__set_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -604,6 +617,7 @@ fn tree_with_stl_containers__map_int32_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -660,6 +674,7 @@ fn tree_with_stl_containers__map_int32_vector_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -757,6 +772,7 @@ fn tree_with_stl_containers__map_int32_vector_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -813,6 +829,7 @@ fn tree_with_stl_containers__map_int32_set_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -910,6 +927,7 @@ fn tree_with_stl_containers__map_int32_set_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -966,6 +984,7 @@ fn tree_with_stl_containers__map_string_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1029,6 +1048,7 @@ fn tree_with_stl_containers__map_string_vector_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1138,6 +1158,7 @@ fn tree_with_stl_containers__map_string_vector_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1201,6 +1222,7 @@ fn tree_with_stl_containers__map_string_set_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1310,6 +1332,7 @@ fn tree_with_stl_containers__map_string_set_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_string() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1369,6 +1392,7 @@ fn tree_with_stl_containers__map_string_string() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1428,6 +1452,7 @@ fn tree_with_stl_containers__map_string_tstring() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 
@@ -1503,6 +1528,7 @@ fn tree_with_stl_containers__map_int32_vector_vector_int16() -> Result<()> {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn tree_with_stl_containers__map_int32_vector_set_int16() -> Result<()> {
     // From https://raw.githubusercontent.com/scikit-hep/scikit-hep-testdata/main/dev/make-root/stl_containers.C
 

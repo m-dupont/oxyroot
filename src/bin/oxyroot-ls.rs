@@ -1,5 +1,4 @@
-use chrono::Local;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use oxyroot::Named;
 use oxyroot::Object;
 use std::io::Write;
@@ -7,7 +6,6 @@ use std::path::PathBuf;
 
 use env_logger;
 use env_logger::{Builder, Target, WriteStyle};
-use log::LevelFilter;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -43,7 +41,6 @@ fn main() {
     }
 
     let mut f = oxyroot::RootFile::open(file).expect("Can not open file");
-    let keys = f.keys_name().collect::<Vec<_>>();
 
     // trace!("keys = {:?}", keys);
 

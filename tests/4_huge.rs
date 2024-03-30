@@ -1,6 +1,5 @@
 use anyhow::Result;
 use oxyroot::RootFile;
-use std::collections::{HashMap, HashSet};
 
 #[test]
 fn tree_with_int_array_25() -> Result<()> {

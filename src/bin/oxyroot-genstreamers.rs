@@ -1,9 +1,6 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use env_logger::{Builder, Target, WriteStyle};
-use itertools::Itertools;
-use lazy_static::lazy_static;
 use log::trace;
-use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -62,7 +59,7 @@ auto name = "{CLASS}";
 }
 
 fn gen_cat_streamers_with_root(classes: &Vec<&str>) -> Result<String> {
-    let mut out_path: PathBuf = OUT_DIR.clone().into();
+    let mut out_path: PathBuf = OUT_DIR.into();
 
     out_path.push(format!("gen_all.txt").to_string());
     if out_path.exists() {

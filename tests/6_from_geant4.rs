@@ -9,9 +9,9 @@ fn open_g4_ntuples_1000() -> anyhow::Result<()> {
     assert_eq!(tree.branch("f64").unwrap().item_type_name(), "double");
 
     assert_eq!(tree.entries(), 1000);
-    let mut bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
+    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
     assert_eq!(bi32.count() as i64, tree.entries());
-    let mut bi64 = tree.branch("i64").unwrap().as_iter::<i32>();
+    let bi64 = tree.branch("i64").unwrap().as_iter::<i32>();
     assert_eq!(bi64.count() as i64, tree.entries());
 
     let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
@@ -34,9 +34,9 @@ fn open_g4_ntuples_10000() -> anyhow::Result<()> {
     assert_eq!(tree.branch("f64").unwrap().item_type_name(), "double");
 
     assert_eq!(tree.entries(), 10000);
-    let mut bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
+    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
     assert_eq!(bi32.count() as i64, tree.entries());
-    let mut bi64 = tree.branch("i64").unwrap().as_iter::<i32>();
+    let bi64 = tree.branch("i64").unwrap().as_iter::<i32>();
     assert_eq!(bi64.count() as i64, tree.entries());
 
     let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
