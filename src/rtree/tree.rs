@@ -232,7 +232,7 @@ impl WriterTree {
         // let branch = WBranch::new(name, b);
         // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
-        let wbranchwb = WBranch::new::<T>(name.as_ref().to_string(), it, self);
+        let wbranchwb = WBranch::new::<T>(name.as_ref(), it, self);
         self.branches.push(wbranchwb);
     }
     pub fn write(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {

@@ -47,7 +47,7 @@ where
     T: Marshaler + 'static,
 {
     pub(crate) fn new<U: 'static>(
-        name: String,
+        name: &str,
         it: impl Iterator<Item = T> + 'static,
         tree: &mut WriterTree,
     ) -> Self
@@ -57,7 +57,7 @@ where
         trace!(";WBranch.new.name:{:?}", name);
         trace!(";WBranch.new.code:{:?}", U::root_code());
 
-        let mut tbanch = TBranch::new(name.clone());
+        let mut tbanch = TBranch::new(name.to_string());
 
         tbanch.iobits = tree.iobits;
         // branch.compress = f.compression();
