@@ -6,17 +6,16 @@ use crate::riofs::dir::TDirectoryFile;
 use crate::riofs::file::{RootFileReader, RootFileWriter};
 use crate::riofs::utils::datetime_to_u32;
 use crate::riofs::{utils, Result};
-use crate::root::traits::{datimeSizeof, tstringSizeof, Named};
+use crate::root::traits::{datime_sizeof, tstring_sizeof, Named};
 use crate::root::{objects, traits};
 use crate::rtypes::factory::FactoryItemWrite;
 use crate::rtypes::FactoryItemRead;
 use crate::{rcompress, riofs, rvers};
 use crate::{rtypes, RootFile};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use log::trace;
 use std::fmt;
 use std::fmt::Debug;
-use utils::now;
 
 // pub struct KeyObject(Option<Box<dyn OBJECT>>);
 
@@ -32,7 +31,7 @@ impl fmt::Debug for objects::Object {
 #[derive(Debug, Clone)]
 pub struct Key {
     rvers: i16,
-    // version of the Key struct
+    // version of the KEY struct
     n_bytes: i32,
     // number of bytes for the compressed object+key
     obj_len: i32,
@@ -40,10 +39,10 @@ pub struct Key {
     datetime: DateTime<Utc>,
     // Date/Time when the object was written
     key_len: i32,
-    // number of bytes for the Key struct
+    // number of bytes for the KEY struct
     cycle: i16, // cycle number of the object
 
-    // address of the object on file (points to Key.bytes)
+    // address of the object on file (points to KEY.bytes)
     // this is a redundant information used to cross-check
     // the data base integrity
     seek_key: i64,
@@ -58,13 +57,13 @@ pub struct Key {
     // number of bytes left in current segment
     left: i32,
 
-    buffer: Vec<u8>, // buffer of the Key's value
+    buffer: Vec<u8>, // buffer of the KEY's value
 }
 
 impl Default for Key {
     fn default() -> Self {
         Key {
-            rvers: rvers::Key,
+            rvers: rvers::KEY,
             n_bytes: 0,
             obj_len: 0,
             datetime: utils::now(),
@@ -84,7 +83,7 @@ impl Default for Key {
 impl Unmarshaler for Key {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let _beg = r.pos();
-        trace!(";Key.unmarshal.a{_beg}.beg: {}", _beg);
+        trace!(";KEY.unmarshal.a{_beg}.beg: {}", _beg);
         let n_bytes = r.read_i32()?;
 
         if n_bytes < 0 {
@@ -94,23 +93,23 @@ impl Unmarshaler for Key {
         }
 
         let rvers = r.read_i16()?;
-        trace!(";Key.unmarshal.a{_beg}.rvers: {}", rvers);
+        trace!(";KEY.unmarshal.a{_beg}.rvers: {}", rvers);
         let obj_len = r.read_i32()?;
         let datetime = DateTime::from_timestamp(r.read_u32()? as i64, 0).unwrap();
         let key_len = r.read_i16()? as i32;
         let cycle = r.read_i16()?;
 
-        trace!(";Key.unmarshal.a{_beg}.key_len: {}", key_len);
-        trace!(";Key.unmarshal.a{_beg}.key_len: {}", key_len);
+        trace!(";KEY.unmarshal.a{_beg}.key_len: {}", key_len);
+        trace!(";KEY.unmarshal.a{_beg}.key_len: {}", key_len);
 
         let is_big_file = rvers > 1000;
-        trace!(";Key.unmarshal.a{_beg}.is_big_file: {}", is_big_file);
+        trace!(";KEY.unmarshal.a{_beg}.is_big_file: {}", is_big_file);
         let seek_key = if is_big_file {
             r.read_i64()?
         } else {
             r.read_i32()? as i64
         };
-        trace!(";Key.unmarshal.a{_beg}.seek_key:{:?}", seek_key);
+        trace!(";KEY.unmarshal.a{_beg}.seek_key:{:?}", seek_key);
         let seek_pdir = if is_big_file {
             r.read_i64()?
         } else {
@@ -142,14 +141,14 @@ impl Unmarshaler for Key {
 impl Marshaler for Key {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let beg = w.pos();
-        trace!(";Key.marshal.{beg}.beg:{:?}", beg);
-        trace!(";Key.marshal.{beg}.n_bytes:{:?}", self.n_bytes);
-        trace!(";Key.marshal.{beg}.seek_key:{:?}", self.seek_key);
+        trace!(";KEY.marshal.{beg}.beg:{:?}", beg);
+        trace!(";KEY.marshal.{beg}.n_bytes:{:?}", self.n_bytes);
+        trace!(";KEY.marshal.{beg}.seek_key:{:?}", self.seek_key);
         w.write_i32(self.n_bytes)?;
 
         if self.n_bytes < 0 {
             panic!("n_bytes < 0");
-            return Ok(w.pos() - beg);
+            // return Ok(w.pos() - beg);
         }
 
         let rvers = if self.seek_key > kStartBigFile && self.rvers < 1000 {
@@ -158,14 +157,14 @@ impl Marshaler for Key {
             self.rvers
         };
 
-        trace!(";Key.marshal.{beg}.rvers:{:?}", rvers);
+        trace!(";KEY.marshal.{beg}.rvers:{:?}", rvers);
         w.write_i16(rvers)?;
-        trace!(";Key.marshal.{beg}.obj_len:{:?}", self.obj_len);
+        trace!(";KEY.marshal.{beg}.obj_len:{:?}", self.obj_len);
         w.write_i32(self.obj_len)?;
         w.write_u32(datetime_to_u32(self.datetime))?;
-        trace!(";Key.marshal.{beg}.key_len:{:?}", self.key_len);
+        trace!(";KEY.marshal.{beg}.key_len:{:?}", self.key_len);
         w.write_i16(self.key_len as i16)?;
-        trace!(";Key.marshal.{beg}.cycle:{:?}", self.cycle);
+        trace!(";KEY.marshal.{beg}.cycle:{:?}", self.cycle);
         w.write_i16(self.cycle)?;
 
         if self.rvers > 1000 {
@@ -176,19 +175,19 @@ impl Marshaler for Key {
             w.write_i32(self.seek_pdir as i32)?;
         }
 
-        trace!(";Key.marshal.{beg}.seek_key:{:?}", self.seek_key);
-        trace!(";Key.marshal.{beg}.seek_pdir:{:?}", self.seek_pdir);
-        trace!(";Key.marshal.{beg}.class:{:?}", self.class);
+        trace!(";KEY.marshal.{beg}.seek_key:{:?}", self.seek_key);
+        trace!(";KEY.marshal.{beg}.seek_pdir:{:?}", self.seek_pdir);
+        trace!(";KEY.marshal.{beg}.class:{:?}", self.class);
         w.write_string(&self.class)?;
-        trace!(";Key.marshal.{beg}.name:{:?}", self.name);
+        trace!(";KEY.marshal.{beg}.name:{:?}", self.name);
         w.write_string(&self.name)?;
-        trace!(";Key.marshal.{beg}.title:{:?}", self.title);
+        trace!(";KEY.marshal.{beg}.title:{:?}", self.title);
         w.write_string(&self.title)?;
 
-        trace!(";Key.marshal.{beg}.buf:{:?}", w);
+        trace!(";KEY.marshal.{beg}.buf:{:?}", w);
 
         let end = w.pos();
-        trace!(";Key.marshal.{beg}.end:{:?}", end);
+        trace!(";KEY.marshal.{beg}.end:{:?}", end);
 
         Ok(end - beg)
     }
@@ -251,8 +250,8 @@ impl Key {
         f: &mut RootFile,
     ) -> Result<Self> {
         let indent = name.clone() + "-" + &name;
-        trace!(";Key.new_from_buffer.{indent}.f.end:{:?}", f.end());
-        // trace!(";Key.new_from_buffer.{indent}.buf.value:{:?}", &buf);
+        trace!(";KEY.new_from_buffer.{indent}.f.end:{:?}", f.end());
+        // trace!(";KEY.new_from_buffer.{indent}.buf.value:{:?}", &buf);
         let key_len = key_len_for(&name, &title, &class, f);
         let obj_len = buf.len() as i32;
         let mut key = Key {
@@ -274,26 +273,26 @@ impl Key {
 
         key.buffer = rcompress::compress(buf, f.compression())?;
         // trace!(
-        //     ";Key.new_from_buffer.{indent}.buf.after_compression:{:?}",
+        //     ";KEY.new_from_buffer.{indent}.buf.after_compression:{:?}",
         //     key.buffer
         // );
         key.n_bytes = key.key_len + key.buffer.len() as i32;
         f.set_end(key.seek_key + key.n_bytes as i64)?;
 
         trace!(
-            ";Key.new_from_buffer.{indent}.key.seek_key:{:?}",
+            ";KEY.new_from_buffer.{indent}.key.seek_key:{:?}",
             key.seek_key
         );
         trace!(
-            ";Key.new_from_buffer.{indent}.key.obj_len:{:?}",
+            ";KEY.new_from_buffer.{indent}.key.obj_len:{:?}",
             key.obj_len
         );
         trace!(
-            ";Key.new_from_buffer.{indent}.key.seek_pdir:{:?}",
+            ";KEY.new_from_buffer.{indent}.key.seek_pdir:{:?}",
             key.seek_pdir
         );
-        trace!(";Key.new_from_buffer.{indent}.key.cycle:{:?}", key.cycle);
-        trace!(";Key.new_from_buffer.{indent}.key.title:{:?}", key.title());
+        trace!(";KEY.new_from_buffer.{indent}.key.cycle:{:?}", key.cycle);
+        trace!(";KEY.new_from_buffer.{indent}.key.title:{:?}", key.title());
 
         Ok(key)
     }
@@ -320,7 +319,7 @@ impl Key {
             key.rvers += 1000;
         }
 
-        trace!(";Key.new_key_for_basket_internal.key:{:?}", &key);
+        trace!(";KEY.new_key_for_basket_internal.key:{:?}", &key);
         key
     }
 
@@ -334,17 +333,17 @@ impl Key {
     where
         T: FactoryItemWrite,
     {
-        trace!(";Key.new_from_object.name:{:?}", name);
-        trace!(";Key.new_from_object.title:{:?}", title);
-        trace!(";Key.new_from_object.class:{:?}", class);
+        trace!(";KEY.new_from_object.name:{:?}", name);
+        trace!(";KEY.new_from_object.title:{:?}", title);
+        trace!(";KEY.new_from_object.class:{:?}", class);
 
         let key_len = key_len_for(&name, &title, &class, f);
-        trace!(";Key.new_from_object.key_len:{:?}", key_len);
+        trace!(";KEY.new_from_object.key_len:{:?}", key_len);
 
         let mut buf = WBuffer::new(key_len as u32);
         obj.marshal(&mut buf)?;
         let obj_len = buf.len() as i32;
-        trace!(";Key.new_from_object.obj_len:{:?}", obj_len);
+        trace!(";KEY.new_from_object.obj_len:{:?}", obj_len);
 
         let mut key = Key {
             n_bytes: key_len + obj_len,
@@ -364,12 +363,12 @@ impl Key {
             key.rvers += 1000;
         }
         trace!(
-            ";Key.new_from_object.buf.len.before_compression:{:?}",
+            ";KEY.new_from_object.buf.len.before_compression:{:?}",
             buf.len()
         );
         let buf = rcompress::compress(buf.buffer(), f.compression())?;
         trace!(
-            ";Key.new_from_object.buf.len.after_compression:{:?}",
+            ";KEY.new_from_object.buf.len.after_compression:{:?}",
             buf.len()
         );
         key.buffer = buf;
@@ -484,16 +483,16 @@ impl Key {
         self.marshal(&mut buf)?;
 
         let buf = buf.buffer();
-        trace!(";Key.write_to_file.buf.value:{:?}", buf);
-        trace!(";Key.write_to_file.buf.value:{:x?}", buf);
-        trace!(";Key.write_to_file.buf.wstart:{:?}", self.seek_key);
+        trace!(";KEY.write_to_file.buf.value:{:?}", buf);
+        trace!(";KEY.write_to_file.buf.value:{:x?}", buf);
+        trace!(";KEY.write_to_file.buf.wstart:{:?}", self.seek_key);
 
         w.write_at(&buf, self.seek_key as u64)?;
         let buf = self.buffer();
-        trace!(";Key.write_to_file.k.buf.value:{:?}", buf);
-        trace!(";Key.write_to_file.k.buf.value:{:x?}", buf);
+        trace!(";KEY.write_to_file.k.buf.value:{:?}", buf);
+        trace!(";KEY.write_to_file.k.buf.value:{:x?}", buf);
         trace!(
-            ";Key.write_to_file.k.buf.wstart:{:?}",
+            ";KEY.write_to_file.k.buf.wstart:{:?}",
             self.seek_key as u64 + self.key_len as u64
         );
         w.write_at(buf, self.seek_key as u64 + self.key_len as u64)?;
@@ -518,11 +517,11 @@ fn key_len_for(name: &str, title: &str, class: &str, f: &RootFile) -> i32 {
         nbytes += 8;
     }
 
-    nbytes += datimeSizeof();
+    nbytes += datime_sizeof();
 
-    nbytes += tstringSizeof(class);
-    nbytes += tstringSizeof(name);
-    nbytes += tstringSizeof(title);
+    nbytes += tstring_sizeof(class);
+    nbytes += tstring_sizeof(name);
+    nbytes += tstring_sizeof(title);
 
     if class == "TBasket" {
         nbytes += 2; // version

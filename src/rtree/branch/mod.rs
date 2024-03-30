@@ -6,7 +6,7 @@ pub(crate) mod wbranch;
 
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::UnmarshalerInto;
@@ -72,7 +72,7 @@ impl Branch {
     }
 
     pub fn new(name: String) -> Self {
-        let mut b = Branch::Base(TBranch::new(name));
+        let b = Branch::Base(TBranch::new(name));
         b
     }
 

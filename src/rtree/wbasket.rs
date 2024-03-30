@@ -1,10 +1,10 @@
 use crate::rbytes::wbuffer::WBuffer;
+use crate::riofs::consts::kGenerateOffsetMap;
 use crate::riofs::Key;
 use crate::rtree::basket::Basket;
-use crate::{riofs, Branch, Marshaler, Named, Object, RootFile};
+use crate::{riofs, Marshaler, Named, Object, RootFile};
 use log::trace;
 use riofs::Result;
-use std::default;
 
 #[derive(Debug)]
 pub(crate) struct BasketBytesWritten {
@@ -174,8 +174,6 @@ impl Marshaler for WBasket {
         w.write_i32(self.basket.last)?;
 
         trace!(";WBasket.marshal.buf.value:{:?}", w.p());
-
-        const kGenerateOffsetMap: u8 = 0;
 
         let must_gen_offset = self.basket.offsets().len() > 0
             && self.basket.nev_buf() > 0

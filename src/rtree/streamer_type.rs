@@ -1,10 +1,8 @@
-use crate::rbytes::MarshallerKind;
 use crate::rdict::Streamer;
 use crate::rmeta::{EReadWrite, Enum, EnumNamed};
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::any::{type_name, Any, TypeId};
 
 lazy_static! {
     static ref RE: Regex =
@@ -102,7 +100,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
                     EnumNamed::CacheDelete => {}
                     EnumNamed::NeedObjectForVirtualBaseClass => {}
                     EnumNamed::Missing => {}
-                    EnumNamed::OffsetP_16 => {
+                    EnumNamed::OffsetP16 => {
                         todo!()
                     }
                 },

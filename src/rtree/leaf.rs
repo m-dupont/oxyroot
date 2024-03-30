@@ -1,17 +1,14 @@
-use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, MarshallerKind, RVersioner, Unmarshaler};
 use crate::root::traits::Named;
 use crate::root::traits::Object;
-use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::TBranch;
 use crate::rtypes::FactoryItemRead;
-use crate::{factory_all_for_register_impl, rbase, Branch, Marshaler};
+use crate::{factory_all_for_register_impl, rbase, Marshaler};
 use crate::{factory_fn_register_impl, rvers};
-use downcast::Any;
 use log::trace;
-use std::any::{type_name, TypeId};
+use std::any::type_name;
 
 #[derive(Debug)]
 pub enum Leaf {
@@ -76,8 +73,7 @@ impl RVersioner for Leaf {
 
 impl Leaf {
     pub(crate) fn new<T: 'static + Marshaler>(b: &TBranch) -> Self {
-        let ty = TypeId::of::<T>();
-        let mut tys = type_name::<T>();
+        let tys = type_name::<T>();
 
         trace!(";Leaf.new.typename:{:?}", tys);
 
@@ -194,7 +190,7 @@ impl Leaf {
                 todo!()
             }
             Leaf::Element(l) => l.write_to_buffer(w, value),
-            Leaf::I(l) => w.write_object(value),
+            Leaf::I(_) => w.write_object(value),
             Leaf::S(_) => w.write_object(value),
             Leaf::D(_) => w.write_object(value),
             Leaf::F(_) => w.write_object(value),
@@ -290,11 +286,6 @@ impl TLeaf {
         self
     }
 
-    pub(crate) fn with_shape(mut self, shape: Vec<i32>) -> Self {
-        self.shape = shape;
-        self
-    }
-
     pub(crate) fn with_len(mut self, len: i32) -> Self {
         self.len = len;
         self
@@ -302,16 +293,6 @@ impl TLeaf {
 
     pub(crate) fn with_etype(mut self, etype: i32) -> Self {
         self.etype = etype;
-        self
-    }
-
-    pub(crate) fn with_offset(mut self, offset: i32) -> Self {
-        self.offset = offset;
-        self
-    }
-
-    pub(crate) fn with_hasrange(mut self, hasrange: bool) -> Self {
-        self.hasrange = hasrange;
         self
     }
 
@@ -477,7 +458,7 @@ impl Unmarshaler for LeafC {
 
 impl Marshaler for LeafC {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        let len = w.len() - 1;
+        let _len = w.len() - 1;
         trace!(";T{}.marshal.buf.pos:{:?}", "LeafC", w.pos());
         trace!(";T{}.marshal.min:{:?}", "LeafC", self.min);
         trace!(";T{}.marshal.max:{:?}", "LeafC", self.max);
@@ -569,7 +550,7 @@ macro_rules! make_tleaf_variant {
 
         impl Marshaler for $struct_name {
             fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-                let len = w.len() - 1;
+                let _len = w.len() - 1;
                 trace!(";{}.marshal.buf.pos:{:?}", $root_name, w.pos());
                 trace!(";{}.marshal.min:{:?}", $root_name, self.min);
                 trace!(";{}.marshal.max:{:?}", $root_name, self.max);
@@ -619,7 +600,7 @@ impl LeafElement {
         w: &mut WBuffer,
         value: &impl Marshaler,
     ) -> crate::rbytes::Result<i64> {
-        let beg = w.pos();
+        let _beg = w.pos();
 
         let hdr = w.write_header(self.class(), rvers::STREAMER_INFO)?;
         // w.write_array_u8(&a)?;
@@ -654,7 +635,7 @@ impl Unmarshaler for LeafElement {
 
 impl Marshaler for LeafElement {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        let len = w.len() - 1;
+        let _len = w.len() - 1;
         trace!(";LeafElement.marshal.buf.pos:{:?}", w.pos());
         let hdr = w.write_header(self.class(), Self::rversion(self))?;
         w.write_object(&self.tleaf)?;

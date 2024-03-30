@@ -1,5 +1,5 @@
 use crate::rdict::StreamerInfo;
-use crate::{root, Object};
+use crate::root;
 pub use error::Error;
 pub use error::Result;
 use rbuffer::RBuffer;
@@ -7,7 +7,6 @@ use std::any::{type_name, TypeId};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::marker::PhantomData;
 
 pub mod consts;
 mod error;
@@ -58,12 +57,12 @@ pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
 }
 #[derive(Debug)]
-pub(crate) enum MarshallerKindStd {
+pub enum MarshallerKindStd {
     Vector { class_name: String },
 }
 
 #[derive(Debug)]
-pub(crate) enum MarshallerKind {
+pub enum MarshallerKind {
     Primitive,
     Array { shape: Vec<i32>, tys: String },
     Slice { std: MarshallerKindStd },

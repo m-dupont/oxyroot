@@ -1,4 +1,3 @@
-use crate::rbase::AttFill;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, RVersioner};
 use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
@@ -7,10 +6,8 @@ use crate::root::traits::Named;
 use crate::root::traits::Object;
 use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::branch::tbranch_props::TBranchProps;
-use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
-use crate::rtree::streamer_type;
 use crate::rtree::tree::TioFeatures;
 use crate::{factory_fn_register_impl, rbase, rvers, Branch, Marshaler, RBuffer, Unmarshaler};
 use itertools::izip;
@@ -19,7 +16,7 @@ use log::trace;
 use regex::Regex;
 
 pub(crate) const DEFAULT_BASKET_SIZE: i32 = 32 * 1024;
-pub(crate) const DEFAULT_SPLIT_LEVEL: i32 = 99;
+// pub(crate) const DEFAULT_SPLIT_LEVEL: i32 = 99;
 pub(crate) const DEFAULT_MAX_BASKETS: i32 = 10;
 
 #[derive(Default, Debug)]
@@ -713,7 +710,7 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
         trace!(";TBranch.marshal.buf.pos.before_branches:{:?}", w.pos());
         {
-            let mut branches = WriterObjArray::new();
+            let branches = WriterObjArray::new();
             for b in self.branches.iter() {
                 trace!(";TBranch.marshal.do_branch:{:?}", b);
                 panic!("TBranch.marshal.do_branch");
@@ -734,7 +731,7 @@ impl Marshaler for TBranch {
         }
         trace!(";TBranch.marshal.buf.pos.after_leaves:{:?}", w.pos());
         {
-            let mut baskets = WriterObjArray::new();
+            let baskets = WriterObjArray::new();
             for b in self.baskets.iter() {
                 panic!(";TBranch.marshal.do_basket:{:?}", b);
                 // baskets.objs.push(b);
@@ -755,7 +752,7 @@ impl Marshaler for TBranch {
             w.write_array_i32(sli)?;
             let n = b_max_baskets as usize - sli.len();
             if n > 0 {
-                let mut v = vec![0; n];
+                let v = vec![0; n];
                 w.write_array_i32(&v)?;
             }
         }
@@ -771,7 +768,7 @@ impl Marshaler for TBranch {
             w.write_array_i64(sli)?;
             let n = b_max_baskets as usize - sli.len();
             if n > 0 {
-                let mut v = vec![0; n];
+                let v = vec![0; n];
                 w.write_array_i64(&v)?;
             }
         }
@@ -788,7 +785,7 @@ impl Marshaler for TBranch {
             w.write_array_i64(sli)?;
             let n = b_max_baskets as usize - sli.len();
             if n > 0 {
-                let mut v = vec![0; n];
+                let v = vec![0; n];
                 w.write_array_i64(&v)?;
             }
         }

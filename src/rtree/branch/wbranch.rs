@@ -1,7 +1,6 @@
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, MarshallerKind, RVersioner};
 use crate::rdict::streamers::make_streamer_for_marshaler_type;
-use crate::riofs::Result;
 use crate::rtree::basket::Basket;
 use crate::rtree::branch::tbranch::{DEFAULT_BASKET_SIZE, DEFAULT_MAX_BASKETS};
 use crate::rtree::branch::{TBranch, TBranchElement};
@@ -10,9 +9,7 @@ use crate::rtree::tree::WriterTree;
 use crate::rtree::wbasket::{BasketBytesWritten, WBasket};
 use crate::{rvers, Branch, Named, Object, RootFile};
 use log::trace;
-use std::any;
-use std::fmt::{format, Debug};
-use std::marker::PhantomData;
+use std::fmt::Debug;
 
 pub struct WBranch<T>
 where
@@ -133,9 +130,9 @@ where
                 tbranch.entries += 1;
                 tbranch.entry_number += 1;
 
-                let szOld = basket.wbuf.len();
-                trace!(";WBranch.write.{ident}.szOld:{:?}", szOld);
-                basket.update(szOld as i64).unwrap();
+                let sz_old = basket.wbuf.len();
+                trace!(";WBranch.write.{ident}.sz_old:{:?}", sz_old);
+                basket.update(sz_old as i64).unwrap();
 
                 assert_eq!(tbranch.leaves.len(), 1);
 
@@ -144,14 +141,14 @@ where
                 }
 
                 // basket.wbuf.write_object(&item).unwrap();
-                let szNew = basket.wbuf.len();
-                trace!(";WBranch.write.{ident}.szNew:{:?}", szNew);
-                let n = (szNew - szOld) as i32;
+                let sz_new = basket.wbuf.len();
+                trace!(";WBranch.write.{ident}.sz_new:{:?}", sz_new);
+                let n = (sz_new - sz_old) as i32;
                 if n > basket.basket.nev_size {
                     basket.basket.nev_size = n;
                 }
 
-                if szNew + n as usize >= tbranch.basket_size as usize {
+                if sz_new + n as usize >= tbranch.basket_size as usize {
                     self.flush(file).unwrap();
                     self.basket = Some(self.create_new_basket(tree, file));
                 }
@@ -233,7 +230,7 @@ where
     T: Marshaler,
 {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        let len = w.len() - 1;
+        let _len = w.len() - 1;
         trace!(";WBranch.marshal.buf.pos:{:?}", w.pos());
         match &self.branch {
             Branch::Base(tb) => tb.marshal(w),

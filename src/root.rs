@@ -4,7 +4,7 @@ pub mod traits {
         fn class(&self) -> &'_ str;
     }
 
-    pub(crate) fn tstringSizeof(v: &str) -> i32 {
+    pub(crate) fn tstring_sizeof(v: &str) -> i32 {
         let n = v.len() as i32;
         if n > 254 {
             n + 1 + 4
@@ -13,7 +13,7 @@ pub mod traits {
         }
     }
 
-    pub(crate) fn datimeSizeof() -> i32 {
+    pub(crate) fn datime_sizeof() -> i32 {
         4
     }
 
@@ -26,7 +26,7 @@ pub mod traits {
         }
 
         fn size_of(&self) -> i32 {
-            tstringSizeof(self.name()) + tstringSizeof(self.title())
+            tstring_sizeof(self.name()) + tstring_sizeof(self.title())
         }
     }
 }

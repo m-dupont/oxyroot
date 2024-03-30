@@ -101,7 +101,7 @@ where
     T: UnmarshalerInto<Item = T>,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
-        for i in 0..self.n {
+        for _i in 0..self.n {
             self.inner.push(r.read_object_into::<T>().unwrap());
         }
 

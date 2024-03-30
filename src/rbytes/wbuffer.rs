@@ -1,11 +1,9 @@
 use crate::rbytes::consts::{kByteCountMask, kClassMask, kMapOffset, kNewClassTag};
 use crate::rbytes::{Header, Result};
 use crate::rtypes::factory::FactoryItemWrite;
-use crate::rtypes::FactoryItemRead;
 use crate::Marshaler;
 use log::trace;
 use std::collections::HashMap;
-use std::mem::size_of;
 
 #[derive(Default, Debug)]
 struct Wbuff {

@@ -129,7 +129,7 @@ pub const DIRECTORY: i16 = 5; // ROOT version for TDirectory
                               // DirectoryFile            = 5  // ROOT version for TDirectoryFile
                               // File                     = 8  // ROOT version for TFile
                               // ROOT version for TKey
-pub const Key: i16 = 4;
+pub const KEY: i16 = 4;
 // FeldmanCousins           = 1  // ROOT version for TFeldmanCousins
 // LorentzVector            = 4  // ROOT version for TLorentzVector
 // Vector2                  = 3  // ROOT version for TVector2

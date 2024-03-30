@@ -1,4 +1,3 @@
-use crate::rbase::{AttFill, Object};
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, RVersioner};
 use crate::rdict::Streamer;
@@ -16,7 +15,6 @@ use itertools::izip;
 use lazy_static::lazy_static;
 use log::trace;
 use regex::Regex;
-use std::cell::RefCell;
 use std::iter::once;
 
 #[derive(Default, Debug)]
@@ -88,7 +86,7 @@ impl TBranchElement {
         // self.props.set(props);
     }
 
-    pub fn streamer(&self) -> Option<&Streamer> {
+    pub(crate) fn streamer(&self) -> Option<&Streamer> {
         let streamer = self.branch.sinfos.as_ref().unwrap().get(self.class_name());
 
         let element = match streamer {
@@ -532,13 +530,12 @@ impl Marshaler for TBranchElement {
         w.write_i32(self.btype)?;
         w.write_i32(self.stype)?;
         w.write_i32(self.max)?;
-        let obj = Object::default();
         // w.write_object_any(&obj)?;
         // w.write_object_any(&obj)?;
         w.write_object_nil()?;
         w.write_object_nil()?;
         w.set_header(hdr)?;
-        Ok((w.pos() - beg))
+        Ok(w.pos() - beg)
     }
 }
 

@@ -1,4 +1,3 @@
-use crate::rbase::{AttFill, AttLine};
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{
@@ -6,7 +5,7 @@ use crate::rbytes::{
     Unmarshaler,
 };
 use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
-use crate::rdict::{Streamer, StreamerInfo};
+use crate::rdict::StreamerInfo;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
@@ -233,15 +232,15 @@ impl WriterTree {
         // let branch = WBranch::new(name, b);
         // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
-        let WBranchwb = WBranch::new::<T>(name.as_ref().to_string(), it, self);
-        self.branches.push(WBranchwb);
+        let wbranchwb = WBranch::new::<T>(name.as_ref().to_string(), it, self);
+        self.branches.push(wbranchwb);
     }
     pub fn write(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
-        let mut branchs_done = self.branches.iter().map(|b| false).collect::<Vec<_>>();
+        let mut branchs_done = self.branches.iter().map(|_b| false).collect::<Vec<_>>();
         let mut branches = std::mem::take(&mut self.branches);
         loop {
             let mut tot = 0;
-            let mut zip = 0;
+            let zip = 0;
             for (b, d) in branches.iter_mut().zip(branchs_done.iter_mut()) {
                 match b.write(self, file) {
                     None => *d = true,
@@ -497,12 +496,6 @@ impl Marshaler for WriterTree {
     }
 }
 
-impl Unmarshaler for WriterTree {
-    fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
-        todo!()
-    }
-}
-
 impl Unmarshaler for ReaderTree {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let _beg = r.pos();
@@ -681,12 +674,6 @@ impl Unmarshaler for ReaderTree {
 
         Ok(())
         // todo!()
-    }
-}
-
-impl Marshaler for ReaderTree {
-    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
     }
 }
 

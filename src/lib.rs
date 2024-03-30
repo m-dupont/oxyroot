@@ -153,6 +153,7 @@ oxyroot can iterate over  branch which contains :
 
  */
 
+#![allow(dead_code)]
 #![deny(unused_must_use)]
 // #![deny(unused_imports)]
 extern crate core;

@@ -4,7 +4,6 @@ use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{Marshaler, Unmarshaler};
 use crate::root::traits;
 use crate::rvers;
-use log::trace;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Object {

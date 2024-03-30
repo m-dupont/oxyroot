@@ -1,11 +1,9 @@
-use crate::rbase::AttFill;
+use crate::factory_all_for_register_impl;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
-use crate::{factory_all_for_register_impl, rcolors, Named};
 use crate::{rvers, Marshaler};
-use num_traits::ToPrimitive;
 
 use crate::rcolors::{Color, ColorNamed};
 

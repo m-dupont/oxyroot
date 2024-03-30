@@ -9,11 +9,9 @@ use crate::root::traits::Named;
 use crate::root::traits::Object;
 
 use crate::rbytes::wbuffer::WBuffer;
-use crate::riofs::blocks::FreeSegments;
 use crate::riofs::{utils, Error, Result};
 use crate::root::traits;
-use crate::rtypes::factory::FactoryItemWrite;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use log::trace;
 use uuid::Uuid;
 
@@ -153,21 +151,21 @@ impl TDirectoryFile {
         let mut dir = r.read_object_into::<TDirectoryFile>()?;
         // r.read_object(&mut file.dir);
 
-        let mut nk = 4; // Key::fNumberOfBytes
+        let mut nk = 4; // KEY::fNumberOfBytes
         let mut r = RBuffer::new(&data[nk..], 0);
         let key_version = r.read_i16()?;
 
         if key_version > 1000 {
             // large files
-            nk += 2; // Key::fVersion
-            nk += 2 * 4; // Key::fObjectSize, Date
-            nk += 2 * 2; // Key::fKeyLength, fCycle
-            nk += 2 * 8; // Key::fSeekKey, fSeekParentDirectory
+            nk += 2; // KEY::fVersion
+            nk += 2 * 4; // KEY::fObjectSize, Date
+            nk += 2 * 2; // KEY::fKeyLength, fCycle
+            nk += 2 * 8; // KEY::fSeekKey, fSeekParentDirectory
         } else {
-            nk += 2; // Key::fVersion
-            nk += 2 * 4; // Key::fObjectSize, Date
-            nk += 2 * 2; // Key::fKeyLength, fCycle
-            nk += 2 * 4; // Key::fSeekKey, fSeekParentDirectory
+            nk += 2; // KEY::fVersion
+            nk += 2 * 4; // KEY::fObjectSize, Date
+            nk += 2 * 2; // KEY::fKeyLength, fCycle
+            nk += 2 * 4; // KEY::fSeekKey, fSeekParentDirectory
         }
 
         let mut r = RBuffer::new(&data[nk..], 0);

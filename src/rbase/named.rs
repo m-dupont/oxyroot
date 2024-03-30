@@ -2,7 +2,6 @@ use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;
-use crate::rtree::tree::WriterTree;
 use crate::{rbase, Marshaler};
 use crate::{root, rvers};
 use log::trace;

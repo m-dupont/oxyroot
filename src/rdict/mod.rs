@@ -1,13 +1,10 @@
-use crate::rbase::AttFill;
-use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::{ensure_maximum_supported_version, RVersioner, Unmarshaler};
 /// Mod rdict contains the definition of ROOT streamers and facilities
 /// to generate new streamers meta data from user types.
-use crate::{factory_all_for_register_impl, factory_fn_register_impl, rbase, Marshaler};
-use downcast::Any;
+use crate::rbytes::rbuffer::RBuffer;
+use crate::rbytes::{RVersioner, Unmarshaler};
+
+use crate::{factory_fn_register_impl, rbase, Marshaler};
 use log::trace;
-use std::iter::{empty, once};
-use std::ptr::addr_of;
 
 use crate::rbytes;
 use crate::rbytes::wbuffer::WBuffer;
@@ -23,7 +20,7 @@ use crate::rtypes::factory::FactoryItemRead;
 use crate::rvers;
 
 #[derive(Debug, Clone)]
-pub enum Streamer {
+pub(crate) enum Streamer {
     String(StreamerString),
     STLstring(StreamerSTLstring),
     BasicType(StreamerBasicType),
@@ -247,7 +244,7 @@ impl Clone for StreamerInfo {
 }
 
 impl StreamerInfo {
-    pub fn get(&self, name: &str) -> Option<&Streamer> {
+    pub(crate) fn get(&self, name: &str) -> Option<&Streamer> {
         self.elems.get(name)
     }
     pub(crate) fn new(name: &str, chksum: u32, clsver: i32) -> Self {
@@ -260,7 +257,7 @@ impl StreamerInfo {
         s.clsver = clsver;
         s
     }
-    pub fn clsver(&self) -> i32 {
+    pub(crate) fn clsver(&self) -> i32 {
         self.clsver
     }
 
@@ -455,7 +452,7 @@ where
                     }
                 }
             }
-            Streamer::Base(se) => {
+            Streamer::Base(_se) => {
                 // visited.push(name.to_string());
                 let si = streamer_info(&name, -1)?;
                 self.run(depth + 1, &si)?;
@@ -709,10 +706,7 @@ pub mod streamers;
 
 mod error;
 
-use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
-use crate::rdict::streamers::db::streamer_info_from;
 use crate::rdict::streamers::db::{streamer_info, ID};
-use crate::rtree::leaf::Leaf;
 pub use error::Error;
 use streamers::streamer_types;
 use streamers::streamer_types::{

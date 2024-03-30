@@ -3,7 +3,6 @@ use crate::rdict::streamers::streamers_db_gen::populate_db;
 use crate::rdict::StreamerInfo;
 use crate::riofs::dir::TDirectoryFile;
 use crate::rtypes::factory::FactoryItemWrite;
-use crate::rtypes::FactoryItemRead;
 use lazy_static::lazy_static;
 use log::trace;
 use std::collections::HashMap;
@@ -61,13 +60,13 @@ lazy_static! {
     pub static ref ID: AtomicUsize = AtomicUsize::new(0);
 }
 
-pub(crate) fn streamer_info_from<T>(obj: &T, dir: &mut TDirectoryFile) -> Result<StreamerInfo>
+pub(crate) fn streamer_info_from<T>(obj: &T, _dir: &mut TDirectoryFile) -> Result<StreamerInfo>
 where
     T: FactoryItemWrite,
 {
     let typename = obj.class();
-    let cxxtype = obj.class();
-    let vers = -1;
+    let _cxxtype = obj.class();
+    let _vers = -1;
 
     let vers = T::rversion(obj);
 

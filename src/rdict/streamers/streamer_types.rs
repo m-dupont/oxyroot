@@ -1,5 +1,5 @@
 use crate::rbytes::Error::Misc;
-use crate::rbytes::{ensure_maximum_supported_version, Error, RVersioner, WBuffer};
+use crate::rbytes::{ensure_maximum_supported_version, RVersioner, WBuffer};
 use crate::rdict::StreamerElement;
 use crate::rmeta::{ESTLType, Enum, EnumNamed};
 use crate::{
@@ -113,7 +113,7 @@ impl Marshaler for StreamerBase {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct StreamerString {
+pub(crate) struct StreamerString {
     pub(crate) element: StreamerElement,
 }
 
@@ -564,7 +564,7 @@ pub struct StreamerSTLstring {
 }
 
 impl Marshaler for StreamerSTLstring {
-    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+    fn marshal(&self, _w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         todo!()
     }
 }

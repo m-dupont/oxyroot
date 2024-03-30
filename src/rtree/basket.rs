@@ -1,13 +1,10 @@
-use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
-use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{ensure_maximum_supported_version, Error, Unmarshaler};
 use crate::riofs::file::RootFileReader;
 use crate::root::traits::Named;
-use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::tree::{TioFeatures, WriterTree};
 use crate::rtypes::FactoryItemRead;
-use crate::{factory_fn_register_impl, rbytes, rvers, Branch, Marshaler, Object, RootFile};
+use crate::{factory_fn_register_impl, rvers, Branch, Object, RootFile};
 use log::trace;
 
 #[derive(Debug)]
@@ -18,7 +15,6 @@ pub struct Basket {
     pub(crate) nev_size: i32,
     pub(crate) buf_size: i32,
     pub(crate) offsets: Vec<i32>,
-    header: bool,
     pub(crate) rvers: i16,
     pub(crate) iobits: TioFeatures,
 }
@@ -32,7 +28,6 @@ impl Default for Basket {
             nev_size: 0,
             buf_size: 0,
             offsets: Vec::new(),
-            header: false,
             rvers: rvers::BASKET,
             iobits: TioFeatures::default(),
         }
@@ -82,7 +77,6 @@ impl Basket {
             last: 0,
             nev_size: offset_len,
             buf_size,
-            header: true,
             offsets: Vec::with_capacity(1000),
             ..Default::default()
         };
@@ -296,9 +290,4 @@ impl Unmarshaler for Basket {
     }
 }
 
-impl Marshaler for Basket {
-    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
-    }
-}
 factory_fn_register_impl!(Basket, "TBasket");

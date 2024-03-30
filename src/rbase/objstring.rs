@@ -1,4 +1,3 @@
-use crate::rbase::AttFill;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
@@ -13,7 +12,7 @@ pub(crate) struct ObjString {
 }
 
 impl Marshaler for ObjString {
-    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
+    fn marshal(&self, _w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         todo!()
     }
 }

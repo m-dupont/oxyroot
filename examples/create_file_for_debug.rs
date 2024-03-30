@@ -1,5 +1,5 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{Marshaler, ReaderTree, RootFile, Slice, WriterTree};
+use oxyroot::{RootFile, WriterTree};
 use std::io::Write;
 
 fn main() {
@@ -18,7 +18,7 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let N = 10;
+    let n = 10;
     fn make_string(n: i32) -> Vec<i32> {
         (0..n).map(|x| x).collect()
     }
@@ -38,7 +38,7 @@ fn main() {
         let file = "/tmp/g.root";
         let mut f = RootFile::create(file).unwrap();
         let mut tree = WriterTree::new("tree");
-        let it = (0..N).map(|x| make_string(x));
+        let it = (0..n).map(|x| make_string(x));
         //
         tree.new_branch("vector_int32", it);
 
@@ -57,7 +57,7 @@ fn main() {
     //     (0..n).map(|x| x).collect()
     // }
     //
-    // let it = (0..N).map(make_string2);
+    // let it = (0..n).map(make_string2);
     //
     // for (i, (r, w)) in b.zip(it).enumerate() {
     //     assert_eq!(r, w);

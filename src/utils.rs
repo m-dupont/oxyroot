@@ -1,11 +1,3 @@
-use crate::rtypes::factory::FactoryItemWrite;
-
-pub(crate) fn get_ptr(obj: &dyn FactoryItemWrite) -> usize {
-    //let addr = std::ptr::addr_of!(obj);
-    let addr: *const &dyn FactoryItemWrite = &obj;
-    addr as usize
-}
-
 const CORE_TYPES: [&str; 8] = [
     "TObject",
     "TFile",
@@ -21,7 +13,7 @@ pub(crate) fn is_core_type(name: &str) -> bool {
     CORE_TYPES.contains(&name)
 }
 
-const CxxBuiltins: [&str; 53] = [
+const CXX_BUILTINS: [&str; 53] = [
     "bool",
     "int8_t",
     "uint8_t",
@@ -81,5 +73,5 @@ const CxxBuiltins: [&str; 53] = [
 ];
 
 pub(crate) fn is_cxx_builtin(name: &str) -> bool {
-    CxxBuiltins.contains(&name)
+    CXX_BUILTINS.contains(&name)
 }

@@ -1,4 +1,3 @@
-use crate::rbase::AttLine;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
 use crate::root::traits::Object;

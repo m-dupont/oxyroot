@@ -1,8 +1,7 @@
 use crate::rdict::streamers::db::streamer_info;
 use crate::riofs::consts;
-use crate::rtree::tree::{ReaderTree, WriterTree};
+use crate::rtree::tree::ReaderTree;
 use crate::utils::is_cxx_builtin;
-use itertools::cons_tuples;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
@@ -23,11 +22,10 @@ use crate::riofs::key::Key;
 use crate::riofs::{Error, Result};
 use crate::rmeta::ESTLType;
 use crate::root::traits::Named;
-use crate::rtree::tree::Tree;
 use crate::rtypes::factory::FactoryItemWrite;
 use crate::rtypes::FactoryItemRead;
 use crate::utils::is_core_type;
-use crate::{rcont, rvers, Object};
+use crate::{rvers, Object};
 use log::{debug, trace};
 use regex::Regex;
 use uuid::Uuid;
@@ -271,7 +269,7 @@ impl RootFile {
 
         f.dir().marshal(&mut buf)?;
 
-        let mut buf = buf.buffer();
+        let buf = buf.buffer();
         trace!(";RootFile.create.buf_for_key.len:{:?}", buf.len());
 
         key.set_buffer(buf, false);
@@ -324,7 +322,7 @@ impl RootFile {
         );
 
         if !is_core_type(typename) {
-            let cxx = typename;
+            let _cxx = typename;
             let streamer = streamer_info_from(obj, &mut self.dir)?;
             self.add_streamer_info(streamer);
         }
@@ -383,7 +381,7 @@ impl RootFile {
     }
 
     pub(crate) fn write_at(&mut self, buf: &[u8], start: u64) -> Result<()> {
-        let mut writer = self.writer()?;
+        let writer = self.writer()?;
         writer.write_at(buf, start)
     }
 
@@ -647,7 +645,7 @@ impl RootFile {
             sinfos.class()
         );
 
-        let mut key = Key::new(
+        let key = Key::new(
             "StreamerInfo".to_string(),
             sinfos.title().to_string(),
             sinfos.class().to_string(),
@@ -759,7 +757,7 @@ impl RootFile {
                 si.name()
             );
 
-            let mut visitor = Visitor::new(|depth, se| {
+            let mut visitor = Visitor::new(|_depth, se| {
                 trace!(";Rootfile.find_deep_streamer.fnmut.se.name:{}", se.name());
                 let name = se.name().to_string();
                 match se {

@@ -106,12 +106,6 @@ impl Unmarshaler for ReaderList {
     }
 }
 
-impl Marshaler for ReaderList {
-    fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
-        todo!()
-    }
-}
-
 impl traits::Named for ReaderList {
     fn name(&self) -> &'_ str {
         match &self.name {

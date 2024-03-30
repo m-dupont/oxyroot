@@ -80,7 +80,7 @@ pub enum EnumNamed {
     /// Fixed size array
     OffsetP = 40,
     // OffsetP_3 = 43,
-    OffsetP_16 = 56,
+    OffsetP16 = 56,
     /// Pointer to object
     Object = 61,
     // Class  derived from TObject, or for TStreamerSTL::fCtype non-pointer elements
@@ -151,7 +151,6 @@ impl EnumNamed {
             "int16_t" => Ok(EnumNamed::Short),
             "unsigned short" => Ok(EnumNamed::UShort),
             "UShort_t" => Ok(EnumNamed::UShort),
-            "unsigned short" => Ok(EnumNamed::UShort),
             "uint16_t" => Ok(EnumNamed::UShort),
             "int64_t" => Ok(EnumNamed::Long64),
             "uint64_t" => Ok(EnumNamed::ULong64),
