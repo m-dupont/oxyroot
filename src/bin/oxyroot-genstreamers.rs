@@ -1,7 +1,6 @@
 use anyhow::Result;
 use env_logger::{Builder, Target, WriteStyle};
 use log::trace;
-use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -58,10 +57,10 @@ auto name = "{CLASS}";
     Ok(String::from_utf8(out.stdout)?)
 }
 
-fn gen_cat_streamers_with_root(classes: &Vec<&str>) -> Result<String> {
+fn gen_cat_streamers_with_root(classes: &[&str]) -> Result<String> {
     let mut out_path: PathBuf = OUT_DIR.into();
 
-    out_path.push(format!("gen_all.txt").to_string());
+    out_path.push("gen_all.txt");
     if out_path.exists() {
         let content = fs::read(out_path)?;
         let s = String::from_utf8(content)?;
@@ -69,16 +68,14 @@ fn gen_cat_streamers_with_root(classes: &Vec<&str>) -> Result<String> {
     }
     let s = classes
         .iter()
-        .map(|class| gen_one_cat_streamers_with_root(class))
-        .filter(|x| x.is_ok())
-        .map(|x| x.unwrap())
+        .flat_map(|class| gen_one_cat_streamers_with_root(class))
         .collect();
     fs::write(out_path, &s)?;
     Ok(s)
 }
 
 fn main() -> Result<()> {
-    let _stylish_logger = Builder::new()
+    Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
         .write_style(WriteStyle::Always)
@@ -227,7 +224,7 @@ fn main() -> Result<()> {
         "TPad",
     ];
 
-    let dump = gen_cat_streamers_with_root(&classes)?;
+    let _dump = gen_cat_streamers_with_root(&classes)?;
 
     // let classes = generate_class(&dump)?;
     // println!("classes = {:?}", classes);

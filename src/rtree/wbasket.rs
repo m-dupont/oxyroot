@@ -1,5 +1,4 @@
 use crate::rbytes::wbuffer::WBuffer;
-use crate::riofs::consts::kGenerateOffsetMap;
 use crate::riofs::Key;
 use crate::rtree::basket::Basket;
 use crate::{riofs, Marshaler, Named, Object, RootFile};
@@ -32,7 +31,7 @@ impl WBasket {
         let offset = offset + self.basket.key().key_len() as i64;
         trace!(";WBranch.write.wbasket.update.{beg}.offset:{:?}", offset);
         let b = &mut self.basket;
-        if b.offsets().len() > 0 {
+        if !b.offsets().is_empty() {
             if b.nev_buf + 1 >= b.nev_size {
                 let mut nev_size = 10;
                 if nev_size < 2 * b.nev_size {
@@ -72,7 +71,7 @@ impl WBasket {
             file.is_big_file()
         );
 
-        let adjust = !(self.basket.key().rvers() > 1000) && file.is_big_file();
+        let adjust = self.basket.key().rvers() <= 1000 && file.is_big_file();
         trace!(";WBasket.write_to_file.adjust:{:?}", adjust);
         trace!(
             ";WBasket.write_to_file.key.rvers:{:?}",
@@ -89,13 +88,13 @@ impl WBasket {
         self.basket.last = self.basket.key().key_len() + self.wbuf.len() as i32;
         trace!(";WBasket.write_to_file.b.last:{:?}", self.basket.last);
 
-        if self.basket.offsets.len() > 0 {
+        if !self.basket.offsets.is_empty() {
             if adjust {
                 for v in self.basket.offsets.iter_mut() {
                     *v += 8;
                 }
             }
-            self.wbuf.write_i32(self.basket.nev_buf as i32 + 1)?;
+            self.wbuf.write_i32(self.basket.nev_buf + 1)?;
             self.wbuf
                 .write_array_i32(&self.basket.offsets[0..self.basket.nev_buf as usize])?;
             self.wbuf.write_i32(0)?;
@@ -162,7 +161,7 @@ impl Marshaler for WBasket {
         w.write_object(self.basket.key())?;
 
         w.write_i16(self.basket.rvers)?;
-        w.write_i32(self.basket.buf_size as i32)?;
+        w.write_i32(self.basket.buf_size)?;
 
         if self.basket.iobits.0 != 0 {
             unimplemented!("WBasket.marshal.iobits");
@@ -175,10 +174,12 @@ impl Marshaler for WBasket {
 
         trace!(";WBasket.marshal.buf.value:{:?}", w.p());
 
-        let must_gen_offset = self.basket.offsets().len() > 0
-            && self.basket.nev_buf() > 0
-            && (self.basket.iobits.0 & kGenerateOffsetMap) != 0
-            && true;
+        // let must_gen_offset = self.basket.offsets().len() > 0
+        //     && self.basket.nev_buf() > 0
+        //     && (self.basket.iobits.0 & kGenerateOffsetMap) != 0
+        //     && true;
+
+        let must_gen_offset = false;
 
         trace!(";WBasket.marshal.must_gen_offset:{:?}", must_gen_offset);
         let mut flag = 0;

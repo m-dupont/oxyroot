@@ -2,7 +2,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    TryFromSliceError,
+    TryFromSlice,
     Io(std::io::Error),
     FileHasAnIncorrectHeaderLength,
     CantReadDirectoryInfo {
@@ -84,6 +84,6 @@ impl From<crate::rdict::Error> for Error {
 
 impl From<std::array::TryFromSliceError> for Error {
     fn from(_: std::array::TryFromSliceError) -> Self {
-        Error::TryFromSliceError
+        Error::TryFromSlice
     }
 }

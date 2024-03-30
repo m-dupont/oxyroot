@@ -3,7 +3,7 @@ use log::trace;
 use std::io::Write;
 
 fn main() {
-    let _stylish_logger = Builder::new()
+    Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
         .write_style(WriteStyle::Always)

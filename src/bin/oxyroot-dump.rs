@@ -6,7 +6,6 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::path::PathBuf;
 
-use env_logger;
 use env_logger::{Builder, Target, WriteStyle};
 use regex::Regex;
 
@@ -1547,7 +1546,7 @@ impl<'a> ZipperDumperItem<'a> {
             }
         };
         Some(ZipperDumperItem {
-            branch: branch,
+            branch,
             iterator: it,
         })
     }
@@ -1563,14 +1562,10 @@ impl<'a> ZiperDumperBranch<'a> {
         let iterators = tree
             .branches_r()
             .iter()
-            .map(|b| ZipperDumperItem::new(b))
-            .filter_map(|x| x)
+            .filter_map(|b| ZipperDumperItem::new(b))
             .collect::<Vec<_>>();
 
-        ZiperDumperBranch {
-            tree: tree,
-            iterators: iterators,
-        }
+        ZiperDumperBranch { tree, iterators }
     }
 
     pub fn dump(&mut self) {
@@ -1586,7 +1581,7 @@ impl<'a> ZiperDumperBranch<'a> {
 }
 
 fn main() {
-    let _stylish_logger = Builder::new()
+    Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
         .write_style(WriteStyle::Always)

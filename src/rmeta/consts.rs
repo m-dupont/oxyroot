@@ -4,14 +4,14 @@ use num_derive::ToPrimitive;
 use std::cmp::Ordering;
 
 #[derive(Debug)]
-pub enum Error {
-    CantMakeEnumNamedFromInteger(i32),
-    CantMakeIntegerFromEnumNamed(EnumNamed),
-    CantMakeESTLTypeFromInteger(i32),
-    CantMakeEReadWriteFromInteger(i32),
+pub enum CantMakeError {
+    EnumNamedFromInteger(i32),
+    IntegerFromEnumNamed(EnumNamed),
+    ESTLTypeFromInteger(i32),
+    EReadWriteFromInteger(i32),
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, CantMakeError>;
 
 #[derive(Debug, Clone)]
 pub enum Enum {
@@ -129,11 +129,11 @@ pub enum EnumNamed {
 
 impl EnumNamed {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeEnumNamedFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(CantMakeError::EnumNamedFromInteger(i))
     }
 
     pub fn to_i32(self) -> Result<i32> {
-        num::ToPrimitive::to_i32(&self).ok_or(Error::CantMakeIntegerFromEnumNamed(self))
+        num::ToPrimitive::to_i32(&self).ok_or(CantMakeError::IntegerFromEnumNamed(self))
     }
 
     pub fn from_string(s: &str) -> Result<Self> {
@@ -190,7 +190,7 @@ pub enum ESTLType {
 
 impl ESTLType {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeESTLTypeFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(CantMakeError::ESTLTypeFromInteger(i))
     }
 
     // pub fn to_i32(&self) -> Result<i32> {
@@ -239,7 +239,7 @@ pub enum EReadWrite {
     Conv = 200,
     ConvL = 220,
     ConvP = 240,
-    STL = 300,
+    Stl = 300,
     //ROOT::kSTLany /* 300 */,
     STLstring = 365,
     //ROOT::kSTLstring /* 365 */,
@@ -256,7 +256,7 @@ pub enum EReadWrite {
 
 impl EReadWrite {
     pub fn from_i32(i: i32) -> Result<Self> {
-        num::FromPrimitive::from_i32(i).ok_or(Error::CantMakeEReadWriteFromInteger(i))
+        num::FromPrimitive::from_i32(i).ok_or(CantMakeError::EReadWriteFromInteger(i))
     }
 
     pub fn to_i32(&self) -> i32 {

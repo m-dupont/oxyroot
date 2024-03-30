@@ -34,10 +34,7 @@ where
     T: Marshaler,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let b = match &self.basket {
-            None => None,
-            Some(b) => Some(&b.basket),
-        };
+        let b = self.basket.as_ref().map(|b| &b.basket);
         f.debug_struct("WBranch")
             .field("branch", &self.branch)
             .field("wbasket", &b)
@@ -101,7 +98,7 @@ where
         trace!(";WBranch.new.rust_type_to_kind:{:?}", U::kind());
 
         let mut branch = Self {
-            branch: branch,
+            branch,
             iterator: Box::new(it),
             basket: None,
         };

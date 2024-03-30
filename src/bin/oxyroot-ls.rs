@@ -4,7 +4,6 @@ use oxyroot::Object;
 use std::io::Write;
 use std::path::PathBuf;
 
-use env_logger;
 use env_logger::{Builder, Target, WriteStyle};
 
 #[derive(Parser)]
@@ -16,7 +15,7 @@ struct Cli {
 }
 
 fn main() {
-    let _stylish_logger = Builder::new()
+    Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
         .write_style(WriteStyle::Always)

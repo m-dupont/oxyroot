@@ -50,7 +50,7 @@ impl Marshaler for FreeSegments {
     fn marshal(&self, w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         let beg = w.pos();
         trace!(";FreeSegments.marshal.beg:{:?}", beg);
-        let mut vers = 1 as i16;
+        let mut vers = 1_i16;
         if self.last > kStartBigFile {
             vers += 1000;
         }
@@ -66,7 +66,7 @@ impl Marshaler for FreeSegments {
         let end = w.pos();
 
         trace!(";FreeSegments.marshal.buf.end:{:?}", w.p());
-        Ok((end - beg) as i64)
+        Ok(end - beg)
     }
 }
 

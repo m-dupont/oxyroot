@@ -222,7 +222,7 @@ impl TDirectoryFile {
                 ";TDirectoryFile.save_keys.for_loop.0.{i}.key_len:{:?}",
                 key.key_len()
             );
-            n_bytes += key.key_len() as i32;
+            n_bytes += key.key_len();
         }
 
         let mut hdr = Key::new(

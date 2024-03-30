@@ -129,7 +129,7 @@ pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: 
         }
     } else if ty == EReadWrite::TString {
         return 0;
-    } else if ty == EReadWrite::STL {
+    } else if ty == EReadWrite::Stl {
         return 6;
     }
 

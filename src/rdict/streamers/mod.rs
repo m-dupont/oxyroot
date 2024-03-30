@@ -40,7 +40,7 @@ pub(crate) fn make_streamer_for_marshaler_type<T: Marshaler>() -> StreamerInfo {
                     vtype: ESTLType::STLvector,
                     ctype: etype.into(),
                 };
-                Streamer::from(Streamer::Stl(si))
+                Streamer::Stl(si)
             }
         },
         MarshallerKind::String => {

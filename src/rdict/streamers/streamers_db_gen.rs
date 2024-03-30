@@ -79,7 +79,7 @@ impl ClassStrings {
 fn generate_class_strings(elements_lines: Vec<&str>) -> ClassStrings {
     let mut element = ClassStrings::default();
     let header = elements_lines[0];
-    println!("header = {:?}", header);
+    // println!("header = {:?}", header);
 
     let r = RE.captures(header).unwrap();
     assert_eq!(r.len(), 3);
@@ -129,7 +129,7 @@ fn generate_class(dump: &str) -> Result<Vec<ClassStreamerStrings>> {
     let mut current_class = CurrentClass::default();
     let mut current_class_name_point_virgule = "";
 
-    for line in dump.split("\n") {
+    for line in dump.split('\n') {
         if line.is_empty() {
             continue;
         }
@@ -182,8 +182,8 @@ fn generate_class(dump: &str) -> Result<Vec<ClassStreamerStrings>> {
                 current_class.get_streamer_info.push(line);
             }
             WhatIAmReading::Elements => {
-                if line.starts_with("==>") {
-                    if !element.is_empty() {
+                if line.starts_with("==>") && !element.is_empty() {
+                    {
                         current_class.get_elements.push(element);
                         element = Vec::new();
                     }
@@ -205,9 +205,10 @@ fn generate_class(dump: &str) -> Result<Vec<ClassStreamerStrings>> {
             ";generate_class.current_class.name:{:?}",
             current_class.get_streamer_info.first()
         );
-        let mut c = ClassStreamerStrings::default();
-
-        c.class = generate_class_strings(current_class.get_streamer_info);
+        let c = ClassStreamerStrings {
+            class: generate_class_strings(current_class.get_streamer_info),
+            elements: generate_elements_strings(current_class.get_elements),
+        };
         trace!(";generate_class.c.class.name:{:?}", c.class.f_name);
 
         // assert_eq!(
@@ -215,7 +216,6 @@ fn generate_class(dump: &str) -> Result<Vec<ClassStreamerStrings>> {
         //     current_class.current_class_name_point_virgule
         // );
 
-        c.elements = generate_elements_strings(current_class.get_elements);
         ret.push(c);
     }
 
@@ -301,7 +301,7 @@ pub fn populate_db(db: &mut DbStreamer, dump: &'static str) -> Result<()> {
                             .unwrap();
                         let base = StreamerBase {
                             element: streamer_element,
-                            vbase: vbase,
+                            vbase,
                         };
                         streamer_info.elems.push(Streamer::Base(base));
                     }

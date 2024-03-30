@@ -250,51 +250,49 @@ impl WBuffer {
             self.write_u32(*ref64 as u32)?;
             let bcnt = self.pos() - start;
             trace!(";WBuffer.write_class.a{beg}.bcnt:{:?}", bcnt);
-            return Ok(bcnt | kByteCountMask);
+            Ok(bcnt | kByteCountMask)
+        } else if let Some(ref64) = self.refs_s.get(class) {
+            trace!(";WBuffer.write_class.a{beg}.ref64_by_class:{:?}", true);
+            self.write_u32(*ref64 as u32 | kClassMask as u32)?;
+            trace!(
+                ";WBuffer.write_class.a{beg}.pos.before_marshall:{:?}",
+                self.pos()
+            );
+            obj.marshal(self)?;
+            trace!(
+                ";WBuffer.write_class.a{beg}.pos.after_marshall:{:?}",
+                self.pos()
+            );
+            self.refs_p.insert(addr, beg + kMapOffset);
+            let bcnt = self.pos() - start;
+            let bcnt = bcnt | kByteCountMask;
+            trace!(";WBuffer.write_class.a{beg}.bcnt:{:?}", bcnt);
+            Ok(bcnt)
         } else {
-            if let Some(ref64) = self.refs_s.get(class) {
-                trace!(";WBuffer.write_class.a{beg}.ref64_by_class:{:?}", true);
-                self.write_u32(*ref64 as u32 | kClassMask as u32)?;
-                trace!(
-                    ";WBuffer.write_class.a{beg}.pos.before_marshall:{:?}",
-                    self.pos()
-                );
-                obj.marshal(self)?;
-                trace!(
-                    ";WBuffer.write_class.a{beg}.pos.after_marshall:{:?}",
-                    self.pos()
-                );
-                self.refs_p.insert(addr, beg + kMapOffset);
-                let bcnt = self.pos() - start;
-                let bcnt = bcnt | kByteCountMask;
-                trace!(";WBuffer.write_class.a{beg}.bcnt:{:?}", bcnt);
-                return Ok(bcnt);
-            } else {
-                self.write_u32(kNewClassTag.try_into()?)?;
-                trace!(
-                    ";WBuffer.write_class.a{beg}.buf.value:{:?}",
-                    &self.p()[len..]
-                );
-                self.write_cstring(class)?;
-                trace!(
-                    ";WBuffer.write_class.a{beg}.buf.value:{:?}",
-                    &self.p()[len..]
-                );
-                let val = (start + kMapOffset) | kClassMask;
-                trace!(";WBuffer.write_class.a{beg}.class_value:{:?}", val);
+            self.write_u32(kNewClassTag.try_into()?)?;
+            trace!(
+                ";WBuffer.write_class.a{beg}.buf.value:{:?}",
+                &self.p()[len..]
+            );
+            self.write_cstring(class)?;
+            trace!(
+                ";WBuffer.write_class.a{beg}.buf.value:{:?}",
+                &self.p()[len..]
+            );
+            let val = (start + kMapOffset) | kClassMask;
+            trace!(";WBuffer.write_class.a{beg}.class_value:{:?}", val);
 
-                self.refs_s.insert(class.to_string(), val);
-                trace!(
-                    ";WBuffer.write_class.a{beg}.obj_value:{:?}",
-                    beg + kMapOffset
-                );
-                self.refs_p.insert(addr, beg + kMapOffset);
-                obj.marshal(self)?;
-                let bcnt = self.pos() - start;
-                let bcnt = bcnt | kByteCountMask;
-                trace!(";WBuffer.write_class.a{beg}.bcnt:{:?}", bcnt);
-                return Ok(bcnt);
-            }
+            self.refs_s.insert(class.to_string(), val);
+            trace!(
+                ";WBuffer.write_class.a{beg}.obj_value:{:?}",
+                beg + kMapOffset
+            );
+            self.refs_p.insert(addr, beg + kMapOffset);
+            obj.marshal(self)?;
+            let bcnt = self.pos() - start;
+            let bcnt = bcnt | kByteCountMask;
+            trace!(";WBuffer.write_class.a{beg}.bcnt:{:?}", bcnt);
+            Ok(bcnt)
         }
     }
 
@@ -312,7 +310,7 @@ impl WBuffer {
         );
         obj.marshal(self)
     }
-    pub(crate) fn write_object_box(&mut self, obj: Box<impl Marshaler>) -> Result<i64> {
+    pub(crate) fn write_object_box(&mut self, obj: impl Marshaler) -> Result<i64> {
         obj.marshal(self)
     }
 

@@ -2,6 +2,7 @@
 /// to generate new streamers meta data from user types.
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::{RVersioner, Unmarshaler};
+use std::cmp::Ordering;
 
 use crate::{factory_fn_register_impl, rbase, Marshaler};
 use log::trace;
@@ -233,13 +234,13 @@ pub struct StreamerInfo {
 
 impl Clone for StreamerInfo {
     fn clone(&self) -> Self {
-        let mut s = StreamerInfo::default();
-        s.named = self.named.clone();
-        s.chksum = self.chksum;
-        s.clsver = self.clsver;
-        s.elems = self.elems.clone();
-        s.id = ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        s
+        StreamerInfo {
+            named: self.named.clone(),
+            chksum: self.chksum,
+            clsver: self.clsver,
+            elems: self.elems.clone(),
+            id: ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
+        }
     }
 }
 
@@ -374,7 +375,7 @@ where
     pub(crate) fn new(f: F) -> Self {
         Visitor {
             visited: Vec::new(),
-            f: f,
+            f,
         }
     }
 
@@ -417,7 +418,7 @@ where
 
         self.visited.push(se.element().id);
 
-        (self.f)(depth, &se);
+        (self.f)(depth, se);
 
         let name = se.name().to_string();
         let tname = se.element().ename.clone();
@@ -507,19 +508,20 @@ pub(crate) struct StreamerElement {
 
 impl Clone for StreamerElement {
     fn clone(&self) -> Self {
-        let mut s = StreamerElement::default();
-        s.named = self.named.clone();
-        s.etype = self.etype.clone();
-        s.esize = self.esize;
-        s.arr_len = self.arr_len;
-        s.arr_dim = self.arr_dim;
-        s.max_idx = self.max_idx;
-        s.ename = self.ename.clone();
-        s.xmin = self.xmin;
-        s.xmax = self.xmax;
-        s.factor = self.factor;
-        s.id = ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        s
+        StreamerElement {
+            named: self.named.clone(),
+            etype: self.etype.clone(),
+            esize: self.esize,
+            arr_len: self.arr_len,
+            arr_dim: self.arr_dim,
+            max_idx: self.max_idx,
+            ename: self.ename.clone(),
+            xmin: self.xmin,
+            xmax: self.xmax,
+            factor: self.factor,
+            id: ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
+            ..Default::default()
+        }
     }
 }
 
@@ -592,15 +594,19 @@ impl Unmarshaler for StreamerElement {
             }
         }
 
-        if hdr.vers == 3 {
-            self.xmin = r.read_f64()?;
-            todo!()
-        } else if hdr.vers > 3 {
-            (self.xmin, self.xmax, self.factor) = streamer_types::get_range(self.title());
-        } else {
-            self.xmin = 0.;
-            self.xmax = 0.;
-            self.factor = 0.;
+        match hdr.vers.cmp(&3) {
+            Ordering::Less => {
+                self.xmin = 0.;
+                self.xmax = 0.;
+                self.factor = 0.;
+            }
+            Ordering::Equal => {
+                self.xmin = r.read_f64()?;
+                todo!()
+            }
+            Ordering::Greater => {
+                (self.xmin, self.xmax, self.factor) = streamer_types::get_range(self.title());
+            }
         }
 
         r.check_header(&hdr)?;
@@ -681,11 +687,15 @@ impl Marshaler for StreamerElement {
             &w.p()[len..]
         );
         w.write_string(&self.ename)?;
-        if self.rversion() == 3 {
-            w.write_f64(self.xmin)?;
-            w.write_f64(self.xmax)?;
-            w.write_f64(self.factor)?;
-        } else if self.rversion() > 3 {
+
+        match self.rversion().cmp(&3) {
+            Ordering::Less => {}
+            Ordering::Equal => {
+                w.write_f64(self.xmin)?;
+                w.write_f64(self.xmax)?;
+                w.write_f64(self.factor)?;
+            }
+            Ordering::Greater => {}
         }
 
         trace!(

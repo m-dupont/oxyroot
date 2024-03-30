@@ -176,7 +176,7 @@ impl TBranchElement {
                             return "TString".to_string();
                         }
 
-                        if self.streamer_type() == EReadWrite::STL || self.streamer_type() == -1 {
+                        if self.streamer_type() == EReadWrite::Stl || self.streamer_type() == -1 {
                             match self.streamer() {
                                 None => {
                                     return clean_type_name(self.class_name());

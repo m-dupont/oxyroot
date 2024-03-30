@@ -337,7 +337,7 @@ impl Key {
         trace!(";KEY.new_from_object.title:{:?}", title);
         trace!(";KEY.new_from_object.class:{:?}", class);
 
-        let key_len = key_len_for(&name, &title, &class, f);
+        let key_len = key_len_for(name, title, class, f);
         trace!(";KEY.new_from_object.key_len:{:?}", key_len);
 
         let mut buf = WBuffer::new(key_len as u32);

@@ -22,17 +22,15 @@ pub(crate) fn now() -> DateTime<Utc> {
 
 pub(crate) fn datetime_to_u32(datetime: DateTime<Utc>) -> u32 {
     let year = datetime.year() as u32;
-    let month = datetime.month() as u32;
-    let day = datetime.day() as u32;
-    let hour = datetime.hour() as u32;
-    let minute = datetime.minute() as u32;
-    let second = datetime.second() as u32;
+    let month = datetime.month();
+    let day = datetime.day();
+    let hour = datetime.hour();
+    let minute = datetime.minute();
+    let second = datetime.second();
 
     if year < 1995 {
         panic!("year {} is less than 1995", year);
     }
 
-    let ret =
-        ((year - 1995) << 26) | (month << 22) | (day << 17) | (hour << 12) | (minute << 6) | second;
-    ret
+    ((year - 1995) << 26) | (month << 22) | (day << 17) | (hour << 12) | (minute << 6) | second
 }

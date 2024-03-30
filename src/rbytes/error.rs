@@ -23,9 +23,9 @@ pub enum Error {
     },
 
     RbufferExtractAsArrayNotPossible(TryFromSliceError),
-    RMeta(crate::rmeta::Error),
+    RMeta(crate::rmeta::CantMakeError),
     RTypes(crate::rtypes::error::Error),
-    TryFromIntError(TryFromIntError),
+    TryFromInt(TryFromIntError),
 }
 
 impl std::fmt::Display for Error {
@@ -42,8 +42,8 @@ impl From<TryFromSliceError> for Error {
     }
 }
 
-impl From<crate::rmeta::Error> for Error {
-    fn from(e: crate::rmeta::Error) -> Self {
+impl From<crate::rmeta::CantMakeError> for Error {
+    fn from(e: crate::rmeta::CantMakeError) -> Self {
         Error::RMeta(e)
     }
 }
@@ -56,6 +56,6 @@ impl From<crate::rtypes::Error> for Error {
 
 impl From<TryFromIntError> for Error {
     fn from(value: TryFromIntError) -> Self {
-        Error::TryFromIntError(value)
+        Error::TryFromInt(value)
     }
 }

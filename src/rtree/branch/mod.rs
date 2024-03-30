@@ -72,8 +72,7 @@ impl Branch {
     }
 
     pub fn new(name: String) -> Self {
-        let b = Branch::Base(TBranch::new(name));
-        b
+        Branch::Base(TBranch::new(name))
     }
 
     pub fn name(&self) -> &str {

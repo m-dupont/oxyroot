@@ -203,12 +203,14 @@ impl RootFile {
 
         let inner = RootFileInner::Writer(writer);
 
-        let mut header = RootFileHeader::default();
-        header.version = rvers::ROOT;
-        header.begin = consts::kBEGIN;
-        header.end = consts::kBEGIN;
-        header.units = 4;
-        header.compression = 1;
+        let header = RootFileHeader {
+            version: rvers::ROOT,
+            begin: consts::kBEGIN,
+            end: consts::kBEGIN,
+            units: 4,
+            compression: 1,
+            ..Default::default()
+        };
 
         let mut spans = FreeList::default();
         spans.append(FreeSegments::new(header.begin, consts::kStartBigFile));
@@ -489,37 +491,36 @@ impl RootFile {
         }
 
         w.write_array_u8(ROOT_MAGIC.as_bytes())?;
-        w.write_i32(version as i32)?;
+        w.write_i32(version)?;
         w.write_i32(self.header.begin as i32)?;
 
         if version < 1000000 {
             w.write_i32(self.header.end as i32)?;
             w.write_i32(self.header.seek_free as i32)?;
-            w.write_i32(self.header.n_bytes_free as i32)?;
-            w.write_i32(self.header.n_free as i32)?;
-            w.write_i32(self.header.n_bytes_name as i32)?;
+            w.write_i32(self.header.n_bytes_free)?;
+            w.write_i32(self.header.n_free)?;
+            w.write_i32(self.header.n_bytes_name)?;
             w.write_u8(self.header.units)?;
-            w.write_i32(self.header.compression as i32)?;
+            w.write_i32(self.header.compression)?;
             w.write_i32(self.header.seek_info as i32)?;
-            w.write_i32(self.header.n_bytes_info as i32)?;
+            w.write_i32(self.header.n_bytes_info)?;
         } else {
             w.write_i64(self.header.end)?;
             w.write_i64(self.header.seek_free)?;
-            w.write_i32(self.header.n_bytes_free as i32)?;
-            w.write_i32(self.header.n_free as i32)?;
-            w.write_i32(self.header.n_bytes_name as i32)?;
+            w.write_i32(self.header.n_bytes_free)?;
+            w.write_i32(self.header.n_free)?;
+            w.write_i32(self.header.n_bytes_name)?;
             w.write_u8(self.header.units)?;
-            w.write_i32(self.header.compression as i32)?;
+            w.write_i32(self.header.compression)?;
             w.write_i64(self.header.seek_info)?;
-            w.write_i32(self.header.n_bytes_info as i32)?;
+            w.write_i32(self.header.n_bytes_info)?;
         }
 
         // TODO: marshal uuid version
         w.write_i16(rvers::UUID)?;
         w.write_array_u8(self.header.uuid.as_ref())?;
 
-        let mut buf = Vec::new();
-        buf.resize(self.header.begin as usize, 0u8);
+        let buf = vec![0; self.header.begin as usize];
         self.write_at(&buf, 0)?;
 
         let buf = w.buffer();
@@ -804,7 +805,7 @@ impl RootFile {
                     }
                     Streamer::Base(o) => {
                         let d = DepsType {
-                            name: name,
+                            name,
                             vers: o.vbase() as i16,
                         };
 

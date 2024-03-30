@@ -711,11 +711,11 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.pos.before_branches:{:?}", w.pos());
         {
             let branches = WriterObjArray::new();
-            for b in self.branches.iter() {
-                trace!(";TBranch.marshal.do_branch:{:?}", b);
-                panic!("TBranch.marshal.do_branch");
-                // branches.objs.push(b);
+            //unimplemented!("self.branches.len() > 0");
+            if !self.branches.is_empty() {
+                unimplemented!("!self.branches.is_empty()");
             }
+
             w.write_object(&branches)?;
         }
         trace!(";TBranch.marshal.buf.len:{:?}", &w.p()[len..].len());
@@ -732,10 +732,13 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.pos.after_leaves:{:?}", w.pos());
         {
             let baskets = WriterObjArray::new();
-            for b in self.baskets.iter() {
-                panic!(";TBranch.marshal.do_basket:{:?}", b);
-                // baskets.objs.push(b);
+            if !self.baskets.is_empty() {
+                unimplemented!("!self.baskets.is_empty()");
             }
+            // for b in self.baskets.iter() {
+            //     panic!(";TBranch.marshal.do_basket:{:?}", b);
+            //     // baskets.objs.push(b);
+            // }
             w.write_object(&baskets)?;
         }
         trace!(";TBranch.marshal.buf.pos.after_baskets:{:?}", w.pos());
@@ -798,7 +801,7 @@ impl Marshaler for TBranch {
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
         w.set_header(hdr)?;
         trace!(";TBranch.marshal.buf.value:{:?}", &w.p()[len..]);
-        Ok((w.pos() - beg) as i64)
+        Ok(w.pos() - beg)
     }
 }
 

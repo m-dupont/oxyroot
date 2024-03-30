@@ -41,6 +41,7 @@ fn main() {
         let it = (0..n).map(|x| make_string(x));
         //
         tree.new_branch("vector_int32", it);
+        tree.new_branch("int32", (0..n));
 
         tree.write(&mut f).unwrap();
 
