@@ -734,6 +734,7 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "b";
+    assert!(tree.branch("b").unwrap().as_iter::<bool>().is_ok());
     let b = tree.branch(branch_name).unwrap().as_iter::<bool>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
@@ -803,6 +804,17 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "ab";
+    assert!(tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<[bool; 3]>()
+        .is_ok());
+    assert!(tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<[bool; 4]>()
+        .is_err());
+
     let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
