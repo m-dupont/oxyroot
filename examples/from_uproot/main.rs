@@ -36,11 +36,11 @@ fn open_HZZ_root() -> Result<()> {
 
     println!("entries = {}", tree.entries());
 
-    let mut Jet_Px = tree.branch("Jet_Px").unwrap().as_iter::<f32>();
-    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>();
-    let mut Jet_Pz = tree.branch("Jet_Pz").unwrap().as_iter::<f32>();
+    let mut Jet_Px = tree.branch("Jet_Px").unwrap().as_iter::<f32>()?;
+    let mut Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<f32>()?;
+    let mut Jet_Pz = tree.branch("Jet_Pz").unwrap().as_iter::<f32>()?;
 
-    let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
+    let NJet = tree.branch("NJet").unwrap().as_iter::<i32>()?;
 
     NJet.take(3000).enumerate().for_each(|(n_entry, n)| {
         println!("n_entry = {n_entry}");
@@ -84,7 +84,7 @@ fn open_simple_root() -> Result<()> {
     let one = tree
         .branch("one")
         .unwrap()
-        .as_iter::<i32>()
+        .as_iter::<i32>()?
         .collect::<Vec<_>>();
 
     assert_eq!(one, [1, 2, 3, 4]);
@@ -92,7 +92,7 @@ fn open_simple_root() -> Result<()> {
     let two = tree
         .branch("two")
         .unwrap()
-        .as_iter::<f32>()
+        .as_iter::<f32>()?
         .collect::<Vec<_>>();
 
     assert_eq!(two, [1.1, 2.2, 3.3, 4.4]);
@@ -106,7 +106,7 @@ fn open_simple_root() -> Result<()> {
     let three = tree
         .branch("three")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .collect::<Vec<_>>();
 
     assert_eq!(three, ["uno", "dos", "tres", "quatro"]);
@@ -159,7 +159,7 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
 
     tree.branch("SliceI16")
         .unwrap()
-        .as_iter::<oxyroot::Slice<i16>>()
+        .as_iter::<oxyroot::Slice<i16>>()?
         .enumerate()
         .for_each(|(i, val)| println!("SliceI16: i = {i} val = {:?}", val));
 
@@ -167,7 +167,7 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
 
     tree.branch("Beg")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("beg-{:03}", i));
@@ -206,25 +206,25 @@ fn open_small_evnt_tree_fullsplit_root() -> Result<()> {
 
     tree.branch("StlVecI16")
         .unwrap()
-        .as_iter::<Vec<i16>>()
+        .as_iter::<Vec<i16>>()?
         .enumerate()
         .for_each(|(i, val)| println!("StlVecI16: i = {i} val = {:?}", val));
 
     tree.branch("StlVecStr")
         .unwrap()
-        .as_iter::<Vec<String>>()
+        .as_iter::<Vec<String>>()?
         .enumerate()
         .for_each(|(i, val)| println!("StlVecStr: i = {i} val = {:?}", val));
 
     tree.branch("End")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, val)| println!("End: i = {i} val = {:?}", val));
 
     tree.branch("StdStr")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, val)| println!("StdStr: i = {i} val = {:?}", val));
 
@@ -311,7 +311,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("string")
         .expect("No branch string")
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .collect::<Vec<_>>();
 
     assert_eq!(v, ["one", "two", "three", "four", "five"]);
@@ -319,7 +319,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("tstring")
         .expect("No branch tstring")
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .collect::<Vec<_>>();
 
     assert_eq!(v, ["one", "two", "three", "four", "five"]);
@@ -327,7 +327,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_int32")
         .expect("No branch vector_int32")
-        .as_iter::<Vec<i32>>()
+        .as_iter::<Vec<i32>>()?
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -343,7 +343,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_string")
         .expect("No branch vector_string")
-        .as_iter::<Vec<String>>()
+        .as_iter::<Vec<String>>()?
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -360,7 +360,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_vector_int32")
         .expect("No branch vector_vector_int32")
-        .as_iter::<Vec<Vec<i32>>>()
+        .as_iter::<Vec<Vec<i32>>>()?
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
@@ -386,7 +386,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_vector_string")
         .expect("No branch vector_vector_string")
-        .as_iter::<Vec<Vec<String>>>()
+        .as_iter::<Vec<Vec<String>>>()?
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
@@ -417,7 +417,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_vector_tstring")
         .expect("No branch vector_vector_tstring")
-        .as_iter::<Vec<Vec<String>>>()
+        .as_iter::<Vec<Vec<String>>>()?
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
@@ -448,7 +448,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_set_int32")
         .expect("No branch vector_set_int32")
-        .as_iter::<Vec<Vec<i32>>>()
+        .as_iter::<Vec<Vec<i32>>>()?
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
@@ -474,7 +474,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("vector_set_string")
         .expect("No branch vector_set_string")
-        .as_iter::<Vec<HashSet<String>>>()
+        .as_iter::<Vec<HashSet<String>>>()?
         .map(|a| a.to_vec())
         .collect::<Vec<_>>();
 
@@ -520,7 +520,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("set_int32")
         .expect("No branch set_int32")
-        .as_iter::<HashSet<i32>>()
+        .as_iter::<HashSet<i32>>()?
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -537,7 +537,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("set_string")
         .expect("No branch set_string")
-        .as_iter::<HashSet<String>>()
+        .as_iter::<HashSet<String>>()?
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -554,7 +554,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_int16")
         .expect("No branch map_int32_int16")
-        .as_iter::<HashMap<i32, i16>>()
+        .as_iter::<HashMap<i32, i16>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -570,7 +570,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_vector_int16")
         .expect("No branch map_int32_vector_int16")
-        .as_iter::<HashMap<i32, Vec<i16>>>()
+        .as_iter::<HashMap<i32, Vec<i16>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -599,7 +599,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_vector_string")
         .expect("No branch map_int32_vector_string")
-        .as_iter::<HashMap<i32, Vec<String>>>()
+        .as_iter::<HashMap<i32, Vec<String>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -669,7 +669,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_set_int16")
         .expect("No branch map_int32_set_int16")
-        .as_iter::<HashMap<i32, HashSet<i16>>>()
+        .as_iter::<HashMap<i32, HashSet<i16>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -702,7 +702,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_set_string")
         .expect("No branch map_int32_set_string")
-        .as_iter::<HashMap<i32, HashSet<String>>>()
+        .as_iter::<HashMap<i32, HashSet<String>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -772,7 +772,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_int16")
         .expect("No branch map_string_int16")
-        .as_iter::<HashMap<String, i16>>()
+        .as_iter::<HashMap<String, i16>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -803,7 +803,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_vector_int16")
         .expect("No branch map_string_vector_int16")
-        .as_iter::<HashMap<String, Vec<i16>>>()
+        .as_iter::<HashMap<String, Vec<i16>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -839,7 +839,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_vector_string")
         .expect("No branch map_string_vector_string")
-        .as_iter::<HashMap<String, Vec<String>>>()
+        .as_iter::<HashMap<String, Vec<String>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -921,7 +921,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_set_int16")
         .expect("No branch map_string_set_int16")
-        .as_iter::<HashMap<String, HashSet<i16>>>()
+        .as_iter::<HashMap<String, HashSet<i16>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -957,7 +957,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_set_string")
         .expect("No branch map_string_set_string")
-        .as_iter::<HashMap<String, HashSet<String>>>()
+        .as_iter::<HashMap<String, HashSet<String>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -1039,7 +1039,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_string")
         .expect("No branch map_string_string")
-        .as_iter::<HashMap<String, String>>()
+        .as_iter::<HashMap<String, String>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -1075,7 +1075,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_string_tstring")
         .expect("No branch map_string_tstring")
-        .as_iter::<HashMap<String, String>>()
+        .as_iter::<HashMap<String, String>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -1111,7 +1111,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_vector_vector_int16")
         .expect("No branch map_int32_vector_vector_int16")
-        .as_iter::<HashMap<i32, Vec<Vec<i16>>>>()
+        .as_iter::<HashMap<i32, Vec<Vec<i16>>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -1159,7 +1159,7 @@ fn tree_with_stl_containers() -> Result<()> {
     let v = tree
         .branch("map_int32_vector_set_int16")
         .expect("No branch map_int32_vector_set_int16")
-        .as_iter::<HashMap<i32, Vec<HashSet<i16>>>>()
+        .as_iter::<HashMap<i32, Vec<HashSet<i16>>>>()?
         .collect::<Vec<_>>();
 
     let good = [
@@ -1256,7 +1256,7 @@ fn tree_open_huge() -> Result<()> {
     let v = tree
         .branch("int_array_25")
         .expect("No branch int_array_25")
-        .as_iter::<[i32; 25]>()
+        .as_iter::<[i32; 25]>()?
         .collect::<Vec<_>>();
 
     // assert_eq!(v, good);
@@ -1287,7 +1287,7 @@ fn huge() -> Result<()> {
     let v = tree
         .branch("int_array_25")
         .expect("No branch int_array_25")
-        .as_iter::<[i32; 25]>()
+        .as_iter::<[i32; 25]>()?
         .collect::<Vec<_>>();
 
     let duration = start.elapsed();
@@ -1329,7 +1329,7 @@ fn tree_with_stl_containers_tmp() -> Result<()> {
     let v = tree
         .branch("int_vector")
         .expect("No branch int_vector")
-        .as_iter::<Vec<i32>>()
+        .as_iter::<Vec<i32>>()?
         .collect::<Vec<_>>();
 
     let duration = start.elapsed();

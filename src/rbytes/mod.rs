@@ -55,6 +55,14 @@ pub trait StreamerInfoContext {
 /// * Owned byte containers (`Vec<T>`, `HashMap<K,V>`, HashSet<K> )
 pub trait Unmarshaler {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()>;
+
+    /// Returns the kind of the type as C++ typename. Used to check if the type is supported.
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        None
+    }
 }
 #[derive(Debug)]
 pub enum MarshallerKindStd {
@@ -113,6 +121,28 @@ macro_rules! impl_marshalers_primitive {
                 *self = r.$buffer_read_fn()?;
                 Ok(())
             }
+
+            fn class_name() -> Option<Vec<String>>
+            where
+                Self: Sized,
+            {
+                let tys = type_name::<Self>();
+                let ret = match tys {
+                    "i32" => "int32_t",
+                    "u32" => "uint32_t",
+                    "i64" => "int64_t",
+                    "u64" => "uint64_t",
+                    "i16" => "int16_t",
+                    "u16" => "uint16_t",
+                    "i8" => "int8_t",
+                    "u8" => "uint8_t",
+                    "f32" => "float",
+                    "f64" => "double",
+                    "bool" => "bool",
+                    _ => unimplemented!("Unmarshaler.class_name for {}", type_name::<Self>()),
+                };
+                Some(vec![ret.to_string()])
+            }
         }
 
         impl Marshaler for $ftype {
@@ -145,6 +175,7 @@ macro_rules! impl_marshalers_primitive {
                     "u8" => "uint8_t",
                     "f32" => "float",
                     "f64" => "double",
+
                     _ => unimplemented!("Marshaler.class_name for {}", type_name::<Self>()),
                 };
                 ret.to_string()
@@ -237,6 +268,13 @@ impl Unmarshaler for String {
         *self = r.read_string()?.to_string();
         Ok(())
     }
+
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        Some(["string", "char*", "TString"].map(String::from).to_vec())
+    }
 }
 
 impl Marshaler for String {
@@ -272,6 +310,20 @@ where
         }
 
         Ok(())
+    }
+
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        match T::classe_name() {
+            None => None,
+            Some(tys) => tys
+                .iter()
+                .map(|t| format!("vector<{}>", t))
+                .collect::<Vec<String>>()
+                .into(),
+        }
     }
 }
 
@@ -323,6 +375,16 @@ where
         }
         Ok(())
     }
+
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        match T::classe_name() {
+            None => None,
+            Some(tys) => vec![format!("set<{}>", tys.first().unwrap())].into(),
+        }
+    }
 }
 
 impl<K, V> Unmarshaler for HashMap<K, V>
@@ -365,7 +427,7 @@ where
 
 impl<T, const N: usize> Unmarshaler for [T; N]
 where
-    T: Unmarshaler,
+    T: UnmarshalerInto<Item = T>,
 {
     fn unmarshal(&mut self, r: &mut RBuffer) -> Result<()> {
         // for i in 0..N {
@@ -373,9 +435,23 @@ where
         // }
 
         for item in self.iter_mut().take(N) {
-            item.unmarshal(r).unwrap();
+            *item = r.read_object_into::<T>()?;
         }
         Ok(())
+    }
+
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        match T::classe_name() {
+            None => None,
+            Some(tys) => tys
+                .iter()
+                .map(|t| format!("{}[{N}]", t))
+                .collect::<Vec<String>>()
+                .into(),
+        }
     }
 }
 
@@ -407,6 +483,7 @@ where
 pub trait UnmarshalerInto {
     type Item: Default + Unmarshaler;
     fn unmarshal_into(r: &mut RBuffer) -> Result<Self::Item>;
+    fn classe_name() -> Option<Vec<String>>;
 }
 
 impl<T> UnmarshalerInto for T
@@ -419,6 +496,10 @@ where
         let mut a: Self::Item = Self::Item::default();
         Unmarshaler::unmarshal(&mut a, r)?;
         Ok(a)
+    }
+
+    fn classe_name() -> Option<Vec<String>> {
+        T::class_name()
     }
 }
 

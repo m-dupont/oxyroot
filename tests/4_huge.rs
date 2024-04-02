@@ -20,7 +20,7 @@ fn tree_with_int_array_25() -> Result<()> {
     let v = tree
         .branch("int_array_25")
         .expect("No branch int_array_25")
-        .as_iter::<[i32; 25]>()
+        .as_iter::<[i32; 25]>()?
         .collect::<Vec<_>>();
 
     assert_eq!(v.len(), tree.entries() as usize);
@@ -53,7 +53,7 @@ fn tree_with_int_vector() -> Result<()> {
     let v = tree
         .branch("int_vector")
         .expect("No branch int_vector")
-        .as_iter::<Vec<i32>>()
+        .as_iter::<Vec<i32>>()?
         .collect::<Vec<_>>();
 
     assert_eq!(v.len(), tree.entries() as usize);

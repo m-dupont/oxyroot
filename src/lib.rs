@@ -37,7 +37,7 @@ three                          | char*                          | String
 use oxyroot::RootFile;
 let s = "examples/from_uproot/data/simple.root";
 let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
-let one = tree.branch("one").unwrap().as_iter::<i32>();
+let one = tree.branch("one").unwrap().as_iter::<i32>().expect("wrong type");
 one.for_each(|v| println!("v = {v}"));
 ```
 
@@ -61,7 +61,7 @@ use oxyroot::RootFile;
 let s = "tests/stl_containers/stl_containers.root";
 let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
 let vector_int32 = tree.branch("vector_int32")
-                   .unwrap().as_iter::<Vec<i32>>()
+                   .unwrap().as_iter::<Vec<i32>>().expect("wrong type")
                    .collect::<Vec<_>>();
 assert_eq!(
     vector_int32,
@@ -192,3 +192,5 @@ pub use rusty::Slice;
 
 pub use root::traits::Named;
 pub use root::traits::Object;
+
+pub use error::Result;

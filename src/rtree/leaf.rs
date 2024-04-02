@@ -37,7 +37,7 @@ impl Marshaler for Leaf {
             Leaf::F(i) => i.marshal(w),
             // Leaf::B(_) => {}
             // Leaf::L(_) => {}
-            // Leaf::O(_) => {}
+            Leaf::O(i) => i.marshal(w),
             Leaf::C(i) => i.marshal(w),
             _ => {
                 todo!("Implement Leaf::marshal for {:?}", self)
@@ -95,7 +95,7 @@ impl Leaf {
                 "u64" => Leaf::L(LeafL::new(tleaf.with_unsigned(true))),
                 "f32" => Leaf::F(LeafF::new(tleaf)),
                 "f64" => Leaf::D(LeafD::new(tleaf)),
-                "bool" => Leaf::L(LeafL::new(tleaf)),
+                "bool" => Leaf::O(LeafO::new(tleaf)),
                 "String" => Leaf::C(LeafC::new(tleaf)),
                 _ => unimplemented!("ty = {}", tys),
             }

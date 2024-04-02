@@ -5,7 +5,11 @@ use std::io::Write;
 fn open_vector_from_root() {
     let file = "stl_containers_simple.root";
     let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
-    let mut Photon_E = tree.branch("vector_int32").unwrap().as_iter::<Vec<i32>>();
+    let mut Photon_E = tree
+        .branch("vector_int32")
+        .unwrap()
+        .as_iter::<Vec<i32>>()
+        .unwrap();
     let v = Photon_E.collect::<Vec<_>>();
     println!("{:?}", v.len());
     println!("{:?}", v);
@@ -15,7 +19,7 @@ fn open_vector_from_root() {
 fn open_i8_from_root() {
     let file = "stl_containers_simple.root";
     let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
-    let mut Photon_E = tree.branch("i8").unwrap().as_iter::<Vec<i8>>();
+    let mut Photon_E = tree.branch("i8").unwrap().as_iter::<Vec<i8>>().unwrap();
     let v = Photon_E.collect::<Vec<_>>();
     println!("{:?}", v.len());
     println!("{:?}", v);
@@ -38,9 +42,9 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let file = "/tmp/r.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
-    let mut Photon_E = tree.branch("vector_int32").unwrap().as_iter::<Vec<i32>>();
+    let file = "/tmp/rust/into/i32/int/101/o.root";
+    let mut tree = RootFile::open(file).unwrap().get_tree("T").unwrap();
+    let mut Photon_E = tree.branch("v_i").unwrap().as_iter::<Vec<i32>>().unwrap();
     let v = Photon_E.collect::<Vec<_>>();
     println!("{:?}", v.len());
     println!("{:?}", v);

@@ -10,7 +10,7 @@ fn open_nested() -> Result<()> {
     let s = "examples/from_uproot/data/HZZ.root";
 
     let tree = RootFile::open(s)?.get_tree("events")?;
-    let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
+    let NJet = tree.branch("NJet").unwrap().as_iter::<i32>()?;
 
     assert_eq!(tree.branch("NJet").unwrap().interpretation(), "i32");
 
@@ -22,16 +22,19 @@ fn open_nested() -> Result<()> {
         "Slice<f32>"
     );
 
-    let Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<Slice<f32>>();
+    let Jet_Py = tree.branch("Jet_Py").unwrap().as_iter::<Slice<f32>>()?;
     assert_eq!(Jet_Py.count(), 2421);
 
-    let nelectron = tree.branch("NElectron").unwrap().as_iter::<i32>();
+    let nelectron = tree.branch("NElectron").unwrap().as_iter::<i32>()?;
     assert_eq!(nelectron.count(), 2421);
 
-    let photon_e = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>();
+    let photon_e = tree.branch("Photon_E").unwrap().as_iter::<Slice<f32>>()?;
     assert_eq!(photon_e.count(), 2421);
 
-    let Electron_Px = tree.branch("Electron_Px").unwrap().as_iter::<Slice<f32>>();
+    let Electron_Px = tree
+        .branch("Electron_Px")
+        .unwrap()
+        .as_iter::<Slice<f32>>()?;
     assert_eq!(Electron_Px.count(), 2421);
 
     Ok(())
@@ -49,8 +52,20 @@ fn open_simple_root() -> Result<()> {
     let tree = f.get_tree("tree")?;
 
     assert_eq!(tree.branch("one").unwrap().item_type_name(), "int32_t");
+
+    assert!(tree.branch("one").unwrap().as_iter::<i32>().is_ok());
+    assert!(tree.branch("one").unwrap().as_iter::<i16>().is_err());
+
     assert_eq!(tree.branch("two").unwrap().item_type_name(), "float");
+
+    assert!(tree.branch("two").unwrap().as_iter::<i32>().is_err());
+    assert!(tree.branch("two").unwrap().as_iter::<i16>().is_err());
+    assert!(tree.branch("two").unwrap().as_iter::<f64>().is_err());
+    assert!(tree.branch("two").unwrap().as_iter::<f32>().is_ok());
+
     assert_eq!(tree.branch("three").unwrap().item_type_name(), "char*");
+    assert!(tree.branch("three").unwrap().as_iter::<String>().is_ok());
+
     assert_eq!(tree.branch("one").unwrap().interpretation(), "i32");
     assert_eq!(tree.branch("two").unwrap().interpretation(), "f32");
     assert_eq!(tree.branch("three").unwrap().interpretation(), "String");
@@ -58,7 +73,7 @@ fn open_simple_root() -> Result<()> {
     let one = tree
         .branch("one")
         .unwrap()
-        .as_iter::<i32>()
+        .as_iter::<i32>()?
         .collect::<Vec<_>>();
 
     assert_eq!(one, [1, 2, 3, 4]);
@@ -66,7 +81,7 @@ fn open_simple_root() -> Result<()> {
     let two = tree
         .branch("two")
         .unwrap()
-        .as_iter::<f32>()
+        .as_iter::<f32>()?
         .collect::<Vec<_>>();
 
     assert_eq!(two, [1.1, 2.2, 3.3, 4.4]);
@@ -74,7 +89,7 @@ fn open_simple_root() -> Result<()> {
     let three = tree
         .branch("three")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .collect::<Vec<_>>();
 
     assert_eq!(three, ["uno", "dos", "tres", "quatro"]);
@@ -97,9 +112,11 @@ fn open_tree_with_string() -> Result<()> {
     assert_eq!(tree.branch("Beg").unwrap().interpretation(), "TString");
     assert_eq!(tree.branch("End").unwrap().interpretation(), "TString");
 
+    assert!(tree.branch("Beg").unwrap().as_iter::<String>().is_ok());
+
     tree.branch("Beg")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("beg-{:03}", i));
@@ -107,7 +124,7 @@ fn open_tree_with_string() -> Result<()> {
 
     tree.branch("End")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("end-{:03}", i));
@@ -128,9 +145,11 @@ fn open_tree_with_stl_string() -> Result<()> {
     assert_eq!(tree.branch("StdStr").unwrap().item_type_name(), "string");
     assert_eq!(tree.branch("StdStr").unwrap().interpretation(), "String");
 
+    assert!(tree.branch("StdStr").unwrap().as_iter::<String>().is_ok());
+
     tree.branch("StdStr")
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .enumerate()
         .for_each(|(i, s)| {
             assert_eq!(s, format!("std-{:03}", i));
@@ -197,6 +216,22 @@ fn open_tree_with_vector_parse() -> Result<()> {
         "vector<int32_t>"
     );
 
+    assert!(tree
+        .branch("int32_array")
+        .unwrap()
+        .as_iter::<Vec<i32>>()
+        .is_ok());
+    assert!(tree
+        .branch("int32_array")
+        .unwrap()
+        .as_iter::<i32>()
+        .is_err());
+    assert!(tree
+        .branch("int32_array")
+        .unwrap()
+        .as_iter::<Vec<i16>>()
+        .is_err());
+
     tree.branch("int32_array")
         .unwrap()
         .get_basket(|r| {
@@ -238,7 +273,7 @@ fn open_tree_with_vector_into() -> Result<()> {
 
     tree.branch("int32_array")
         .unwrap()
-        .as_iter::<Vec<i32>>()
+        .as_iter::<Vec<i32>>()?
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
@@ -266,6 +301,19 @@ fn open_tree_with_slice_i16() -> Result<()> {
         tree.branch("SliceI16").unwrap().item_type_name(),
         "int16_t[]"
     );
+
+    assert!(tree
+        .branch("SliceI16")
+        .unwrap()
+        .as_iter::<Slice<i16>>()
+        .is_ok());
+
+    assert!(tree
+        .branch("SliceI16")
+        .unwrap()
+        .as_iter::<Slice<i32>>()
+        .is_err());
+
     assert_eq!(
         tree.branch("SliceI32").unwrap().item_type_name(),
         "int32_t[]"
@@ -331,7 +379,7 @@ fn open_tree_with_slice_i16() -> Result<()> {
 
     tree.branch("SliceI16")
         .unwrap()
-        .as_iter::<oxyroot::Slice<i16>>()
+        .as_iter::<oxyroot::Slice<i16>>()?
         .map(|a| a.into_vec())
         .enumerate()
         .for_each(|(i, val)| {
@@ -360,7 +408,7 @@ fn open_tree_with_slice_i16_into_vec() -> Result<()> {
     let v: Vec<Vec<i16>> = tree
         .branch("SliceI16")
         .unwrap()
-        .as_iter::<oxyroot::Slice<i16>>()
+        .as_iter::<oxyroot::Slice<i16>>()?
         .map(|s| s.into())
         .collect();
 
@@ -491,9 +539,15 @@ fn open_tree_with_vector_of_string() -> Result<()> {
         "Vec<String>"
     );
 
-    tree.branch("StlVecStr")
+    assert!(tree
+        .branch("StlVecStr")
         .unwrap()
         .as_iter::<Vec<String>>()
+        .is_ok());
+
+    tree.branch("StlVecStr")
+        .unwrap()
+        .as_iter::<Vec<String>>()?
         .enumerate()
         .for_each(|(i, val)| {
             trace!("StlVecStr: i = {i} val = {:?}", val);
@@ -528,6 +582,22 @@ fn tree_with_array() -> Result<()> {
         "[i16;10]"
     );
 
+    assert!(tree
+        .branch("ArrayI16[10]")
+        .unwrap()
+        .as_iter::<Slice<i16>>()
+        .is_err());
+    assert!(tree
+        .branch("ArrayI16[10]")
+        .unwrap()
+        .as_iter::<i16>()
+        .is_err());
+    assert!(tree
+        .branch("ArrayI16[10]")
+        .unwrap()
+        .as_iter::<[i16; 10]>()
+        .is_ok());
+
     tree.branch("ArrayI16[10]")
         .unwrap()
         .get_basket(|r| {
@@ -543,7 +613,7 @@ fn tree_with_array() -> Result<()> {
 
     tree.branch("ArrayI16[10]")
         .unwrap()
-        .as_iter::<[i16; 10]>()
+        .as_iter::<[i16; 10]>()?
         .enumerate()
         .for_each(|(i, buf)| {
             // trace!("buf = {:?}", buf);
@@ -565,7 +635,7 @@ where
     let tree = f.get_tree("tree")?;
     tree.branch(name_branch)
         .unwrap()
-        .as_iter::<Vec<T>>()
+        .as_iter::<Vec<T>>()?
         .enumerate()
         .for_each(|(i, val)| {
             assert_eq!(val.len(), i % 10);
@@ -636,10 +706,10 @@ where
     // f.keys_name().map(|k| trace!("key = {}", k)).for_each(drop);
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
-    let b = tree.branch("n").unwrap().as_iter::<i32>();
+    let b = tree.branch("n").unwrap().as_iter::<i32>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
-    let b = tree.branch("n").unwrap().as_iter::<i32>();
+    let b = tree.branch("n").unwrap().as_iter::<i32>()?;
     b.enumerate().for_each(|(i, val)| {
         assert_eq!(val, (i % 5) as i32);
     });
@@ -664,13 +734,13 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "b";
-    let b = tree.branch(branch_name).unwrap().as_iter::<bool>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<bool>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let vv: Vec<_> = tree
         .branch(branch_name)
         .unwrap()
-        .as_iter::<bool>()
+        .as_iter::<bool>()?
         .collect();
     let vgood = vec![
         true, false, true, false, true, false, true, false, true, false, true, false, true, false,
@@ -699,10 +769,14 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "i4";
-    let b = tree.branch(branch_name).unwrap().as_iter::<i32>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<i32>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
-    let vv: Vec<_> = tree.branch(branch_name).unwrap().as_iter::<i32>().collect();
+    let vv: Vec<_> = tree
+        .branch(branch_name)
+        .unwrap()
+        .as_iter::<i32>()?
+        .collect();
     let vgood = vec![
         -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7,
         8, 9, 10, 11, 12, 13, 14,
@@ -729,13 +803,13 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "ab";
-    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let vv: Vec<_> = tree
         .branch(branch_name)
         .unwrap()
-        .as_iter::<[bool; 3]>()
+        .as_iter::<[bool; 3]>()?
         .collect();
     let vgood = vec![
         vec![false, true, false],
@@ -794,13 +868,13 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "ai4";
-    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let vv: Vec<_> = tree
         .branch(branch_name)
         .unwrap()
-        .as_iter::<[i32; 3]>()
+        .as_iter::<[i32; 3]>()?
         .collect();
     let vgood = vec![
         vec![-14, -13, -12],
@@ -859,7 +933,7 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "ab";
-    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<[bool; 3]>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let f = move |r: &mut RBuffer| {
@@ -927,7 +1001,7 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "ai4";
-    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<[i32; 3]>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let f = move |r: &mut RBuffer| {
@@ -996,13 +1070,13 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "Ab";
-    let b = tree.branch(branch_name).unwrap().as_iter::<Slice<bool>>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<Slice<bool>>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let vv: Vec<_> = tree
         .branch(branch_name)
         .unwrap()
-        .as_iter::<Slice<bool>>()
+        .as_iter::<Slice<bool>>()?
         .collect();
     let vgood = vec![
         vec![],
@@ -1062,13 +1136,13 @@ where
     let tree = f.get_tree("sample")?;
     assert_eq!(tree.entries(), 30);
     let branch_name = "str";
-    let b = tree.branch(branch_name).unwrap().as_iter::<String>();
+    let b = tree.branch(branch_name).unwrap().as_iter::<String>()?;
     assert_eq!(b.count(), tree.entries() as usize);
 
     let vv: Vec<_> = tree
         .branch(branch_name)
         .unwrap()
-        .as_iter::<String>()
+        .as_iter::<String>()?
         .collect();
 
     vv.into_iter().enumerate().for_each(|(i, v)| {

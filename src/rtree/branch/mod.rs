@@ -6,6 +6,7 @@ pub(crate) mod wbranch;
 
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
+use std::any::type_name;
 use std::fmt::Debug;
 
 use crate::rbytes::rbuffer::RBuffer;
@@ -243,7 +244,31 @@ impl Branch {
     }
 
     /// Create an iterator over the data of a column (`TBranch`)
-    pub fn as_iter<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
+    pub fn as_iter<'a, T>(&'a self) -> crate::Result<impl Iterator<Item = T> + 'a>
+    where
+        T: UnmarshalerInto<Item = T> + 'a,
+    {
+        println!("typename of branch: {}", self.item_type_name());
+        println!("typename of type: {:?}", T::classe_name());
+        println!("typename of type: {:?}", type_name::<T>());
+
+        let ok_typename = match T::classe_name() {
+            None => true,
+            Some(tys) => tys.contains(&self.item_type_name()),
+        };
+
+        if !ok_typename {
+            return Err(crate::error::Error::TypeMismatch {
+                given: format!("one of {:?}", T::classe_name().unwrap()),
+                expected: self.item_type_name(),
+            });
+        } else {
+            Ok(self.get_basket(|r| r.read_object_into::<T>().unwrap()))
+        }
+    }
+
+    /// Create an iterator over the data of a column (`TBranch`)
+    pub fn as_iter_unchecked<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
     where
         T: UnmarshalerInto<Item = T> + 'a,
     {

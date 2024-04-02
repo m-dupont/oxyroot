@@ -400,7 +400,7 @@ fn write_bool_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<bool>();
+    let b = tree.branch(ty).unwrap().as_iter::<bool>()?;
 
     let it = (0..n).map(|x| x.is_even());
 
@@ -431,7 +431,7 @@ fn write_string_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<String>();
+    let b = tree.branch(ty).unwrap().as_iter::<String>()?;
 
     let it = (0..n).map(|x| format!("string{}", x));
 
@@ -470,7 +470,7 @@ fn write_variable_lenght_string_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<String>();
+    let b = tree.branch(ty).unwrap().as_iter::<String>()?;
 
     let it = (0..n).map(|x| make_string(x));
 
@@ -504,7 +504,7 @@ fn write_array_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>();
+    let b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>()?;
 
     let it = (0..n).map(|x| make_string(x));
 

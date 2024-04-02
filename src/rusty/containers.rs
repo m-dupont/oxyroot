@@ -15,7 +15,7 @@ use std::fmt::Debug;
 ///
 /// tree.branch("SliceI16")
 ///         .unwrap()
-///         .as_iter::<oxyroot::Slice<i16>>()
+///         .as_iter::<oxyroot::Slice<i16>>().expect("wrong type")
 ///         .map(|a| a.into_vec())
 ///         .enumerate()
 ///         .for_each(|(i, val)| {
@@ -69,6 +69,20 @@ where
         }
 
         Ok(())
+    }
+
+    fn class_name() -> Option<Vec<String>>
+    where
+        Self: Sized,
+    {
+        match T::classe_name() {
+            None => None,
+            Some(tys) => tys
+                .iter()
+                .map(|t| format!("{}[]", t))
+                .collect::<Vec<String>>()
+                .into(),
+        }
     }
 }
 

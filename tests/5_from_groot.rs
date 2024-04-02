@@ -8,12 +8,12 @@ fn open_g4litetree_primitives() -> anyhow::Result<()> {
     assert_eq!(tree.branch("f64").unwrap().item_type_name(), "double");
 
     assert_eq!(
-        tree.branch("i32").unwrap().as_iter::<i32>().count(),
+        tree.branch("i32").unwrap().as_iter::<i32>()?.count(),
         tree.entries() as usize
     );
 
-    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
-    let bf64 = tree.branch("f64").unwrap().as_iter::<f64>();
+    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>()?;
+    let bf64 = tree.branch("f64").unwrap().as_iter::<f64>()?;
 
     for val in bi32.zip(bf64).enumerate() {
         let (i, (ii, f)) = val;
@@ -35,12 +35,15 @@ fn open_g4litetree_vector() -> anyhow::Result<()> {
     );
 
     assert_eq!(
-        tree.branch("slif64").unwrap().as_iter::<Vec<f64>>().count(),
+        tree.branch("slif64")
+            .unwrap()
+            .as_iter::<Vec<f64>>()?
+            .count(),
         tree.entries() as usize
     );
 
-    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>();
-    let bslif64 = tree.branch("slif64").unwrap().as_iter::<Vec<f64>>();
+    let bi32 = tree.branch("i32").unwrap().as_iter::<i32>()?;
+    let bslif64 = tree.branch("slif64").unwrap().as_iter::<Vec<f64>>()?;
 
     for val in bi32.zip(bslif64).enumerate() {
         let (i, (i3, f)) = val;

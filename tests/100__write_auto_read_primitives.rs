@@ -29,7 +29,7 @@ macro_rules! write_branch {
         let mut f = oxyroot::RootFile::open(out_file)?;
         let tree = f.get_tree("mytree")?;
         assert_eq!(tree.entries(), $N.into());
-        let b = tree.branch(tys).unwrap().as_iter::<$ty>();
+        let b = tree.branch(tys).unwrap().as_iter::<$ty>()?;
 
         for (_i, (r, w)) in b.zip(gen_it()).enumerate() {
             assert_eq!(r, w);
@@ -126,7 +126,7 @@ fn write_bool_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let mut b = tree.branch(ty).unwrap().as_iter::<bool>();
+    let mut b = tree.branch(ty).unwrap().as_iter::<bool>()?;
 
     let it = (0..n).map(|x| x.is_even());
 
@@ -157,7 +157,7 @@ fn write_string_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<String>();
+    let b = tree.branch(ty).unwrap().as_iter::<String>()?;
 
     let it = (0..n).map(|x| format!("string{}", x));
 
@@ -196,7 +196,7 @@ fn write_variable_lenght_string_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<String>();
+    let b = tree.branch(ty).unwrap().as_iter::<String>()?;
 
     let it = (0..n).map(|x| make_string(x));
 
@@ -230,7 +230,7 @@ fn write_array_branch() -> Result<()> {
     let mut f = oxyroot::RootFile::open(out_file)?;
     let tree = f.get_tree("mytree")?;
     assert_eq!(tree.entries(), n.into());
-    let b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>();
+    let b = tree.branch(ty).unwrap().as_iter::<[i32; 5]>()?;
 
     let it = (0..n).map(|x| make_string(x));
 
@@ -269,7 +269,7 @@ macro_rules! write_branch_vector {
         let mut f = oxyroot::RootFile::open(out_file)?;
         let tree = f.get_tree("mytree")?;
         assert_eq!(tree.entries(), n.into());
-        let b = tree.branch(ty).unwrap().as_iter::<Vec<$ty_item>>();
+        let b = tree.branch(ty).unwrap().as_iter::<Vec<$ty_item>>()?;
 
         let it = (0..n).map(|x| make_vector(x));
 

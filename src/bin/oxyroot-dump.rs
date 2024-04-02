@@ -99,6 +99,7 @@ where
     let bo: Box<dyn Iterator<Item = Box<dyn Dumpable + 'a>> + 'a> = Box::new(
         branch
             .as_iter::<T>()
+            .unwrap()
             .map(|x| Box::new(x) as Box<dyn Dumpable>),
     );
     bo

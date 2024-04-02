@@ -230,45 +230,6 @@ fn read_f64_branch() -> Result<()> {
     Ok(())
 }
 
-// fn read_tree_i32() {
-//     read_i32_branch().expect("nooo");
-// }
-
-// #[test]
-// fn read_tree_u32() {
-//     read_u32_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_i16() {
-//     read_i16_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_u16() {
-//     read_u16_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_i8() {
-//     read_i8_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_i64() {
-//     read_i64_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_f32() {
-//     read_f32_branch().expect("nooo");
-// }
-//
-// #[test]
-// fn read_tree_f64() {
-//     read_f64_branch().expect("nooo");
-// }
-
 macro_rules! read_primitive_branch {
     ($ftype:ty, $root_type:literal) => {{
         read_primitive_branch! {$ftype, $root_type, 207};
@@ -295,7 +256,7 @@ macro_rules! read_primitive_branch {
             temp.execute_macro()?;
 
             let tree = temp.tree()?;
-            let mut b = tree.branch("v_i").unwrap().as_iter::<$ftype>();
+            let mut b = tree.branch("v_i").unwrap().as_iter::<$ftype>()?;
 
             for i in -10..10 {
                 assert_eq!(i as $ftype, b.next().unwrap());
