@@ -1,6 +1,6 @@
 [package]
 name = "oxyroot"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2021"
 authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
 exclude = ["*test_data/", "*.root", "*.C"]
