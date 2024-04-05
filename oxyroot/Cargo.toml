@@ -49,6 +49,10 @@ default = ["build-binaries"]
 # Provide derive(Serialize, Deserialize) macros.
 derive = ["oxyroot_derive"]
 
+[package.metadata.docs.rs]
+features = ["derive"]
+rustdoc-args = ["--cfg", "doc_cfg"]
+
 [[bin]]
 name = "oxyroot-ls"
 required-features = ["build-binaries"]

@@ -156,6 +156,10 @@ oxyroot can iterate over  branch which contains :
 #![allow(dead_code)]
 #![deny(unused_must_use)]
 // #![deny(unused_imports)]
+
+// Show which crate feature enables conditionally compiled APIs in documentation.
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+
 extern crate core;
 
 mod error;
@@ -181,9 +185,6 @@ pub use rtree::tree::ReaderTree;
 
 pub use rtree::tree::ReadFromTree;
 
-#[cfg(feature = "derive")]
-pub use oxyroot_derive::ReadFromTree;
-
 pub use rtree::tree::WriterTree;
 // pub use rtree::tree::Tree;
 
@@ -200,3 +201,8 @@ pub use root::traits::Named;
 pub use root::traits::Object;
 
 pub use error::Result;
+
+/// Derive macro available if oxyroot is built with `features = ["derive"]`.
+#[cfg(feature = "derive")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
+pub use oxyroot_derive::ReadFromTree;
