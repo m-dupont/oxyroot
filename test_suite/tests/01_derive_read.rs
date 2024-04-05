@@ -205,7 +205,7 @@ fn test_a_i32_b_i16_c_veci32_d_string__ab_c_d() -> anyhow::Result<()> {
 
 #[test]
 fn test_a_i32_b_i16_c_veci32_d_string__ab_cd() -> anyhow::Result<()> {
-    let out_dir = format!("{}/a_i32_b_i16_c_veci32_d_string__ab_c_d", OUT_DIR);
+    let out_dir = format!("{}/a_i32_b_i16_c_veci32_d_string__ab_cd", OUT_DIR);
     std::fs::create_dir_all(&out_dir)?;
     let out_file = format!("{}/a.root", out_dir);
 
