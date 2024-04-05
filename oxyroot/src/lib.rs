@@ -178,6 +178,12 @@ mod utils;
 pub use riofs::file::RootFile;
 pub use rtree::branch::Branch;
 pub use rtree::tree::ReaderTree;
+
+pub use rtree::tree::ReadFromTree;
+
+#[cfg(feature = "derive")]
+pub use oxyroot_derive::ReadFromTree;
+
 pub use rtree::tree::WriterTree;
 // pub use rtree::tree::Tree;
 

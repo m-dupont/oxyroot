@@ -1,14 +1,25 @@
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 
-use quote::{format_ident, quote, quote_spanned, ToTokens};
+use quote::{format_ident, quote, quote_spanned};
 
-use oxyroot;
+// use oxyroot;
 
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, parse_quote, Fields, GenericParam, Generics};
 use syn::{Data, DeriveInput};
 
-#[proc_macro_derive(FromRootTree)]
+///
+/// Derive macro in order to read struct data from TTree. Branch names and types  are deduced from item.
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+/// #[derive(ReadFromTree)]
+/// struct C {
+///     a: i32,     // will be read from branch "a" as 32 bits integer
+///     s: String,  // will be read from branch "s" String
+/// }
+/// ```
+///
+#[proc_macro_derive(ReadFromTree)]
 pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     // eprintln!("ast: {:#?}", input);
@@ -25,15 +36,17 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let iterator_name = format_ident!("{name}Iterator");
 
     let expanded = quote!(
-        impl #impl_generics #name #ty_generics #where_clause {
-            fn from_tree<'a>(tree: &'a oxyroot::ReaderTree) -> impl Iterator<Item = #name> +'a {
+
+        impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
+            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: Option<&str>) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
                 struct #iterator_name<'a>  {
                    #stru
                 }
 
                 impl<'a> #iterator_name<'a> {
-                    fn new(tree: &'a oxyroot::ReaderTree) -> Self {
-                        #func
+                    fn new(tree: &'a oxyroot::ReaderTree) -> oxyroot::Result<Self> {
+                        use oxyroot::ReadFromTree;
+                        Ok(#func)
                     }
                 }
 
@@ -43,7 +56,7 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                         Some(#name { #next })
                 }
             }
-                #iterator_name::new(tree)
+                Ok(#iterator_name::new(tree)?)
             }
         }
 
@@ -56,7 +69,7 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 fn add_trait_bounds(mut generics: Generics) -> Generics {
     for param in &mut generics.params {
         if let GenericParam::Type(ref mut type_param) = *param {
-            type_param.bounds.push(parse_quote!(oxyroot::Marshaler));
+            type_param.bounds.push(parse_quote!(oxyroot::ReadFromTree));
         }
     }
     generics
@@ -69,6 +82,7 @@ fn write_struct(data: &Data) -> TokenStream {
                 let recurse = fields.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
                     let field_type = &f.ty;
+
                     quote_spanned! {
                         f.span() => #field_name: Box<dyn Iterator<Item=#field_type> + 'a>,
                     }
@@ -99,7 +113,7 @@ fn write_func(data: &Data) -> TokenStream {
                     let field_name = f.ident.as_ref().unwrap();
                     let field_type = &f.ty;
                     quote_spanned! {
-                        f.span() => #field_name:Box::new(tree.branch(stringify!(#field_name)).unwrap().as_iter::<#field_type>().expect("wrong type")),
+                        f.span() => #field_name:Box::new(<#field_type>::from_branch_tree(tree, stringify!(#field_name).into())?),
                     }
                 });
                 quote!(  Self{  #(#recurse)* })
@@ -126,7 +140,6 @@ fn write_next(data: &Data) -> TokenStream {
             Fields::Named(fields) => {
                 let recurse = fields.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
-                    let field_type = &f.ty;
                     quote_spanned! {
                         f.span() => #field_name: self.#field_name.next()?,
                     }

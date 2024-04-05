@@ -6,7 +6,6 @@ pub(crate) mod wbranch;
 
 pub(crate) use crate::rtree::branch::tbranch::TBranch;
 pub(crate) use crate::rtree::branch::tbranch_element::TBranchElement;
-use std::any::type_name;
 use std::fmt::Debug;
 
 use crate::rbytes::rbuffer::RBuffer;
@@ -248,9 +247,9 @@ impl Branch {
     where
         T: UnmarshalerInto<Item = T> + 'a,
     {
-        println!("typename of branch: {}", self.item_type_name());
-        println!("typename of type: {:?}", T::classe_name());
-        println!("typename of type: {:?}", type_name::<T>());
+        // println!("typename of branch: {}", self.item_type_name());
+        // println!("typename of type: {:?}", T::classe_name());
+        // println!("typename of type: {:?}", type_name::<T>());
 
         let ok_typename = match T::classe_name() {
             None => true,

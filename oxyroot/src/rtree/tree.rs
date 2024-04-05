@@ -1,3 +1,4 @@
+use crate::error::Error::BranchNotFound;
 use crate::rbytes::rbuffer::RBuffer;
 use crate::rbytes::wbuffer::WBuffer;
 use crate::rbytes::{
@@ -10,10 +11,102 @@ use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
-use crate::{factory_all_for_register_impl, rvers, RootFile};
+use crate::{factory_all_for_register_impl, rvers, RootFile, UnmarshalerInto};
 use crate::{rbase, Named};
 use log::trace;
 use std::fmt::Debug;
+
+pub trait ReadFromTree<'a> {
+    fn from_branch_tree(
+        tree: &'a crate::ReaderTree,
+        branch_name: Option<&str>,
+    ) -> crate::Result<impl Iterator<Item = Self>>
+    where
+        Self: Sized;
+
+    fn from_tree(tree: &'a crate::ReaderTree) -> crate::Result<impl Iterator<Item = Self>>
+    where
+        Self: Sized,
+    {
+        Self::from_branch_tree(tree, None)
+    }
+}
+
+impl<'a, T> ReadFromTree<'a> for T
+where
+    T: UnmarshalerInto<Item = T> + 'a,
+{
+    fn from_branch_tree(
+        tree: &'a crate::ReaderTree,
+        branch_name: Option<&str>,
+    ) -> crate::Result<impl Iterator<Item = Self>> {
+        Ok(tree
+            .branch(branch_name.unwrap())
+            .ok_or(BranchNotFound {
+                name: branch_name.unwrap().into(),
+            })?
+            .as_iter::<T>()?)
+    }
+}
+
+// impl FromTree for i32 {
+//     fn from_tree(
+//         tree: &crate::ReaderTree,
+//         branch_name: Option<&str>,
+//     ) -> impl Iterator<Item = Self> {
+//         let branch = tree.branch(branch_name.unwrap());
+//         branch.unwrap().as_iter::<i32>().unwrap()
+//     }
+// }
+//
+// impl FromTree for Vec<i32> {
+//     fn from_tree(
+//         tree: &crate::ReaderTree,
+//         branch_name: Option<&str>,
+//     ) -> impl Iterator<Item = Self> {
+//         let branch = tree.branch(branch_name.unwrap());
+//         branch.unwrap().as_iter::<Vec<i32>>().unwrap()
+//     }
+// }
+
+// impl<T> FromTree for T
+// where
+//     T: Unmarshaler + Default,
+// {
+//     fn from_tree<'a>(
+//         tree: &'a ReaderTree,
+//         branch_name: Option<&str>,
+//     ) -> impl Iterator<Item = Self> + 'a {
+//         struct TestIterator<'a, T> {
+//             a: Box<dyn Iterator<Item = T> + 'a>,
+//         }
+//         impl<'a, T> TestIterator<'a, T>
+//         where
+//             T: Unmarshaler + Default + 'a,
+//         {
+//             fn new(tree: &'a ReaderTree) -> Self {
+//                 Self {
+//                     a: Box::new(
+//                         tree.branch("a")
+//                             .unwrap()
+//                             .as_iter::<T>()
+//                             .expect("wrong type"),
+//                     ),
+//                 }
+//             }
+//         }
+//         impl<T> Iterator for TestIterator<'_, T>
+//         where
+//             T: Unmarshaler + Default,
+//         {
+//             type Item = T;
+//             fn next(&mut self) -> Option<Self::Item> {
+//                 Some(self.a.next()?)
+//             }
+//         }
+//         TestIterator::<T>::new(tree)
+//     }
+// }
 
 #[derive(Default)]
 pub struct Clusters {
@@ -392,6 +485,13 @@ impl ReaderTree {
 
         self.branches_r().iter().for_each(show_one_branch);
     }
+
+    // pub fn as_iter<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
+    // where
+    //     T: FromTree + 'a,
+    // {
+    //     T::from_tree(self)
+    // }
 }
 
 impl Marshaler for WriterTree {

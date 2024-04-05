@@ -19,8 +19,6 @@ To make this library :
 
 For now:
 
-- only writing of primitive types is supported (i.e. `i32`, `f64`, `bool`, `String`, Fixed length arrays). `Vec` is also
-  supported.
 - can only write uncompressed file
 
 ## See also
@@ -39,7 +37,7 @@ let NJet = tree.branch("NJet").unwrap().as_iter::<i32>();
 NJet.for_each( | v| trace!("v = {v}"));
 ```
 
-### # Example: Write i32 values in a branch
+### Example: Write i32 values in a branch
 
 ```rust
 use oxyroot::{RootFile, WriterTree};
@@ -71,6 +69,32 @@ assert_eq!(
         vec![1, 2, 3, 4, 5]
     ]
 );
+```
+
+### Example : Iter over several branches by using `ReadFromTree`.
+
+If you a root file containing several branches, you can use `ReadFromTree` to read them all at once. To read
+`Point` from branches `x`, `y`:
+
+```rust
+use oxyroot::ReadFromTree;
+
+#[derive(ReadFromTree)]
+struct Point {
+    // will read from branch "x"  
+    x: f64,
+    // will read from branch "y"
+    y: f64,
+}
+
+let s = "tests/point/point.root";
+let tree = RootFile::open(s).unwrap().get_tree("tree").unwrap();
+let points = Point::from_tree(tree).unwrap();
+
+for point in points {
+println!("x = {}, y = {}", point.x, point.y);
+}
+
 ```
 
 ### Feature

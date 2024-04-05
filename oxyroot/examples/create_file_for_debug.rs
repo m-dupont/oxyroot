@@ -42,6 +42,7 @@ fn main() {
         //
         tree.new_branch("a", (10..10 + n));
         tree.new_branch("b", it);
+        tree.new_branch("c", (100..100 + n));
 
         tree.write(&mut f).unwrap();
 

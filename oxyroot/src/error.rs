@@ -3,6 +3,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug)]
 pub enum Error {
     TypeMismatch { expected: String, given: String },
+    BranchNotFound { name: String },
 }
 
 impl std::fmt::Display for Error {

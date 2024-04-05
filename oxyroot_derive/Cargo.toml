@@ -1,0 +1,21 @@
+[package]
+name = "oxyroot_derive"
+version = "0.1.13"
+edition = "2021"
+authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
+description = "Derive macro for oxyroot"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/m-dupont/oxyroot"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+syn = { version = "2", features = ["extra-traits"] }
+proc-macro2 = "1"
+
+[dev-dependencies]
+oxyroot = { path = "../oxyroot", features = ["derive"] }
+

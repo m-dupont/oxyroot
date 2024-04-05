@@ -10,7 +10,12 @@ readme = "readme.md"
 repository = "https://github.com/m-dupont/oxyroot"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
+
+
+
 [dependencies]
+oxyroot_derive = { path = "../oxyroot_derive", optional = true }
 log = "0.4"
 num = "0.4"
 uuid = "1"
@@ -41,6 +46,8 @@ test-log = "0.2"
 zlib-ng = ["flate2/zlib-ng"]
 build-binaries = ["clap", "env_logger", "anyhow"]
 default = ["build-binaries"]
+# Provide derive(Serialize, Deserialize) macros.
+derive = ["oxyroot_derive"]
 
 [[bin]]
 name = "oxyroot-ls"

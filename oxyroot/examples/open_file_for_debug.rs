@@ -26,7 +26,7 @@ fn open_i8_from_root() {
     // assert_eq!(Photon_E.count(), 2421);
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let _stylish_logger = Builder::new()
         .parse_default_env()
         // .filter(None, LevelFilter::Trace)
@@ -42,11 +42,13 @@ fn main() {
         .target(Target::Stdout)
         .init();
 
-    let file = "/tmp/rust/into/i32/int/101/o.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("T").unwrap();
-    let mut Photon_E = tree.branch("v_i").unwrap().as_iter::<Vec<i32>>().unwrap();
+    let file = "oxyroot/tests/root_containers/root_containers.root";
+    let mut tree = RootFile::open(file).unwrap().get_tree("tree")?;
+    let mut Photon_E = tree.branch("map").unwrap().as_iter::<String>().unwrap();
     let v = Photon_E.collect::<Vec<_>>();
     println!("{:?}", v.len());
     println!("{:?}", v);
+
+    Ok(())
     // assert_eq!(Photon_E.count(), 2421);
 }
