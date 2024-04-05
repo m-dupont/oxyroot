@@ -11,12 +11,14 @@ use syn::{Data, DeriveInput};
 ///
 /// Derive macro in order to read struct data from TTree. Branch names and types  are deduced from item.
 /// ```no_run
-/// use oxyroot::ReadFromTree;
+/// use oxyroot::{ReadFromTree, RootFile};
 /// #[derive(ReadFromTree)]
-/// struct C {
+/// struct MyStruct {
 ///     a: i32,     // will be read from branch "a" as 32 bits integer
 ///     s: String,  // will be read from branch "s" String
 /// }
+/// let tree = RootFile::open("in.root").unwrap().get_tree("tree").unwrap();
+/// MyStruct::from_tree(&tree).unwrap().map(|m: MyStruct | {  /* do something with m */ });
 /// ```
 ///
 #[proc_macro_derive(ReadFromTree)]
