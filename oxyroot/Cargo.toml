@@ -15,7 +15,7 @@ repository = "https://github.com/m-dupont/oxyroot"
 
 
 [dependencies]
-oxyroot_derive = { path = "../oxyroot_derive", optional = true }
+oxyroot_derive = { path = "../oxyroot_derive", optional = true, version = "0.1" }
 log = "0.4"
 num = "0.4"
 uuid = "1"
