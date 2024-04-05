@@ -6,7 +6,7 @@ authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
 exclude = ["*test_data/", "*.root", "*.C"]
 description = "Another attempt to make library reading and writing of `.root` binary files which are commonly used in particle physics"
 license = "MIT OR Apache-2.0"
-readme = "readme.md"
+readme = "../readme.md"
 repository = "https://github.com/m-dupont/oxyroot"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
