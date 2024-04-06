@@ -1,6 +1,6 @@
 [package]
 name = "oxyroot_derive"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
 description = "Derive macro for oxyroot"
