@@ -1574,8 +1574,11 @@ impl<'a> ZiperDumperBranch<'a> {
 
         for i in 0..n {
             for zbv in self.iterators.iter_mut() {
-                let it = zbv.iterator.as_mut().next().unwrap();
-                println!("[{}][{}]: {}", i, zbv.branch.name(), it.dump());
+                let s = match zbv.iterator.as_mut().next() {
+                    Some(it) => it.dump(),
+                    None => "None".to_string(),
+                };
+                println!("[{}][{}]: {}", i, zbv.branch.name(), s);
             }
         }
     }
