@@ -94,7 +94,31 @@ let points = Point::from_tree(tree).unwrap();
 for point in points {
 println!("x = {}, y = {}", point.x, point.y);
 }
+```
 
+### Example : Write to several branches by using `WriteToTree`.
+
+```rust
+use oxyroot::ReadFromTree;
+
+#[derive(WriteToTree)]
+struct Point {
+    // will write to branch "x"  
+    x: f64,
+    // will write to branch "y"
+    y: f64,
+}
+
+let s = "tests/point/point.root";
+let mut f = RootFile::create(s).unwrap();
+let mut tree = WriterTree::new("tree");
+
+let points = vec![Point { x: 1.0, y: 2.0 }, Point { x: 3.0, y: 4.0 }];
+
+Test::to_tree(points.into_iter(), & mut tree).unwrap();
+
+tree.write( & mut f).unwrap();
+f.close().unwrap();
 ```
 
 ### Feature

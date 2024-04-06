@@ -184,6 +184,7 @@ pub use rtree::branch::Branch;
 pub use rtree::tree::ReaderTree;
 
 pub use rtree::tree::ReadFromTree;
+pub use rtree::tree::WriteToTree;
 
 pub use rtree::tree::WriterTree;
 // pub use rtree::tree::Tree;
@@ -205,4 +206,6 @@ pub use error::Result;
 /// Derive macro available if oxyroot is built with `features = ["derive"]`.
 #[cfg(feature = "derive")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
-pub use oxyroot_derive::ReadFromTree;
+pub use oxyroot_derive::{ReadFromTree, WriteToTree};
+
+pub use rtree::tree::StateCallBack;

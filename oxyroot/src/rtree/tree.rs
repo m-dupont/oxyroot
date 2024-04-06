@@ -32,6 +32,26 @@ pub trait ReadFromTree<'a> {
     }
 }
 
+pub trait WriteToTree {
+    fn to_tree(
+        it: impl Iterator<Item = Self> + 'static,
+        tree: &mut crate::WriterTree,
+    ) -> crate::Result<()>
+    where
+        Self: Sized,
+    {
+        Self::to_branch_tree(it, tree, None)
+    }
+
+    fn to_branch_tree(
+        it: impl Iterator<Item = Self> + 'static,
+        tree: &mut crate::WriterTree,
+        branch_name: Option<&str>,
+    ) -> crate::Result<()>
+    where
+        Self: Sized;
+}
+
 impl<'a, T> ReadFromTree<'a> for T
 where
     T: UnmarshalerInto<Item = T> + 'a,
@@ -49,64 +69,19 @@ where
     }
 }
 
-// impl FromTree for i32 {
-//     fn from_tree(
-//         tree: &crate::ReaderTree,
-//         branch_name: Option<&str>,
-//     ) -> impl Iterator<Item = Self> {
-//         let branch = tree.branch(branch_name.unwrap());
-//         branch.unwrap().as_iter::<i32>().unwrap()
-//     }
-// }
-//
-// impl FromTree for Vec<i32> {
-//     fn from_tree(
-//         tree: &crate::ReaderTree,
-//         branch_name: Option<&str>,
-//     ) -> impl Iterator<Item = Self> {
-//         let branch = tree.branch(branch_name.unwrap());
-//         branch.unwrap().as_iter::<Vec<i32>>().unwrap()
-//     }
-// }
-
-// impl<T> FromTree for T
-// where
-//     T: Unmarshaler + Default,
-// {
-//     fn from_tree<'a>(
-//         tree: &'a ReaderTree,
-//         branch_name: Option<&str>,
-//     ) -> impl Iterator<Item = Self> + 'a {
-//         struct TestIterator<'a, T> {
-//             a: Box<dyn Iterator<Item = T> + 'a>,
-//         }
-//         impl<'a, T> TestIterator<'a, T>
-//         where
-//             T: Unmarshaler + Default + 'a,
-//         {
-//             fn new(tree: &'a ReaderTree) -> Self {
-//                 Self {
-//                     a: Box::new(
-//                         tree.branch("a")
-//                             .unwrap()
-//                             .as_iter::<T>()
-//                             .expect("wrong type"),
-//                     ),
-//                 }
-//             }
-//         }
-//         impl<T> Iterator for TestIterator<'_, T>
-//         where
-//             T: Unmarshaler + Default,
-//         {
-//             type Item = T;
-//             fn next(&mut self) -> Option<Self::Item> {
-//                 Some(self.a.next()?)
-//             }
-//         }
-//         TestIterator::<T>::new(tree)
-//     }
-// }
+impl<T> WriteToTree for T
+where
+    T: Marshaler + 'static,
+{
+    fn to_branch_tree(
+        it: impl Iterator<Item = T> + 'static,
+        tree: &mut crate::WriterTree,
+        branch_name: Option<&str>,
+    ) -> crate::Result<()> {
+        tree.new_branch(branch_name.unwrap(), it);
+        Ok(())
+    }
+}
 
 #[derive(Default)]
 pub struct Clusters {
@@ -217,6 +192,8 @@ pub struct Tree<B> {
 
     reader: Option<RootFileReader>,
     sinfos: Option<RootFileStreamerInfoContext>,
+
+    callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
 }
 
 impl<B> Tree<B> {
@@ -257,6 +234,7 @@ impl<B> Default for Tree<B> {
             branches: Vec::new(),
             reader: None,
             sinfos: None,
+            callbacks: Vec::new(),
         }
     }
 }
@@ -286,6 +264,13 @@ file.close().expect("Can not close file");
  */
 pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
 
+#[derive(Debug)]
+pub enum StateCallBack {
+    Before,
+    Branch(String),
+    After,
+}
+
 impl WriterTree {
     pub fn new<S>(name: S) -> Self
     where
@@ -309,12 +294,18 @@ impl WriterTree {
         }
     }
 
+    pub fn add_callback<F>(&mut self, f: Box<F>)
+    where
+        F: FnMut(StateCallBack) + 'static,
+    {
+        self.callbacks.push(f);
+    }
+
     pub fn add_streamer(&mut self, si: StreamerInfo) {
         let sis = self.sinfos.as_mut().unwrap();
         sis.push(si);
     }
 
-    // TODO: ckeck if f is mandatory, now used in new_key_for_basket_internal to check is_big_file
     pub fn new_branch<T, S>(&mut self, name: S, provider: impl Iterator<Item = T> + 'static)
     where
         T: Marshaler + 'static,
@@ -334,7 +325,13 @@ impl WriterTree {
         loop {
             let mut tot = 0;
             let zip = 0;
+            for f in self.callbacks.iter_mut() {
+                f(StateCallBack::Before);
+            }
             for (b, d) in branches.iter_mut().zip(branchs_done.iter_mut()) {
+                for f in self.callbacks.iter_mut() {
+                    f(StateCallBack::Branch(b.name().to_string()));
+                }
                 match b.write(self, file)? {
                     None => *d = true,
                     Some(nbytes) => {
