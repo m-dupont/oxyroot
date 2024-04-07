@@ -23,8 +23,7 @@ jobs:
     - run: sudo apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
     - run: sudo wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
     - run: sudo tar -xzf /tmp/root.tar.gz -C /opt
-    - run: source /opt/root/bin/thisroot.sh && root --version
-    - run: root --version
-    - run: cargo test
+    - run: source /opt/root/bin/thisroot.sh && root --version    
+    - run: source /opt/root/bin/thisroot.sh && cargo test
         
 
