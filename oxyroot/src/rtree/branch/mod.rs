@@ -257,10 +257,10 @@ impl Branch {
         };
 
         if !ok_typename {
-            return Err(crate::error::Error::TypeMismatch {
+            Err(crate::error::Error::TypeMismatch {
                 given: format!("one of {:?}", T::classe_name().unwrap()),
                 expected: self.item_type_name(),
-            });
+            })
         } else {
             Ok(self.get_basket(|r| r.read_object_into::<T>().unwrap()))
         }

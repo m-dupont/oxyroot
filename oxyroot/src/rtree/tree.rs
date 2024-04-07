@@ -60,12 +60,11 @@ where
         tree: &'a crate::ReaderTree,
         branch_name: Option<&str>,
     ) -> crate::Result<impl Iterator<Item = Self>> {
-        Ok(tree
-            .branch(branch_name.unwrap())
+        tree.branch(branch_name.unwrap())
             .ok_or(BranchNotFound {
                 name: branch_name.unwrap().into(),
             })?
-            .as_iter::<T>()?)
+            .as_iter::<T>()
     }
 }
 
