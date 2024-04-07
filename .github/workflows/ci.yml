@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3    
-    - run: apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
-    - run: wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
+    - run: sudo apt-get update 
+    - run: sudo apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
+    - run: sudo wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
     - run: source /opt/root/bin/thisroot.sh
     - run: root --version
     - run: cargo test
