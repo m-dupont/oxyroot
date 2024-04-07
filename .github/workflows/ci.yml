@@ -10,16 +10,15 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
   test_with_root:
+    name: Test with ROOT
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Install root
+    - uses: actions/checkout@v3    
     - run: apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
     - run: wget  https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz -O /tmp/root.tar.gz
     - run: source /opt/root/bin/thisroot.sh
