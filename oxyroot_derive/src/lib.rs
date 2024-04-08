@@ -1,4 +1,6 @@
-use proc_macro2::TokenStream;
+use darling::{ast, FromDeriveInput, FromField};
+use proc_macro2::{Ident, TokenStream};
+use std::collections::HashMap;
 
 use quote::{format_ident, quote, quote_spanned};
 
@@ -7,6 +9,36 @@ use quote::{format_ident, quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, parse_quote, Fields, GenericParam, Generics};
 use syn::{Data, DeriveInput};
+
+#[derive(FromDeriveInput, Debug)]
+#[darling(attributes(oxyroot))]
+struct GOpts {
+    // The struct ident.
+    // ident: syn::Ident,
+    // rename: Option<String>,
+
+    // Receives the body of the struct or enum. We don't care about
+    // struct fields because we previously told darling we only accept structs.
+    data: ast::Data<(), FOpts>,
+    // The type's generics. You'll need these any time your trait is expected
+    // to work with types that declare generics.
+    // generics: syn::Generics,
+}
+
+#[derive(FromField, Default, Debug)]
+#[darling(default, attributes(oxyroot))]
+struct FOpts {
+    rename: Option<String>,
+
+    /// Get the ident of the field. For fields in tuple or newtype structs or
+    /// enum bodies, this can be `None`.
+    ident: Option<syn::Ident>,
+}
+
+#[derive(Default, Debug)]
+struct OptionByField {
+    renames: HashMap<Ident, String>,
+}
 
 ///
 /// Derive macro in order to read struct data from TTree. Branch names and types  are deduced from fields.
@@ -21,17 +53,50 @@ use syn::{Data, DeriveInput};
 /// MyStruct::from_tree(&tree).unwrap().map(|m: MyStruct | {  /* do something with m */ });
 /// ```
 ///
-#[proc_macro_derive(ReadFromTree)]
+/// By using attribute `#[oxyroot(rename = "...")]`, it is possible to use different branch name :
+/// ```no_run
+/// use oxyroot::{ReadFromTree};
+/// #[derive(ReadFromTree)]///
+///  struct MyStruct {
+///      #[oxyroot(rename = "b")]
+///      a: i32,     // will be read from branch *"b"* as 32 bits integer
+///      s: String,  // will be read from branch "s" String
+///  }
+/// ```
+///
+#[proc_macro_derive(ReadFromTree, attributes(oxyroot))]
 pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     // eprintln!("ast: {:#?}", input);
+
+    let opts = GOpts::from_derive_input(&input).expect("Wrong options");
+    // eprintln!("ropts: {:#?}", opts);
+    let mut opts_by_fiels = OptionByField::default();
+
+    let data = opts
+        .data
+        .as_ref()
+        .take_struct()
+        .expect("should be struct")
+        .fields;
+    for f in data.iter() {
+        match &f.rename {
+            None => {}
+            Some(i) => {
+                let ident = f.ident.as_ref().expect("de");
+                opts_by_fiels.renames.insert(ident.clone(), i.clone());
+            }
+        }
+    }
+
+    // eprintln!("opts_by_fiels: {:#?}", opts_by_fiels);
 
     // Used in the quasi-quotation below as `#name`.
     let name = input.ident;
     let generics = add_trait_bounds(input.generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let func = write_func_for_readtotree(&input.data);
+    let func = write_func_for_readtotree(&input.data, &opts_by_fiels);
     let stru = write_struct_for_readtotree(&input.data);
     let next = write_next_for_readtotree(&input.data);
 
@@ -107,15 +172,19 @@ fn write_struct_for_readtotree(data: &Data) -> TokenStream {
     }
 }
 
-fn write_func_for_readtotree(data: &Data) -> TokenStream {
+fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
     match &data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
                 let recurse = fields.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
+                    let branch_name = match  opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
+                        None => {  field_name.to_string()}
+                        Some(s) => {s.to_string()}
+                    };
                     let field_type = &f.ty;
                     quote_spanned! {
-                        f.span() => #field_name:Box::new(<#field_type>::from_branch_tree(tree, stringify!(#field_name).into())?),
+                        f.span() => #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name.into())?),
                     }
                 });
                 quote!(  Self{  #(#recurse)* })
@@ -186,6 +255,8 @@ pub fn derive_write_to_tree(input: proc_macro::TokenStream) -> proc_macro::Token
     let input = parse_macro_input!(input as DeriveInput);
     // eprintln!("ast: {:#?}", input);
 
+    //let opts = GOpts::from_derive_input(&input).expect("Wrong options");
+    // eprintln!("opts: {:#?}", opts);
     // Used in the quasi-quotation below as `#name`.
     let name = input.ident;
     let generics = add_trait_bounds(input.generics);
