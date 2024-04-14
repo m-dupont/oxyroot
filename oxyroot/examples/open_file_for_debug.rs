@@ -2,28 +2,12 @@ use env_logger::{Builder, Target, WriteStyle};
 use oxyroot::{RootFile, Slice};
 use std::io::Write;
 
-fn open_vector_from_root() {
-    let file = "stl_containers_simple.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
-    let mut Photon_E = tree
-        .branch("vector_int32")
-        .unwrap()
-        .as_iter::<Vec<i32>>()
-        .unwrap();
-    let v = Photon_E.collect::<Vec<_>>();
-    println!("{:?}", v.len());
-    println!("{:?}", v);
-    // assert_eq!(Photon_E.count(), 2421);
-}
+use oxyroot::ReadFromTree;
 
-fn open_i8_from_root() {
-    let file = "stl_containers_simple.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("tree").unwrap();
-    let mut Photon_E = tree.branch("i8").unwrap().as_iter::<Vec<i8>>().unwrap();
-    let v = Photon_E.collect::<Vec<_>>();
-    println!("{:?}", v.len());
-    println!("{:?}", v);
-    // assert_eq!(Photon_E.count(), 2421);
+#[derive(Debug, ReadFromTree)]
+struct myDetectorData {
+    #[oxyroot(rename = "branch1.time")]
+    time: f64,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -42,10 +26,12 @@ fn main() -> anyhow::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let file = "oxyroot/tests/root_containers/root_containers.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("tree")?;
-    let mut Photon_E = tree.branch("map").unwrap().as_iter::<String>().unwrap();
-    let v = Photon_E.collect::<Vec<_>>();
+    let file =
+        "/home/mdupont/Documents/DocumentsSync_data/repositories/customTTreeExample/testFile.root";
+    let mut tree = RootFile::open(file).unwrap().get_tree("myTree")?;
+    // let mut Photon_E = tree.branch("branch1.").unwrap().as_iter::<String>()?;
+
+    let v = myDetectorData::from_tree(&mut tree)?.collect::<Vec<_>>();
     println!("{:?}", v.len());
     println!("{:?}", v);
 

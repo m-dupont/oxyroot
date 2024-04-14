@@ -1,0 +1,84 @@
+use oxyroot::{ReadFromTree, RootFile, WriteToTree, WriterTree};
+
+#[test]
+fn t04_01_read_tree_points() -> anyhow::Result<()> {
+    #[derive(ReadFromTree)]
+    struct Points {
+        x: i32,
+        y: i32,
+    }
+
+    let file = "create_root_files_with_root/t04_01_write_tree_points.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+    for (i, p) in Points::from_tree(&tree)?.enumerate() {
+        assert_eq!(p.x, i as i32);
+        assert_eq!(p.y, (i * i) as i32);
+    }
+    Ok(())
+}
+
+#[test]
+fn t04_02_write_tree_points_prefix() -> anyhow::Result<()> {
+    #[derive(ReadFromTree)]
+    #[oxyroot(branch_prefix = "branch.")]
+    struct Points {
+        x: i32,
+        y: i32,
+    }
+
+    let file = "create_root_files_with_root/t04_02_write_tree_points_prefix.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+    for (i, p) in Points::from_tree(&tree)?.enumerate() {
+        assert_eq!(p.x, i as i32);
+        assert_eq!(p.y, (i * i) as i32);
+    }
+    Ok(())
+}
+
+#[test]
+fn t04_03_write_tree_pointsvector() -> anyhow::Result<()> {
+    #[derive(ReadFromTree)]
+    struct Points {
+        x: Vec<i32>,
+        y: Vec<i32>,
+    }
+
+    let file = "create_root_files_with_root/t04_03_write_tree_pointsvector.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+    for (i, p) in Points::from_tree(&tree)?.enumerate() {
+        let xx = vec![i as i32; i];
+        let yy: Vec<_> = (0..i as i32).collect();
+        assert_eq!(p.x, xx);
+        assert_eq!(p.y, yy);
+    }
+    Ok(())
+}
+
+#[test]
+fn t04_04_write_twopoints() -> anyhow::Result<()> {
+    #[derive(ReadFromTree)]
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    #[derive(ReadFromTree)]
+    struct TwoPoints {
+        #[oxyroot(branch_prefix = "p1.")]
+        p1: Point,
+        #[oxyroot(branch_prefix = "p2.")]
+        p2: Point,
+    }
+
+    let file = "create_root_files_with_root/t04_04_write_twopoints.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+    for (i, p) in TwoPoints::from_tree(&tree)?.enumerate() {
+        assert_eq!(p.p1.x, i as i32);
+        assert_eq!(p.p2.y, (i * i) as i32);
+    }
+    Ok(())
+}

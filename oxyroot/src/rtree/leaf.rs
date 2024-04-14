@@ -335,8 +335,16 @@ impl Unmarshaler for TLeaf {
 
         match ptr {
             None => {}
-            Some(_) => {
-                todo!()
+            Some(p) => {
+                if p.class() == "TLeafElement" {
+                    let _p = p.downcast::<LeafElement>().unwrap();
+
+                    //  todo!("");
+
+                    self.count = Some(LeafCount {});
+                } else {
+                    todo!("can not read ptr:{}", p.class())
+                }
             }
         };
 

@@ -208,4 +208,5 @@ pub use error::Result;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
 pub use oxyroot_derive::{ReadFromTree, WriteToTree};
 
+pub use rtree::tree::BranchName;
 pub use rtree::tree::StateCallBack;

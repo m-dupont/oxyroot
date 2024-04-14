@@ -16,6 +16,7 @@ struct GOpts {
     // The struct ident.
     // ident: syn::Ident,
     // rename: Option<String>,
+    branch_prefix: Option<String>,
 
     // Receives the body of the struct or enum. We don't care about
     // struct fields because we previously told darling we only accept structs.
@@ -29,6 +30,7 @@ struct GOpts {
 #[darling(default, attributes(oxyroot))]
 struct FOpts {
     rename: Option<String>,
+    branch_prefix: Option<String>,
 
     /// Get the ident of the field. For fields in tuple or newtype structs or
     /// enum bodies, this can be `None`.
@@ -38,6 +40,7 @@ struct FOpts {
 #[derive(Default, Debug)]
 struct OptionByField {
     renames: HashMap<Ident, String>,
+    branch_prefixs: HashMap<Ident, String>,
 }
 
 ///
@@ -80,13 +83,44 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
         .expect("should be struct")
         .fields;
     for f in data.iter() {
-        match &f.rename {
-            None => {}
-            Some(i) => {
-                let ident = f.ident.as_ref().expect("de");
-                opts_by_fiels.renames.insert(ident.clone(), i.clone());
+        let original_name = f.ident.as_ref().expect("de");
+        let final_name = match &f.rename {
+            None => original_name.to_string(),
+
+            Some(i) => i.to_string(),
+        };
+        opts_by_fiels
+            .renames
+            .insert(original_name.clone(), final_name);
+
+        match &f.branch_prefix {
+            None => match &opts.branch_prefix {
+                None => {}
+                Some(ref prefix) => {
+                    let s = prefix.to_string();
+                    let branch_prefix = s;
+                    opts_by_fiels
+                        .branch_prefixs
+                        .insert(original_name.clone(), branch_prefix);
+                }
+            },
+            Some(local_prefix) => {
+                match &opts.branch_prefix {
+                    None => {
+                        let branch_prefix = local_prefix.to_string();
+                        opts_by_fiels
+                            .branch_prefixs
+                            .insert(original_name.clone(), branch_prefix);
+                    }
+                    Some(ref prefix) => {
+                        let branch_prefix = format!("{prefix}{local_prefix}");
+                        opts_by_fiels
+                            .branch_prefixs
+                            .insert(original_name.clone(), branch_prefix);
+                    }
+                };
             }
-        }
+        };
     }
 
     // eprintln!("opts_by_fiels: {:#?}", opts_by_fiels);
@@ -105,15 +139,15 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
     let expanded = quote!(
 
         impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
-            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: Option<&str>) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
+            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: Option<oxyroot::BranchName>) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
                 struct #iterator_name<'a>  {
                    #stru
                 }
 
                 impl<'a> #iterator_name<'a> {
-                    fn new(tree: &'a oxyroot::ReaderTree) -> oxyroot::Result<Self> {
+                    fn new(tree: &'a oxyroot::ReaderTree, branch_name: Option<oxyroot::BranchName>) -> oxyroot::Result<Self> {
                         use oxyroot::ReadFromTree;
-                        Ok(#func)
+                        #func
                     }
                 }
 
@@ -123,7 +157,7 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
                         Some(#name { #next })
                 }
             }
-                Ok(#iterator_name::new(tree)?)
+                Ok(#iterator_name::new(tree, branch_name)?)
             }
         }
 
@@ -176,18 +210,83 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
     match &data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
+                let branch_names = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let branch_name_ident = format_ident!("bn_{field_name}");
+                    let branch_name = match opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
+                        None => field_name.to_string(),
+                        Some(s) => s.to_string(),
+                    };
+
+                    match opts_by_fiels.branch_prefixs.get(f.ident.as_ref().unwrap()) {
+                        None => quote_spanned!(f.span() => let #branch_name_ident =
+                            {
+                                match &branch_name {
+                                 None => oxyroot::BranchName::new(None, Some(#branch_name.to_string())),
+                                 Some(b) =>  {
+                                    match &b.prefix_branch {
+                                        None => oxyroot::BranchName::new(None, Some(#branch_name.to_string())),
+                                        Some(prefix) => {
+                                            let s = format!("{}{}", prefix, #branch_name.to_string());
+                                            oxyroot::BranchName::new(Some(s), None)
+                                        }
+                                    }
+                                }
+                                }
+                            };
+
+                        ),
+                        Some(local_prefix) => quote_spanned!(f.span() =>
+
+                            let #branch_name_ident = {
+                                //oxyroot::BranchName::new(Some(#local_prefix.to_string()), Some(#branch_name.to_string()))
+
+
+                                match &branch_name {
+                                 None => oxyroot::BranchName::new(Some(#local_prefix.to_string()), Some(#branch_name.to_string())),
+                                 Some(b) =>  {
+                                    match &b.prefix_branch {
+                                        None => {
+                                                let s = format!("{}{}", #local_prefix.to_string(), #branch_name.to_string());
+                                                oxyroot::BranchName::new(Some(s), None)},
+                                        Some(prefix) => {
+                                            let s = format!("{}{}{}", #local_prefix.to_string(), prefix, #branch_name.to_string());
+                                            oxyroot::BranchName::new(Some(s), None)
+                                        }
+                                    }
+                                }
+                                }
+
+
+                                }
+                            ;
+
+                            ),
+                    }
+
+
+
+
+
+                });
+
                 let recurse = fields.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
-                    let branch_name = match  opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
+                    let _branch_name = match  opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
                         None => {  field_name.to_string()}
                         Some(s) => {s.to_string()}
                     };
                     let field_type = &f.ty;
+
+
+                    let branch_name_ident = format_ident!("bn_{field_name}");
+
+
                     quote_spanned! {
-                        f.span() => #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name.into())?),
+                        f.span() =>  #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name_ident.into())?)     ,
                     }
                 });
-                quote!(  Self{  #(#recurse)* })
+                quote!(  #(#branch_names)*   Ok(Self{  #(#recurse)* }))
             }
             Fields::Unnamed(_) => {
                 unimplemented!("Unnamed")

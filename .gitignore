@@ -1,3 +1,4 @@
 /target
 /Cargo.lock
 cmake-build-debug*
+/test_suite/create_root_files_with_root/build/

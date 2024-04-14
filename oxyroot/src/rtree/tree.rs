@@ -16,10 +16,33 @@ use crate::{rbase, Named};
 use log::trace;
 use std::fmt::Debug;
 
+pub struct BranchName {
+    name: Option<String>,
+    pub prefix_branch: Option<String>,
+}
+
+impl BranchName {
+    pub fn new(prefix: Option<String>, aname: Option<String>) -> Self {
+        BranchName {
+            name: aname,
+            prefix_branch: prefix,
+        }
+    }
+}
+
+impl From<&str> for BranchName {
+    fn from(value: &str) -> Self {
+        BranchName {
+            name: value.to_string().into(),
+            prefix_branch: None,
+        }
+    }
+}
+
 pub trait ReadFromTree<'a> {
     fn from_branch_tree(
         tree: &'a crate::ReaderTree,
-        branch_name: Option<&str>,
+        branch_name: Option<BranchName>,
     ) -> crate::Result<impl Iterator<Item = Self>>
     where
         Self: Sized;
@@ -58,15 +81,44 @@ where
 {
     fn from_branch_tree(
         tree: &'a crate::ReaderTree,
-        branch_name: Option<&str>,
+        branch_name: Option<BranchName>,
     ) -> crate::Result<impl Iterator<Item = Self>> {
-        tree.branch(branch_name.unwrap())
+        let mut final_branch_name = String::new();
+        let branch_name = branch_name.unwrap();
+
+        if let Some(prefix) = branch_name.prefix_branch {
+            final_branch_name.push_str(&prefix);
+        }
+
+        match branch_name.name {
+            None => {}
+            Some(s) => {
+                final_branch_name.push_str(&s);
+            }
+        }
+
+        tree.branch(&final_branch_name)
             .ok_or(BranchNotFound {
-                name: branch_name.unwrap().into(),
+                name: final_branch_name,
             })?
             .as_iter::<T>()
     }
 }
+
+// impl<'a, T> ReadFromTree<'a> for Vec<T>
+// where
+//     T: ReadFromTree<'a>,
+// {
+//     fn from_branch_tree(
+//         tree: &'a ReaderTree,
+//         branch_name: Option<&str>,
+//     ) -> crate::Result<impl Iterator<Item = Self>>
+//     where
+//         Self: Sized,
+//     {
+//         todo!()
+//     }
+// }
 
 impl<T> WriteToTree for T
 where
