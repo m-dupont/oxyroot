@@ -11,38 +11,16 @@ use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
 use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
+use crate::rtree::branch_name::BranchName;
 use crate::{factory_all_for_register_impl, rvers, RootFile, UnmarshalerInto};
 use crate::{rbase, Named};
 use log::trace;
 use std::fmt::Debug;
 
-pub struct BranchName {
-    name: Option<String>,
-    pub prefix_branch: Option<String>,
-}
-
-impl BranchName {
-    pub fn new(prefix: Option<String>, aname: Option<String>) -> Self {
-        BranchName {
-            name: aname,
-            prefix_branch: prefix,
-        }
-    }
-}
-
-impl From<&str> for BranchName {
-    fn from(value: &str) -> Self {
-        BranchName {
-            name: value.to_string().into(),
-            prefix_branch: None,
-        }
-    }
-}
-
 pub trait ReadFromTree<'a> {
     fn from_branch_tree(
         tree: &'a crate::ReaderTree,
-        branch_name: Option<BranchName>,
+        branch_name: BranchName,
     ) -> crate::Result<impl Iterator<Item = Self>>
     where
         Self: Sized;
@@ -51,7 +29,7 @@ pub trait ReadFromTree<'a> {
     where
         Self: Sized,
     {
-        Self::from_branch_tree(tree, None)
+        Self::from_branch_tree(tree, BranchName::new())
     }
 }
 
@@ -81,21 +59,9 @@ where
 {
     fn from_branch_tree(
         tree: &'a crate::ReaderTree,
-        branch_name: Option<BranchName>,
+        branch_name: BranchName,
     ) -> crate::Result<impl Iterator<Item = Self>> {
-        let mut final_branch_name = String::new();
-        let branch_name = branch_name.unwrap();
-
-        if let Some(prefix) = branch_name.prefix_branch {
-            final_branch_name.push_str(&prefix);
-        }
-
-        match branch_name.name {
-            None => {}
-            Some(s) => {
-                final_branch_name.push_str(&s);
-            }
-        }
+        let final_branch_name = branch_name.final_name();
 
         tree.branch(&final_branch_name)
             .ok_or(BranchNotFound {

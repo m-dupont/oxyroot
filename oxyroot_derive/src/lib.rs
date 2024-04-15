@@ -40,7 +40,8 @@ struct FOpts {
 #[derive(Default, Debug)]
 struct OptionByField {
     renames: HashMap<Ident, String>,
-    branch_prefixs: HashMap<Ident, String>,
+    local_branch_prefix: HashMap<Ident, String>,
+    global_branch_prefix: HashMap<Ident, String>,
 }
 
 ///
@@ -93,34 +94,17 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
             .renames
             .insert(original_name.clone(), final_name);
 
-        match &f.branch_prefix {
-            None => match &opts.branch_prefix {
-                None => {}
-                Some(ref prefix) => {
-                    let s = prefix.to_string();
-                    let branch_prefix = s;
-                    opts_by_fiels
-                        .branch_prefixs
-                        .insert(original_name.clone(), branch_prefix);
-                }
-            },
-            Some(local_prefix) => {
-                match &opts.branch_prefix {
-                    None => {
-                        let branch_prefix = local_prefix.to_string();
-                        opts_by_fiels
-                            .branch_prefixs
-                            .insert(original_name.clone(), branch_prefix);
-                    }
-                    Some(ref prefix) => {
-                        let branch_prefix = format!("{prefix}{local_prefix}");
-                        opts_by_fiels
-                            .branch_prefixs
-                            .insert(original_name.clone(), branch_prefix);
-                    }
-                };
-            }
-        };
+        if let Some(l) = &f.branch_prefix {
+            opts_by_fiels
+                .local_branch_prefix
+                .insert(original_name.clone(), l.to_string());
+        }
+
+        if let Some(g) = &opts.branch_prefix {
+            opts_by_fiels
+                .global_branch_prefix
+                .insert(original_name.clone(), g.to_string());
+        }
     }
 
     // eprintln!("opts_by_fiels: {:#?}", opts_by_fiels);
@@ -139,13 +123,13 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
     let expanded = quote!(
 
         impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
-            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: Option<oxyroot::BranchName>) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
+            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
                 struct #iterator_name<'a>  {
                    #stru
                 }
 
                 impl<'a> #iterator_name<'a> {
-                    fn new(tree: &'a oxyroot::ReaderTree, branch_name: Option<oxyroot::BranchName>) -> oxyroot::Result<Self> {
+                    fn new(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<Self> {
                         use oxyroot::ReadFromTree;
                         #func
                     }
@@ -218,56 +202,31 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
                         Some(s) => s.to_string(),
                     };
 
-                    match opts_by_fiels.branch_prefixs.get(f.ident.as_ref().unwrap()) {
-                        None => quote_spanned!(f.span() => let #branch_name_ident =
-                            {
-                                match &branch_name {
-                                 None => oxyroot::BranchName::new(None, Some(#branch_name.to_string())),
-                                 Some(b) =>  {
-                                    match &b.prefix_branch {
-                                        None => oxyroot::BranchName::new(None, Some(#branch_name.to_string())),
-                                        Some(prefix) => {
-                                            let s = format!("{}{}", prefix, #branch_name.to_string());
-                                            oxyroot::BranchName::new(Some(s), None)
-                                        }
-                                    }
-                                }
-                                }
-                            };
+                    let mut let_b =
+                        quote_spanned!(f.span() => let b = branch_name.make_child(#branch_name));
 
-                        ),
-                        Some(local_prefix) => quote_spanned!(f.span() =>
+                    let global_prefix = opts_by_fiels
+                        .global_branch_prefix
+                        .get(f.ident.as_ref().unwrap());
 
-                            let #branch_name_ident = {
-                                //oxyroot::BranchName::new(Some(#local_prefix.to_string()), Some(#branch_name.to_string()))
-
-
-                                match &branch_name {
-                                 None => oxyroot::BranchName::new(Some(#local_prefix.to_string()), Some(#branch_name.to_string())),
-                                 Some(b) =>  {
-                                    match &b.prefix_branch {
-                                        None => {
-                                                let s = format!("{}{}", #local_prefix.to_string(), #branch_name.to_string());
-                                                oxyroot::BranchName::new(Some(s), None)},
-                                        Some(prefix) => {
-                                            let s = format!("{}{}{}", #local_prefix.to_string(), prefix, #branch_name.to_string());
-                                            oxyroot::BranchName::new(Some(s), None)
-                                        }
-                                    }
-                                }
-                                }
-
-
-                                }
-                            ;
-
-                            ),
+                    if let Some(l) = global_prefix {
+                        let_b = quote_spanned!(f.span() => #let_b.with_prefix(#l));
                     }
 
+                    let local_prefix = opts_by_fiels
+                        .local_branch_prefix
+                        .get(f.ident.as_ref().unwrap());
 
+                    if let Some(l) = local_prefix {
+                        let_b = quote_spanned!(f.span() => #let_b.with_prefix(#l));
+                    }
 
-
-
+                    quote_spanned!(f.span() => let #branch_name_ident =
+                        {
+                            #let_b;
+                            b
+                        };
+                    )
                 });
 
                 let recurse = fields.named.iter().map(|f| {

@@ -22,6 +22,10 @@ class TwoPoints {
         Point p2;
 };
 
+class SeveralPoints {
+    public:
+        std::vector<Point> points;
+};
 
 
 #endif

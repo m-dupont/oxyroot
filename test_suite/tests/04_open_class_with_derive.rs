@@ -67,9 +67,7 @@ fn t04_04_write_twopoints() -> anyhow::Result<()> {
 
     #[derive(ReadFromTree)]
     struct TwoPoints {
-        #[oxyroot(branch_prefix = "p1.")]
         p1: Point,
-        #[oxyroot(branch_prefix = "p2.")]
         p2: Point,
     }
 
