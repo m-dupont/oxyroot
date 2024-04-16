@@ -7,6 +7,7 @@ use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItemRead;
 use log::trace;
+use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;
@@ -47,7 +48,8 @@ impl<'a> Rbuff<'a> {
     where
         F: FnMut(&u8) -> bool,
     {
-        let buf = &self.p[self.c..(self.c + n)];
+        let m = min(self.c + n, self.p.len());
+        let buf = &self.p[self.c..m];
         let mut iter = buf.split(pred);
         if let Some(buf) = iter.next() {
             self.c += buf.len() + 1;
@@ -272,7 +274,7 @@ impl<'a> RBuffer<'a> {
         //     panic!(";rbuffer.ReadObjectAny.beg: {}", _beg);
         // }
         trace!(";rbuffer.ReadObjectAny.beg: {}", _beg);
-        trace!(";rbuffer.ReadObjectAny.{}.beg: {}", _beg, _beg);
+        trace!(";rbuffer.ReadObjectAny.a{}.beg: {}", _beg, _beg);
         let bcnt = self.read_u32()?;
         let mut vers = 0;
         let tag: u32;
@@ -287,7 +289,7 @@ impl<'a> RBuffer<'a> {
             tag = self.read_u32()?;
         }
 
-        trace!(";rbuffer.ReadObjectAny.{}.tag: {}", _beg, tag);
+        trace!(";rbuffer.ReadObjectAny.a{}.tag: {}", _beg, tag);
 
         // trace!(
         //     "\t\t beg = {} bcnt = {} start = {} tag = {}",
@@ -305,12 +307,12 @@ impl<'a> RBuffer<'a> {
         // );
 
         trace!(
-            ";rbuffer.ReadObjectAny.{}.kClassMask.value: {}",
+            ";rbuffer.ReadObjectAny.a{}.kClassMask.value: {}",
             _beg,
             tag64 & kClassMask
         );
         trace!(
-            ";rbuffer.ReadObjectAny.{}.kNewClassTag.value: {}",
+            ";rbuffer.ReadObjectAny.a{}.kNewClassTag.value: {}",
             _beg,
             tag64 == kNewClassTag
         );
@@ -318,7 +320,7 @@ impl<'a> RBuffer<'a> {
         if tag64 & kClassMask == 0 {
             if tag64 == kNullTag {
                 trace!(
-                    ";rbuffer.ReadObjectAny.{}.kClassMask.kNullTag: {}",
+                    ";rbuffer.ReadObjectAny.a{}.kClassMask.kNullTag: {}",
                     _beg,
                     true
                 );
@@ -340,15 +342,20 @@ impl<'a> RBuffer<'a> {
             // trace!("self.refs = {:?}", self.refs);
             // trace!("o = {:?}", o);
         } else if tag64 == kNewClassTag {
+            trace!(
+                ";rbuffer.ReadObjectAny.a{}.kNewClassTag.pos: {}",
+                _beg,
+                self.pos()
+            );
             let cname = self.read_cstring(80)?;
 
             trace!(
-                ";rbuffer.ReadObjectAny.{}.kNewClassTag.cname: {}",
+                ";rbuffer.ReadObjectAny.a{}.kNewClassTag.cname: {}",
                 _beg,
                 cname
             );
             trace!(
-                ";rbuffer.ReadObjectAny.{}.kNewClassTag.vers: {}",
+                ";rbuffer.ReadObjectAny.a{}.kNewClassTag.vers: {}",
                 _beg,
                 vers
             );
@@ -373,7 +380,7 @@ impl<'a> RBuffer<'a> {
 
             let pos = self.pos();
             trace!(
-                ";rbuffer.ReadObjectAny.{}.kNewClassTag.pos_before_object: {}",
+                ";rbuffer.ReadObjectAny.a{}.kNewClassTag.pos_before_object: {}",
                 _beg,
                 pos
             );
@@ -395,7 +402,7 @@ impl<'a> RBuffer<'a> {
             // trace!(";rbuffer.ReadObjectAny.default.{}.tag64: {}", tag64, tag64);
             let uref = tag64 & !kClassMask;
 
-            trace!(";rbuffer.ReadObjectAny.{}.default.uref: {}", _beg, uref);
+            trace!(";rbuffer.ReadObjectAny.a{}.default.uref: {}", _beg, uref);
 
             trace!("fct tag64 = {} uref = {}", tag64, uref);
 
