@@ -5,6 +5,7 @@ use crate::rbytes::{
     ensure_maximum_supported_version, ensure_minimum_supported_version, Marshaler, RVersioner,
     Unmarshaler,
 };
+use crate::rcont::list::ReaderList;
 use crate::rcont::objarray::{ReaderObjArray, WriterObjArray};
 use crate::rdict::StreamerInfo;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
@@ -12,7 +13,7 @@ use crate::root::traits::Object;
 use crate::rtree::branch::wbranch::WBranch;
 use crate::rtree::branch::Branch;
 use crate::rtree::branch_name::BranchName;
-use crate::{factory_all_for_register_impl, rvers, RootFile, UnmarshalerInto};
+use crate::{factory_all_for_register_impl, rcont, rvers, RootFile, UnmarshalerInto};
 use crate::{rbase, Named};
 use log::trace;
 use std::fmt::Debug;
@@ -210,6 +211,8 @@ pub struct Tree<B> {
     reader: Option<RootFileReader>,
     sinfos: Option<RootFileStreamerInfoContext>,
 
+    user_infos: Option<ReaderList>,
+
     callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
 }
 
@@ -251,6 +254,7 @@ impl<B> Default for Tree<B> {
             branches: Vec::new(),
             reader: None,
             sinfos: None,
+            user_infos: None,
             callbacks: Vec::new(),
         }
     }
@@ -452,6 +456,10 @@ impl ReaderTree {
         }
 
         v
+    }
+
+    pub fn user_info(&self) -> Option<&ReaderList> {
+        self.user_infos.as_ref()
     }
 
     /// Display branches in this tree
@@ -738,6 +746,7 @@ impl Unmarshaler for ReaderTree {
         );
 
         if hdr.vers > 5 {
+            // tree.aliases
             let v = r.read_object_any_into()?;
             if v.is_some() {
                 todo!()
@@ -761,7 +770,7 @@ impl Unmarshaler for ReaderTree {
         }
 
         if hdr.vers > 5 {
-            //tree.index
+            //tree.treeindex
             let v = r.read_object_any_into()?;
             if v.is_some() {
                 todo!()
@@ -773,11 +782,21 @@ impl Unmarshaler for ReaderTree {
                 todo!()
             }
 
+            trace!(";Tree.unmarshal.{}.pos_before_user_info: {}", _beg, r.pos());
+
             //tree.userInfo
             let v = r.read_object_any_into()?;
-            if v.is_some() {
-                todo!()
+            if let Some(v) = v {
+                self.user_infos = Some(*v.downcast::<ReaderList>().unwrap());
+                trace!(
+                    ";Tree.unmarshal.a{_beg}.userInfo.len: {}",
+                    self.user_infos.as_ref().unwrap().len()
+                );
             }
+
+            // let user_info = r.read_object_into::<ReaderList>()?;
+
+            // todo!();
 
             //tree.branchRef
             let v = r.read_object_any_into()?;

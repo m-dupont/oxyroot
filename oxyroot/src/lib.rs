@@ -164,11 +164,12 @@ extern crate core;
 
 mod error;
 mod gen_factory;
-mod rbase;
+pub mod rbase;
+
 mod rbytes;
 mod rcolors;
 mod rcompress;
-mod rcont;
+pub mod rcont;
 mod rdict;
 mod riofs;
 mod rmeta;

@@ -173,6 +173,7 @@ lazy_static! {
 
     pub static ref FACTORY: Factory<'static> = {
         use crate::rcont::list::ReaderList;
+        use crate::rcont::tmap::TMap;
         use crate::rcont::objarray::ReaderObjArray;
         use crate::rdict::StreamerInfo;
         use crate::rdict::streamers::streamer_types::StreamerBase;
@@ -186,6 +187,7 @@ lazy_static! {
         let mut f = Factory::new();
         // f.add(LIST::make_factory_name(), LIST::make_factory_builder());
         ReaderList::register(&mut f);
+        TMap::register(&mut f);
         ReaderObjArray::register(&mut f);
         StreamerInfo::register(&mut f);
         StreamerBase::register(&mut f);
@@ -197,7 +199,7 @@ lazy_static! {
         StreamerBasicPointer::register(&mut f);
         crate::rdict::streamers::streamer_types::StreamerSTL::register(&mut f);
         crate::rdict::streamers::streamer_types::StreamerSTLstring::register(&mut f);
-        crate::rbase::ObjString::register(&mut f);
+        crate::rbase::TObjString::register(&mut f);
         crate::rbase::AttLine::register(&mut f);
         crate::rbase::AttFill::register(&mut f);
         crate::rbase::AttMarker::register(&mut f);

@@ -595,7 +595,7 @@ impl RootFile {
         let mut objs: Box<ReaderList> = ogj.downcast::<ReaderList>().unwrap();
 
         for i in (0..objs.len()).rev() {
-            let obj = objs.at(i);
+            let obj = objs.remove(i);
 
             if obj.class() == "TStreamerInfo" {
                 let obj: Box<StreamerInfo> = obj.downcast::<StreamerInfo>().unwrap();
@@ -603,7 +603,7 @@ impl RootFile {
             } else {
                 let mut list: Box<ReaderList> = obj.downcast::<ReaderList>().unwrap();
                 for j in (0..list.len()).rev() {
-                    let _jobj = list.at(j);
+                    let _jobj = list.remove(j);
                     // let obj: Box<StreamerInfo> = jobj.downcast::<StreamerInfo>().unwrap();
                     // trace!("\tobj.name = {}", obj.name());
                 }

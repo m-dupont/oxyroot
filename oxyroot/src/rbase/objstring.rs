@@ -6,17 +6,23 @@ use crate::{factory_all_for_register_impl, Marshaler};
 use crate::{rbase, rvers};
 
 #[derive(Default)]
-pub(crate) struct ObjString {
+pub struct TObjString {
     obj: rbase::Object,
     str: String,
 }
 
-impl Marshaler for ObjString {
+impl ToString for TObjString {
+    fn to_string(&self) -> String {
+        self.str.clone()
+    }
+}
+
+impl Marshaler for TObjString {
     fn marshal(&self, _w: &mut WBuffer) -> crate::rbytes::Result<i64> {
         todo!()
     }
 }
-factory_all_for_register_impl!(ObjString, "TObjString", rvers::OBJ_STRING);
+factory_all_for_register_impl!(TObjString, "TObjString", rvers::OBJ_STRING);
 //
 // impl RVersioner for ObjString {
 //     fn rversion() -> i16 {
@@ -24,7 +30,7 @@ factory_all_for_register_impl!(ObjString, "TObjString", rvers::OBJ_STRING);
 //     }
 // }
 
-impl Unmarshaler for ObjString {
+impl Unmarshaler for TObjString {
     fn unmarshal(&mut self, r: &mut RBuffer) -> crate::rbytes::Result<()> {
         let hdr = r.read_header(self.class())?;
 

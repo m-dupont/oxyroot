@@ -50,8 +50,13 @@ impl ReaderList {
         self.objs.len()
     }
 
-    pub fn at(&mut self, i: usize) -> Box<dyn FactoryItemRead> {
+    pub fn remove(&mut self, i: usize) -> Box<dyn FactoryItemRead> {
         self.objs.remove(i)
+    }
+
+    pub fn at<T: 'static>(&self, i: usize) -> &T {
+        let v = &self.objs[i].downcast_ref::<T>().unwrap();
+        v
     }
 }
 

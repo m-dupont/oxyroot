@@ -12,4 +12,4 @@ pub(crate) use attline::AttLine;
 pub(crate) use attmarker::AttMarker;
 pub use named::Named;
 pub(crate) use object::Object;
-pub(crate) use objstring::ObjString;
+pub use objstring::TObjString;
