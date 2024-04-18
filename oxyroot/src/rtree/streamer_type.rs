@@ -192,10 +192,67 @@ pub(crate) fn _from_leaftype_to_str(leaftype: i32) -> Option<&'static str> {
     }
 }
 
+pub fn replace_string(s: &str, from: &str, to: &str) -> String {
+    let mut ret = String::new();
+    let indices: Vec<_> = s.match_indices(from).collect();
+    let mut g_indices = Vec::new();
+    let chars = s.chars().collect::<Vec<_>>();
+    for (i, _) in indices.iter() {
+        let start = {
+            if *i == 0 {
+                None
+            } else {
+                chars.get(*i - 1)
+            }
+        };
+
+        let end = chars.get(*i + from.len());
+
+        match (start, end) {
+            (Some(start), Some(end)) => {
+                if start.is_alphabetic() || end.is_alphabetic() {
+                    continue;
+                } else {
+                    g_indices.push(*i);
+                }
+            }
+            (Some(start), None) => {
+                if start.is_alphabetic() {
+                    continue;
+                } else {
+                    g_indices.push(*i);
+                }
+            }
+            (None, Some(end)) => {
+                if end.is_alphabetic() {
+                    continue;
+                } else {
+                    g_indices.push(*i);
+                }
+            }
+            (None, None) => {
+                g_indices.push(*i);
+            }
+        }
+    }
+
+    let mut last_end = 0;
+
+    for start in g_indices.iter() {
+        let start = *start;
+        ret.push_str(&s[last_end..start]);
+        ret.push_str(to);
+        last_end = start + from.len();
+    }
+    ret.push_str(&s[last_end..s.len()]);
+
+    ret
+}
+
 /// change c++ typename from "int" to int32_t and so on
 pub(crate) fn clean_type_name<T: AsRef<str>>(ty: T) -> String {
     let ret = ty.as_ref().to_string().replace("unsigned int", "uint32_t");
-    let ret = ret.replace("int", "int32_t");
+    let ret = replace_string(&ret, "int", "int32_t");
     // undo change (uint32_t -> uint32_t32_t)
     let ret = ret.replace("uint32_t32_t", "uint32_t");
     // undo change (int32_t -> int32_t32_t)
@@ -277,6 +334,31 @@ mod tests {
     use anyhow::Result;
 
     #[test]
+    fn test_replace_string() -> Result<()> {
+        let s = "int";
+        let from = "int";
+        let to = "int32_t";
+        assert_eq!(replace_string(s, from, to), "int32_t");
+
+        let s = "unsigned int";
+        let from = "unsigned int";
+        let to = "uint32_t";
+        assert_eq!(replace_string(s, from, to), "uint32_t");
+
+        let s = "Point";
+        let from = "int";
+        let to = "uint32_t";
+        assert_eq!(replace_string(s, from, to), "Point");
+
+        let s = "vector<int>";
+        let from = "int";
+        let to = "int32_t";
+        assert_eq!(replace_string(s, from, to), "vector<int32_t>");
+
+        Ok(())
+    }
+
+    #[test]
     fn test_clean_type_name() -> Result<()> {
         let dirties_clean = [
             ("vector<long>", "vector<int64_t>"),
@@ -288,6 +370,7 @@ mod tests {
             ("vector<unsigned short>", "vector<uint16_t>"),
             ("int[10]", "int32_t[10]"),
             ("unsigned int[10]", "uint32_t[10]"),
+            ("Point", "Point"),
         ];
 
         dirties_clean.iter().for_each(|(dirty, clean)| {

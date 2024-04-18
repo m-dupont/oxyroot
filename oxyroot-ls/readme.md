@@ -20,7 +20,7 @@
 > Data in myTree:
 name                           | typename                       | interpretation                
 -------------------------------+-------------------------------+-------------------------------
-points                         | Point                          | Poi32                         
+points                         | Point                          | Point                         
 x                              | int32_t                        | i32                           
 y                              | int32_t                        | i32                           
 
