@@ -44,7 +44,7 @@ test-log = "0.2"
 
 [features]
 zlib-ng = ["flate2/zlib-ng"]
-build-binaries = ["clap", "env_logger", "anyhow"]
+build-binaries = ["clap", "env_logger", "anyhow", "derive"]
 default = ["build-binaries"]
 # Provide derive(Serialize, Deserialize) macros.
 derive = ["oxyroot_derive"]

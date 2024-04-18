@@ -1,6 +1,6 @@
 use crate::rdict::streamers::db::streamer_info;
 use crate::riofs::consts;
-use crate::rtree::tree::ReaderTree;
+use crate::rtree::tree::reader::ReaderTree;
 use crate::utils::is_cxx_builtin;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;

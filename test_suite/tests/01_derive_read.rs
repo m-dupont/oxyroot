@@ -1,5 +1,6 @@
-use oxyroot::{ReadFromTree, WriterTree};
-use oxyroot::{ReaderTree, RootFile};
+use oxyroot::ReadFromTree;
+use oxyroot::RootFile;
+use oxyroot::WriterTree;
 
 const OUT_DIR: &str = "/tmp/rust/derive_read/";
 

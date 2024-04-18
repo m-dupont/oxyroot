@@ -1,9 +1,9 @@
 use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{RootFile, Slice};
+
 use std::io::Write;
 
 use oxyroot::ReadFromTree;
-
+use oxyroot::{RootFile, Slice};
 #[derive(Debug, ReadFromTree)]
 struct myDetectorData {
     #[oxyroot(rename = "branch1.time")]

@@ -8,7 +8,7 @@ use crate::rtree::basket::{Basket, BasketData};
 use crate::rtree::branch::tbranch_props::TBranchProps;
 use crate::rtree::branch::BranchChunks;
 use crate::rtree::leaf::Leaf;
-use crate::rtree::tree::TioFeatures;
+use crate::rtree::tree::tio_features::TioFeatures;
 use crate::{factory_fn_register_impl, rbase, rvers, Branch, Marshaler, RBuffer, Unmarshaler};
 use itertools::izip;
 use lazy_static::lazy_static;

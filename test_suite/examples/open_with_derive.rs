@@ -1,8 +1,6 @@
 // use env_logger::{Builder, Target, WriteStyle};
-use oxyroot::{ReaderTree, RootFile, Slice};
-use std::io::Write;
-
 use oxyroot::ReadFromTree;
+use oxyroot::RootFile;
 
 #[derive(Debug, ReadFromTree)]
 struct Point {

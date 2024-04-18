@@ -1,10 +1,11 @@
 use oxyroot::WriteToTree;
-use oxyroot::{RootFile, StateCallBack, WriterTree};
+use oxyroot::{RootFile, WriterTree};
 use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
 // use std::sync::mpsc::Receiver;
 
+use oxyroot::rtree::StateCallBack;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]

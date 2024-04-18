@@ -1,5 +1,5 @@
 use clap::Parser;
-use oxyroot::{Branch, RBuffer, ReaderTree, SizedSlice, Unmarshaler, UnmarshalerInto};
+use oxyroot::{Branch, RBuffer, SizedSlice, Unmarshaler, UnmarshalerInto};
 use oxyroot::{RootFile, Slice};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -7,6 +7,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use env_logger::{Builder, Target, WriteStyle};
+use oxyroot::ReaderTree;
 use regex::Regex;
 
 #[derive(Parser)]

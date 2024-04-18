@@ -1,4 +1,5 @@
-use oxyroot::{ReadFromTree, RootFile, WriteToTree, WriterTree};
+use oxyroot::WriterTree;
+use oxyroot::{ReadFromTree, RootFile, WriteToTree};
 
 #[derive(Debug, WriteToTree)]
 struct WStruct {

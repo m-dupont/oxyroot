@@ -174,7 +174,7 @@ mod rdict;
 mod riofs;
 mod rmeta;
 mod root;
-mod rtree;
+pub mod rtree;
 mod rtypes;
 mod rusty;
 mod rvers;
@@ -182,10 +182,10 @@ mod utils;
 
 pub use riofs::file::RootFile;
 pub use rtree::branch::Branch;
-pub use rtree::tree::ReaderTree;
+pub use rtree::tree::reader::ReaderTree;
 
-pub use rtree::tree::ReadFromTree;
-pub use rtree::tree::WriteToTree;
+pub use rtree::tree::traits::ReadFromTree;
+pub use rtree::tree::traits::WriteToTree;
 
 pub use rtree::tree::WriterTree;
 // pub use rtree::tree::Tree;

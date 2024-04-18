@@ -1,4 +1,4 @@
-use oxyroot::{ReadFromTree, RootFile, WriteToTree, WriterTree};
+use oxyroot::{ReadFromTree, RootFile};
 
 #[test]
 fn t04_01_read_tree_points() -> anyhow::Result<()> {
