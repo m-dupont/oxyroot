@@ -8,14 +8,15 @@ build_rust-latest:
   image: rust:latest
   script:
     - cargo build --verbose
-    - cargo b --bin oxyroot-ls --features=build-binaries
+    - cargo b --bin oxyroot-ls
+    - cargo b --bin oxyroot-dump
 
 build rust-nightly:
   stage: build
   image: rustlang/rust:nightly
   script:
     - cargo build --verbose
-    - cargo b --bin oxyroot-ls --features=build-binaries
+    - cargo b --bin oxyroot-ls
   allow_failure: true
 
 test_rust-latest:
