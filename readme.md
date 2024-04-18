@@ -5,6 +5,11 @@
 
 Another attempt to make library reading and writing `.root` binary files which are commonly used in particle physics
 
+## Cli tools
+
+- [oxyroot-ls](https://crates.io/crates/oxyroot-ls) : List the content of trees of a root file
+- [oxyroot-dump](https://crates.io/crates/oxyroot-dump) : Dump the content of trees of a root file
+
 ## Inspiration
 
 To make this library :
