@@ -1,3 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["oxyroot", "oxyroot_derive", "test_suite"]
+members = ["oxyroot", "oxyroot-dump", "oxyroot-genstreamers", "oxyroot-ls", "oxyroot_derive", "test_suite"]
+
+
+[workspace.package]
+version = "0.1.19"
+edition = "2021"
+authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/m-dupont/oxyroot"

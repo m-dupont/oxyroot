@@ -1,0 +1,15 @@
+[package]
+name = "oxyroot-genstreamers"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+oxyroot = { path = "../oxyroot" }
+env_logger = { version = "0.11" }
+anyhow = { version = "1.0" }

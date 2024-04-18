@@ -1,0 +1,15 @@
+[package]
+name = "oxyroot-ls"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+oxyroot = { path = "../oxyroot" }
+clap = { version = "4.5", features = ["derive"] }
+env_logger = { version = "0.11" }
+anyhow = { version = "1.0" }
