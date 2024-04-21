@@ -4,7 +4,7 @@ members = ["oxyroot", "oxyroot-dump", "oxyroot-genstreamers", "oxyroot-ls", "oxy
 
 
 [workspace.package]
-version = "0.1.22"
+version = "0.1.23"
 edition = "2021"
 authors = ["Mathieu Dupont <mdsoft@rudu.fr>"]
 license = "MIT OR Apache-2.0"
