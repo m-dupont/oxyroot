@@ -56,8 +56,6 @@ pub struct Tree<B> {
     pub(crate) branches: Vec<B>,
 
     pub(crate) sinfos: Option<RootFileStreamerInfoContext>,
-
-    pub(crate) callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
 }
 
 impl<B> Tree<B> {
@@ -97,7 +95,6 @@ impl<B> Default for Tree<B> {
             iobits: TioFeatures::default(),
             branches: Vec::new(),
             sinfos: None,
-            callbacks: Vec::new(),
         }
     }
 }

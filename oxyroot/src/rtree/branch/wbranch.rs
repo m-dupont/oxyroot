@@ -59,7 +59,7 @@ where
 
         let mut tbanch = TBranch::new(name.to_string());
 
-        tbanch.iobits = tree.iobits;
+        tbanch.iobits = tree.iobits();
         // branch.compress = f.compression();
         tbanch.basket_size = DEFAULT_BASKET_SIZE;
         tbanch.max_baskets = DEFAULT_MAX_BASKETS;

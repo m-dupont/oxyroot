@@ -3,6 +3,7 @@ use crate::rcont::objarray::WriterObjArray;
 use crate::rdict::StreamerInfo;
 use crate::riofs::file::RootFileStreamerInfoContext;
 use crate::rtree::branch::wbranch::WBranch;
+use crate::rtree::tree::tio_features::TioFeatures;
 use crate::rtree::tree::tree::Tree;
 use crate::{rbase, rvers, Marshaler, Named, Object, RootFile};
 use log::trace;
@@ -24,7 +25,11 @@ tree.write(&mut file).expect("Can not write tree");
 file.close().expect("Can not close file");
 ```
  */
-pub type WriterTree = Tree<WBranch<Box<dyn Marshaler>>>;
+
+pub struct WriterTree {
+    tree: Tree<WBranch<Box<dyn Marshaler>>>,
+    callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
+}
 
 #[derive(Debug)]
 pub enum StateCallBack {
@@ -39,21 +44,28 @@ impl WriterTree {
         S: AsRef<str>,
     {
         Self {
-            named: rbase::Named::default()
-                .with_name(name.as_ref().to_string())
-                .with_title(String::new()),
-            weight: 1.0,
-            scan_field: 25,
-            default_entry_offset_len: 1000,
-            max_entries: 1000000000000,
-            max_entry_loop: 1000000000000,
-            auto_save: -300000000,
-            auto_flush: -30000000,
-            estimate: 1000000,
-            branches: Vec::new(),
-            sinfos: Some(RootFileStreamerInfoContext::new()),
-            ..Default::default()
+            tree: Tree {
+                named: rbase::Named::default()
+                    .with_name(name.as_ref().to_string())
+                    .with_title(String::new()),
+                weight: 1.0,
+                scan_field: 25,
+                default_entry_offset_len: 1000,
+                max_entries: 1000000000000,
+                max_entry_loop: 1000000000000,
+                auto_save: -300000000,
+                auto_flush: -30000000,
+                estimate: 1000000,
+                branches: Vec::new(),
+                sinfos: Some(RootFileStreamerInfoContext::new()),
+                ..Default::default()
+            },
+            callbacks: Vec::new(),
         }
+    }
+
+    pub(crate) fn iobits(&self) -> TioFeatures {
+        self.tree.iobits
     }
 
     pub fn add_callback<F>(&mut self, f: Box<F>)
@@ -64,7 +76,7 @@ impl WriterTree {
     }
 
     pub fn add_streamer(&mut self, si: StreamerInfo) {
-        let sis = self.sinfos.as_mut().unwrap();
+        let sis = self.tree.sinfos.as_mut().unwrap();
         sis.push(si);
     }
 
@@ -79,11 +91,16 @@ impl WriterTree {
         // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
         let wbranchwb = WBranch::new::<T>(name.as_ref(), it, self);
-        self.branches.push(wbranchwb);
+        self.tree.branches.push(wbranchwb);
     }
     pub fn write(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
-        let mut branchs_done = self.branches.iter().map(|_b| false).collect::<Vec<_>>();
-        let mut branches = std::mem::take(&mut self.branches);
+        let mut branchs_done = self
+            .tree
+            .branches
+            .iter()
+            .map(|_b| false)
+            .collect::<Vec<_>>();
+        let mut branches = std::mem::take(&mut self.tree.branches);
         loop {
             let mut tot = 0;
             let zip = 0;
@@ -102,23 +119,23 @@ impl WriterTree {
                 }
             }
 
-            self.tot_bytes += tot as i64;
-            self.zip_bytes += zip as i64;
+            self.tree.tot_bytes += tot as i64;
+            self.tree.zip_bytes += zip as i64;
             if branchs_done.iter().all(|d| *d) {
                 break;
             }
-            self.entries += 1;
+            self.tree.entries += 1;
         }
-        self.branches = branches;
+        self.tree.branches = branches;
 
-        trace!(";WriterTree.write_all.entries:{:?}", self.entries);
+        trace!(";WriterTree.write_all.entries:{:?}", self.tree.entries);
 
         self.close(file)
     }
 
     fn flush(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
         trace!(";WriterTree.flush:{:?}", true);
-        for b in self.branches.iter_mut() {
+        for b in self.tree.branches.iter_mut() {
             b.flush(file)?;
         }
         Ok(())
@@ -130,9 +147,9 @@ impl WriterTree {
 
         // let t: ReaderTree = self.into();
 
-        file.put(self.named.name(), self)?;
+        file.put(self.tree.named.name(), self)?;
 
-        let sis = self.sinfos.take().unwrap();
+        let sis = self.tree.sinfos.take().unwrap();
 
         for si in sis.list().iter() {
             file.add_streamer_info(si.clone());
@@ -150,68 +167,68 @@ impl Marshaler for WriterTree {
         let beg = w.pos();
         trace!(
             ";WriterTree.marshal.a{beg}.auto_flush:{:?}",
-            self.auto_flush
+            self.tree.auto_flush
         );
         let hdr = w.write_header(self.class(), Self::rversion(self))?;
 
         trace!(";WriterTree.marshal.a{beg}.pos.before.named:{:?}", w.pos());
-        w.write_object(&self.named)?;
+        w.write_object(&self.tree.named)?;
         trace!(
             ";WriterTree.marshal.a{beg}.pos.before.attline:{:?}",
             w.pos()
         );
 
-        w.write_object(&self.attline)?;
+        w.write_object(&self.tree.attline)?;
         trace!(
             ";WriterTree.marshal.a{beg}.pos.before.attfill:{:?}",
             w.pos()
         );
 
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
-        w.write_object(&self.attfill)?;
+        w.write_object(&self.tree.attfill)?;
         trace!(
             ";WriterTree.marshal.a{beg}.pos.before.attmarker:{:?}",
             w.pos()
         );
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
-        w.write_object(&self.attmarker)?;
+        w.write_object(&self.tree.attmarker)?;
 
-        w.write_i64(self.entries)?;
-        w.write_i64(self.tot_bytes)?;
-        w.write_i64(self.zip_bytes)?;
-        w.write_i64(self.saved_bytes)?;
-        w.write_i64(self.flushed_bytes)?;
-        w.write_f64(self.weight)?;
-        w.write_i32(self.timer_interval)?;
-        w.write_i32(self.scan_field)?;
-        w.write_i32(self.update)?;
-        w.write_i32(self.default_entry_offset_len)?;
+        w.write_i64(self.tree.entries)?;
+        w.write_i64(self.tree.tot_bytes)?;
+        w.write_i64(self.tree.zip_bytes)?;
+        w.write_i64(self.tree.saved_bytes)?;
+        w.write_i64(self.tree.flushed_bytes)?;
+        w.write_f64(self.tree.weight)?;
+        w.write_i32(self.tree.timer_interval)?;
+        w.write_i32(self.tree.scan_field)?;
+        w.write_i32(self.tree.update)?;
+        w.write_i32(self.tree.default_entry_offset_len)?;
 
-        w.write_i32(self.clusters.ranges.len().try_into()?)?;
+        w.write_i32(self.tree.clusters.ranges.len().try_into()?)?;
 
-        w.write_i64(self.max_entries)?;
-        w.write_i64(self.max_entry_loop)?;
-        w.write_i64(self.max_virtual_size)?;
+        w.write_i64(self.tree.max_entries)?;
+        w.write_i64(self.tree.max_entry_loop)?;
+        w.write_i64(self.tree.max_virtual_size)?;
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
-        w.write_i64(self.auto_save)?;
+        w.write_i64(self.tree.auto_save)?;
         // trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
-        trace!(";WriterTree.marshal.auto_flush:{:?}", self.auto_flush);
-        trace!(";WriterTree.marshal.auto_save:{:?}", self.auto_save);
-        trace!(";WriterTree.marshal.estimate:{:?}", self.estimate);
-        w.write_i64(self.auto_flush)?;
-        w.write_i64(self.estimate)?;
+        trace!(";WriterTree.marshal.auto_flush:{:?}", self.tree.auto_flush);
+        trace!(";WriterTree.marshal.auto_save:{:?}", self.tree.auto_save);
+        trace!(";WriterTree.marshal.estimate:{:?}", self.tree.estimate);
+        w.write_i64(self.tree.auto_flush)?;
+        w.write_i64(self.tree.estimate)?;
 
         w.write_i8(0)?;
-        w.write_array_i64(&self.clusters.ranges)?;
+        w.write_array_i64(&self.tree.clusters.ranges)?;
         w.write_i8(0)?;
-        w.write_array_i64(&self.clusters.sizes)?;
-        w.write_object(&self.iobits)?;
+        w.write_array_i64(&self.tree.clusters.sizes)?;
+        w.write_object(&self.tree.iobits)?;
         trace!(";WriterTree.marshal.buf.value:{:?}", w.p());
 
         {
             let mut branches = WriterObjArray::new();
             // let tbranches = std::mem::take()
-            for b in self.branches.iter() {
+            for b in self.tree.branches.iter() {
                 branches.push(b, std::ptr::addr_of!(*b) as usize);
             }
             w.write_object(&branches)?;
@@ -220,7 +237,7 @@ impl Marshaler for WriterTree {
         trace!(";WriterTree.marshal.buf.value:{:?}", &w.p()[len..]);
         {
             let mut leaves = WriterObjArray::new();
-            for b in self.branches.iter() {
+            for b in self.tree.branches.iter() {
                 for leaf in b.branch().tbranch().leaves.iter() {
                     leaves.push(leaf, std::ptr::addr_of!(*leaf) as usize);
                 }
@@ -254,11 +271,11 @@ impl Object for WriterTree {
 
 impl Named for WriterTree {
     fn name(&self) -> &'_ str {
-        self.named.name()
+        self.tree.named.name()
     }
 
     fn title(&self) -> &'_ str {
-        self.named.title()
+        self.tree.named.title()
     }
 }
 
