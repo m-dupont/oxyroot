@@ -10,12 +10,17 @@ use log::trace;
 /// Read only Rust equivalent of [`TTree`](https://root.cern/doc/master/classTTree.html)
 ///
 /// Mainly used to retrieve [`Branch`](crate::Branch) and iterate on data.
-pub type ReaderTree = Tree<Branch>;
+#[derive(Default)]
+pub struct ReaderTree {
+    tree: Tree<Branch>,
+    reader: Option<RootFileReader>,
+    user_infos: Option<ReaderList>,
+}
 
 impl ReaderTree {
     pub(crate) fn set_reader(&mut self, reader: Option<RootFileReader>) {
         if let Some(r) = &reader {
-            for b in self.branches.iter_mut() {
+            for b in self.tree.branches.iter_mut() {
                 b.set_reader(Some(r.clone()));
             }
             self.reader = reader;
@@ -23,15 +28,15 @@ impl ReaderTree {
     }
 
     pub(crate) fn set_streamer_info(&mut self, sinfos: RootFileStreamerInfoContext) {
-        for b in self.branches.iter_mut() {
+        for b in self.tree.branches.iter_mut() {
             b.set_streamer_info(sinfos.clone());
         }
-        self.sinfos = Some(sinfos);
+        self.tree.sinfos = Some(sinfos);
     }
 
     /// Get a branch from this tree
     pub fn branch(&self, name: &str) -> Option<&Branch> {
-        for b in self.branches.iter() {
+        for b in self.tree.branches.iter() {
             if b.name() == name {
                 return Some(b);
             }
@@ -45,12 +50,12 @@ impl ReaderTree {
 
     /// Get iterator over top-level branches
     pub fn branches(&self) -> impl Iterator<Item = &Branch> {
-        self.branches.iter()
+        self.tree.branches.iter()
     }
 
     /// Number of entries in the TTree, as reported by fEntries.
     pub fn entries(&self) -> i64 {
-        self.entries
+        self.tree.entries
     }
 
     /// Get all (recursively) branches in this tree
@@ -137,44 +142,44 @@ impl Unmarshaler for ReaderTree {
 
         ensure_maximum_supported_version(hdr.vers, crate::rvers::TREE, self.class())?;
 
-        self.rvers = hdr.vers;
-        r.read_object(&mut self.named)?;
+        self.tree.rvers = hdr.vers;
+        r.read_object(&mut self.tree.named)?;
         trace!(";Tree.unmarshal.{_beg}.pos.before.attline: {}", r.pos());
-        r.read_object(&mut self.attline)?;
+        r.read_object(&mut self.tree.attline)?;
         trace!(";Tree.unmarshal.{_beg}.pos.before.attfill: {}", r.pos());
 
-        r.read_object(&mut self.attfill)?;
+        r.read_object(&mut self.tree.attfill)?;
         trace!(";Tree.unmarshal.{_beg}.pos.before.attmarker: {}", r.pos());
-        r.read_object(&mut self.attmarker)?;
+        r.read_object(&mut self.tree.attmarker)?;
 
         ensure_minimum_supported_version(hdr.vers, 4, self.class())?;
 
         if hdr.vers > 5 {
-            self.entries = r.read_i64()?;
-            self.tot_bytes = r.read_i64()?;
-            self.zip_bytes = r.read_i64()?;
-            self.saved_bytes = r.read_i64()?;
+            self.tree.entries = r.read_i64()?;
+            self.tree.tot_bytes = r.read_i64()?;
+            self.tree.zip_bytes = r.read_i64()?;
+            self.tree.saved_bytes = r.read_i64()?;
         } else {
-            self.entries = r.read_f64()? as i64;
-            self.tot_bytes = r.read_f64()? as i64;
-            self.zip_bytes = r.read_f64()? as i64;
-            self.saved_bytes = r.read_f64()? as i64;
+            self.tree.entries = r.read_f64()? as i64;
+            self.tree.tot_bytes = r.read_f64()? as i64;
+            self.tree.zip_bytes = r.read_f64()? as i64;
+            self.tree.saved_bytes = r.read_f64()? as i64;
         }
 
         if hdr.vers >= 18 {
-            self.flushed_bytes = r.read_i64()?;
+            self.tree.flushed_bytes = r.read_i64()?;
         }
 
         if hdr.vers >= 16 {
-            self.weight = r.read_f64()?;
+            self.tree.weight = r.read_f64()?;
         }
 
-        self.timer_interval = r.read_i32()?;
-        self.scan_field = r.read_i32()?;
-        self.update = r.read_i32()?;
+        self.tree.timer_interval = r.read_i32()?;
+        self.tree.scan_field = r.read_i32()?;
+        self.tree.update = r.read_i32()?;
 
         if hdr.vers >= 17 {
-            self.default_entry_offset_len = r.read_i32()?;
+            self.tree.default_entry_offset_len = r.read_i32()?;
         }
 
         let mut nclus = 0;
@@ -184,41 +189,41 @@ impl Unmarshaler for ReaderTree {
         }
 
         if hdr.vers > 5 {
-            self.max_entries = r.read_i64()?;
+            self.tree.max_entries = r.read_i64()?;
         }
 
         if hdr.vers > 5 {
-            self.max_entry_loop = r.read_i64()?;
-            self.max_virtual_size = r.read_i64()?;
-            self.auto_save = r.read_i64()?;
+            self.tree.max_entry_loop = r.read_i64()?;
+            self.tree.max_virtual_size = r.read_i64()?;
+            self.tree.auto_save = r.read_i64()?;
         } else {
-            self.max_entry_loop = r.read_i32()? as i64;
-            self.max_virtual_size = r.read_i32()? as i64;
-            self.auto_save = r.read_i32()? as i64;
+            self.tree.max_entry_loop = r.read_i32()? as i64;
+            self.tree.max_virtual_size = r.read_i32()? as i64;
+            self.tree.auto_save = r.read_i32()? as i64;
         }
 
         if hdr.vers >= 18 {
-            self.auto_flush = r.read_i64()?;
+            self.tree.auto_flush = r.read_i64()?;
         }
 
         if hdr.vers > 5 {
-            self.estimate = r.read_i64()?;
+            self.tree.estimate = r.read_i64()?;
         } else {
-            self.estimate = r.read_i32()? as i64;
+            self.tree.estimate = r.read_i32()? as i64;
         }
 
         if hdr.vers >= 19 {
-            self.clusters.ranges = vec![0; nclus as usize];
-            self.clusters.sizes = vec![0; nclus as usize];
+            self.tree.clusters.ranges = vec![0; nclus as usize];
+            self.tree.clusters.sizes = vec![0; nclus as usize];
             let _ = r.read_i8();
-            r.read_array_i64(&mut self.clusters.ranges)?;
+            r.read_array_i64(&mut self.tree.clusters.ranges)?;
 
             let _ = r.read_i8();
-            r.read_array_i64(&mut self.clusters.sizes)?;
+            r.read_array_i64(&mut self.tree.clusters.sizes)?;
         }
 
         if hdr.vers >= 20 {
-            r.read_object(&mut self.iobits)?;
+            r.read_object(&mut self.tree.iobits)?;
         }
 
         trace!(";Tree.unmarshal.{}.pos_before_branch: {}", _beg, r.pos());
@@ -226,13 +231,13 @@ impl Unmarshaler for ReaderTree {
         {
             let mut branches = r.read_object_into::<ReaderObjArray>()?;
 
-            self.branches = branches
+            self.tree.branches = branches
                 .take_objs()
                 .into_iter()
                 .map(|obj| obj.into())
                 .collect();
 
-            self.branches.iter_mut().for_each(|b| {
+            self.tree.branches.iter_mut().for_each(|b| {
                 b.set_top_level(Some(true));
                 // b.set_item_type_name();
             });
@@ -300,6 +305,8 @@ impl Unmarshaler for ReaderTree {
                     self.user_infos.as_ref().unwrap().len()
                 );
             }
+
+            trace!(";Tree.unmarshal.{}.pos_after_user_info: {}", _beg, r.pos());
 
             // let user_info = r.read_object_into::<ReaderList>()?;
 

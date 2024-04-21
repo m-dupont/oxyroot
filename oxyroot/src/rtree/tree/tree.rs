@@ -55,10 +55,7 @@ pub struct Tree<B> {
 
     pub(crate) branches: Vec<B>,
 
-    pub(crate) reader: Option<RootFileReader>,
     pub(crate) sinfos: Option<RootFileStreamerInfoContext>,
-
-    pub(crate) user_infos: Option<ReaderList>,
 
     pub(crate) callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
 }
@@ -99,9 +96,7 @@ impl<B> Default for Tree<B> {
             clusters: Clusters::default(),
             iobits: TioFeatures::default(),
             branches: Vec::new(),
-            reader: None,
             sinfos: None,
-            user_infos: None,
             callbacks: Vec::new(),
         }
     }

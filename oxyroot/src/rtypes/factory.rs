@@ -203,7 +203,7 @@ lazy_static! {
         crate::rbase::AttLine::register(&mut f);
         crate::rbase::AttFill::register(&mut f);
         crate::rbase::AttMarker::register(&mut f);
-        crate::rtree::tree::Tree::register(&mut f);
+        crate::rtree::tree::ReaderTree::register(&mut f);
         crate::rtree::branch::TBranch::register(&mut f);
         crate::rtree::branch::TBranchElement::register(&mut f);
         crate::rtree::leaf::TLeaf::register(&mut f);
