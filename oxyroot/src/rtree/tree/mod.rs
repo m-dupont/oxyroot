@@ -4,6 +4,8 @@ pub mod writer;
 
 pub mod traits;
 
+pub mod branch_name;
+
 pub mod tree;
 
 use crate::rbytes::{Marshaler, RVersioner, Unmarshaler};
