@@ -16,6 +16,13 @@ impl BranchName {
         self
     }
 
+    pub fn make_absolute<S: AsRef<str>>(&self, name: S) -> Self {
+        let mut b = BranchName::new();
+        b.name = Some(name.as_ref().to_string());
+        b.prefix_branch = None;
+        b
+    }
+
     pub fn new() -> Self {
         BranchName {
             parent: None,
@@ -83,5 +90,20 @@ mod tests {
 
         let branch = BranchName::new().make_child("fils");
         assert_eq!(branch.final_name(), "fils");
+
+        let branch = BranchName::new()
+            .with_name("name")
+            .with_prefix("prefix")
+            .make_child("fils");
+        assert_eq!(branch.final_name(), "prefixname.fils");
+
+        let branch_a = branch.make_absolute("fils");
+        assert_eq!(branch_a.final_name(), "fils");
+
+        let branch_a = branch.make_absolute("fils").with_prefix("prefix.");
+        assert_eq!(branch_a.final_name(), "prefix.fils");
+
+        let branch_a = branch.with_prefix("prefix.").make_absolute("fils");
+        assert_eq!(branch_a.final_name(), "fils");
     }
 }

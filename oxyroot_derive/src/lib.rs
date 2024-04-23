@@ -31,6 +31,7 @@ struct GOpts {
 struct FOpts {
     rename: Option<String>,
     branch_prefix: Option<String>,
+    absolute_name: Option<String>,
 
     /// Get the ident of the field. For fields in tuple or newtype structs or
     /// enum bodies, this can be `None`.
@@ -42,31 +43,112 @@ struct OptionByField {
     renames: HashMap<Ident, String>,
     local_branch_prefix: HashMap<Ident, String>,
     global_branch_prefix: HashMap<Ident, String>,
+    absolute_names: HashMap<Ident, String>,
 }
 
 ///
 /// Derive macro in order to read struct data from TTree. Branch names and types  are deduced from fields.
+/// ## Basic usage
 /// ```no_run
 /// use oxyroot::{ReadFromTree, RootFile};
+///
 /// #[derive(ReadFromTree)]
 /// struct MyStruct {
 ///     a: i32,     // will be read from branch "a" as 32 bits integer
-///     s: String,  // will be read from branch "s" String
+///     s: String,  // will be read from branch "s" as String
 /// }
 /// let tree = RootFile::open("in.root").unwrap().get_tree("tree").unwrap();
 /// MyStruct::from_tree(&tree).unwrap().map(|m: MyStruct | {  /* do something with m */ });
 /// ```
 ///
-/// By using attribute `#[oxyroot(rename = "...")]`, it is possible to use different branch name :
+/// ## Nested structures
 /// ```no_run
-/// use oxyroot::{ReadFromTree};
-/// #[derive(ReadFromTree)]///
+/// use oxyroot::{ReadFromTree, RootFile};
+///
+/// #[derive(ReadFromTree)]
+/// struct NestedStruct {
+///     a: i32,     // will be read from branch "s.a" as 32 bits integer
+///     s: String,  // will be read from branch "s.s" as String
+/// }
+///
+/// #[derive(ReadFromTree)]
+/// struct MyStruct {
+///     s: NestedStruct,  // will be constructed from branch "s.a" and "s.s"
+///     i: i32,           // will be read from branch "i" as 32 bits integer
+/// }
+/// let tree = RootFile::open("in.root").unwrap().get_tree("tree").unwrap();
+/// MyStruct::from_tree(&tree).unwrap().map(|m: MyStruct | {  /* do something with m */ });
+/// ```
+///
+///
+///
+///
+/// ## Customisation
+/// This macro can be customized with the following attributes:
+/// - By using attribute `#[oxyroot(rename = "...")]`, it is possible to use different branch name:
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
 ///  struct MyStruct {
 ///      #[oxyroot(rename = "b")]
 ///      a: i32,     // will be read from branch *"b"* as 32 bits integer
-///      s: String,  // will be read from branch "s" String
+///      s: String,  // will be read from branch "s" as String
 ///  }
 /// ```
+///
+/// - By using attribute `#[oxyroot(branch_prefix = "...")]` directly on the struct, it is possible to
+/// globally (i.e. for all fields) prefix all branch names:
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
+/// #[oxyroot(branch_prefix = "branch_")]
+///  struct MyStruct {
+///      a: i32,     // will be read from branch *"branch_a"* as 32 bits integer
+///      s: String,  // will be read from branch *"branch_s"* as String
+///  }
+/// ```
+///
+/// - By using attribute `#[oxyroot(branch_prefix = "...")]` on a field, it is possible to
+/// locally prefix branch name:
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
+///  struct MyStruct {
+///      a: i32,     // will be read from branch *"a"* as 32 bits integer
+///     #[oxyroot(branch_prefix = "branch_")]
+///      s: String,  // will be read from branch *"branch_s"* as String
+///  }
+/// ```
+///
+/// - By using attribute `#[oxyroot(absolute_name = "...")]` on a field, it is possible to
+/// precisely set the branch name, even in a nested struct:
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
+///  struct MyStruct {
+///      a: i32,     // will be read from branch *"a"* as 32 bits integer
+///     #[oxyroot(absolute_name = "branch_s")]
+///      s: String,  // will be read from branch *"branch_s"* as String
+///  }
+/// ```
+/// - In combination with `#[oxyroot(branch_prefix = "...")]`:
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
+/// #[oxyroot(branch_prefix = "branch_")]
+/// struct MyStruct {
+///    a: i32,     // will be read from branch *"branch_a"* as 32 bits integer
+///    c: f64,     // will be read from branch *"branch_c"* as 64 bits float
+///   #[oxyroot(absolute_name = "zweig_s")]
+///   s: String,  // will be read from branch *"zweig_s"* as String
+///
+/// }
+///
 ///
 #[proc_macro_derive(ReadFromTree, attributes(oxyroot))]
 pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -104,6 +186,12 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
             opts_by_fiels
                 .global_branch_prefix
                 .insert(original_name.clone(), g.to_string());
+        }
+
+        if let Some(a) = &f.absolute_name {
+            opts_by_fiels
+                .absolute_names
+                .insert(original_name.clone(), a.to_string());
         }
     }
 
@@ -211,6 +299,12 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
 
                     if let Some(l) = global_prefix {
                         let_b = quote_spanned!(f.span() => #let_b.with_prefix(#l));
+                    }
+
+                    let absolute_name = opts_by_fiels.absolute_names.get(f.ident.as_ref().unwrap());
+
+                    if let Some(a) = absolute_name {
+                        let_b = quote_spanned!(f.span() => #let_b.make_absolute(#a));
                     }
 
                     let local_prefix = opts_by_fiels
