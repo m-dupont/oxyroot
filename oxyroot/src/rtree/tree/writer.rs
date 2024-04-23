@@ -31,14 +31,19 @@ pub struct WriterTree {
     callbacks: Vec<Box<dyn FnMut(StateCallBack)>>,
 }
 
+/// Argument for callbacks called before and during writing branches. Callbacks are mainly used to
+/// monitor the writing process and by the derive [WriteToTree macro](../derive.WriteToTree.html).
 #[derive(Debug)]
 pub enum StateCallBack {
     Before,
+    /// Before writing branches, called once per entry
     Branch(String),
+    /// Before writing a branch, called once per entry with name of the branch
     After,
 }
 
 impl WriterTree {
+    /// Create a new WriterTree with a name. The name is used to identify the TTree in the file.
     pub fn new<S>(name: S) -> Self
     where
         S: AsRef<str>,
@@ -68,6 +73,8 @@ impl WriterTree {
         self.tree.iobits
     }
 
+    /// Register callback to be called before and after writing branches. See [StateCallBack](enum.StateCallBack.html) and
+    /// [write](#method.write) method for more information.
     pub fn add_callback<F>(&mut self, f: Box<F>)
     where
         F: FnMut(StateCallBack) + 'static,
@@ -75,24 +82,36 @@ impl WriterTree {
         self.callbacks.push(f);
     }
 
-    pub fn add_streamer(&mut self, si: StreamerInfo) {
+    pub(crate) fn add_streamer(&mut self, si: StreamerInfo) {
         let sis = self.tree.sinfos.as_mut().unwrap();
         sis.push(si);
     }
 
+    /// Add a new branch to the tree.
+    ///
+    /// At this point, the iterator is not consumed, it will be by calling the write method.
+    /// The `T` type has to implement [Marshaler](crate::Marshaler) to be able to write to the file.
+    /// Implementation for basic types are provided by oxyroot.
+    ///
+    /// In order to write a custom type, you have to implement the Marshaler trait or use the derive
+    /// [WriteToTree macro](derive.WriteToTree.html).
     pub fn new_branch<T, S>(&mut self, name: S, provider: impl Iterator<Item = T> + 'static)
     where
         T: Marshaler + 'static,
         S: AsRef<str>,
     {
-        // let b: Box<dyn Iterator<Item = dyn Marshaler>> =
-        //     Box::new(provider.map(|x| Box::new(x) as Box<dyn Marshaler>));
-        // let branch = WBranch::new(name, b);
-        // self.branches.push(branch);
         let it = provider.map(|x| Box::new(x) as Box<dyn Marshaler>);
         let wbranchwb = WBranch::new::<T>(name.as_ref(), it, self);
         self.tree.branches.push(wbranchwb);
     }
+
+    /// Effectively write the tree to the file.
+    ///
+    /// The branches are written until all provided iterator are exhausted. The branches are written all
+    /// at the same time, the method jump from one iterator to another. During the writing, the callback
+    /// registered with [add_callback](#method.add_callback) are called for each new entry:
+    /// - Before writing branches with the argument [StateCallBack::Before](enum.StateCallBack.html)
+    /// - Before writing each branch with the argument [StateCallBack::Branch](enum.StateCallBack.html)
     pub fn write(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
         let mut branchs_done = self
             .tree
@@ -141,6 +160,7 @@ impl WriterTree {
         Ok(())
     }
 
+    /// Called by file close method.
     fn close(&mut self, file: &mut RootFile) -> crate::riofs::Result<()> {
         trace!(";WriterTree.close:{:?}", true);
         self.flush(file)?;

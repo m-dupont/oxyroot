@@ -4,13 +4,41 @@ and particularly `Tree` and `Branch` inside `Tree`.
 This crate is in fact a port of [groot](https://pkg.go.dev/go-hep.org/x/hep/groot) written
 in Go and  [uproot](https://github.com/scikit-hep/uproot5) written in Python.
 
-To read from a branch and write to a branch, the API used is iterator based :
-- [`as_iter`](enum.Branch.html#method.as_iter) to read from a branch. The type to read is provided as a type parameter.
-This type has to implement `Unmarshaler` trait.
-- [`new_branch`](type.WriterTree.html#method.new_branch) from [`WriterTree`](type.WriterTree.html) to write to a branch. The method
-[`write`](type.WriterTree.html#method.write) from [`WriterTree`](crate::WriterTree) is used
-to write the data to the file by exhausting provided iterators. The type to write has to implement
-`Marshaler` trait. The type is deduced from the iterator.
+To read from a branch and write to a branch, the API is iterator based :
+- by branch:
+    - [`as_iter`](enum.Branch.html#method.as_iter) to read from a branch. The type to read is provided as a type parameter.
+    This type has to implement `Unmarshaler` trait.
+    - [`new_branch`](type.WriterTree.html#method.new_branch) from [`WriterTree`](type.WriterTree.html) to write to a branch. The method
+    [`write`](type.WriterTree.html#method.write) from [`WriterTree`](crate::WriterTree) is used
+    to write the data to the file by exhausting provided iterators. The type to write has to implement
+    [`Marshaler`](crate::Marshaler) trait. The type is deduced from the iterator.
+- by Tree, by creating struct from several branches, thanks to the [`ReadFromTree`](trait.ReadFromTree.html) and [`WriteToTree`](trait.WriteToTree.html) traits. These traits
+can be automatically derived with the `derive` feature which provides macros [`ReadFromTree`](derive.ReadFromTree.html) and [`WriteToTree`](derive.WriteToTree.html).
+
+# Example: Iter over a branch tree containing `i32` values
+
+```rust
+use oxyroot::RootFile;
+let s = "examples/from_uproot/data/simple.root";
+let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
+let one = tree.branch("one").unwrap().as_iter::<i32>().expect("wrong type");
+one.for_each(|v| println!("v = {v}"));
+```
+
+# Example : Read custom struct from branches
+```no_run
+use oxyroot::{ReadFromTree, RootFile};
+
+#[derive(ReadFromTree)]
+struct MyStruct {
+     a: i32,     // will be read from branch "a" as 32 bits integer
+     s: String,  // will be read from branch "s" as String
+}
+let tree = RootFile::open("in.root").unwrap().get_tree("tree").unwrap();
+MyStruct::from_tree(&tree).unwrap().map(|m: MyStruct | {  /* do something with m */ });
+```
+
+More information and examples here : [`ReadFromTree`](derive.ReadFromTree.html)
 
 # Example: Show branches from a tree
 
@@ -31,15 +59,7 @@ two                            | float                          | f32
 three                          | char*                          | String
 ```
 
-# Example: Iter over a branch tree containing `i32` values
 
-```rust
-use oxyroot::RootFile;
-let s = "examples/from_uproot/data/simple.root";
-let tree = RootFile::open(s).expect("Can not open file").get_tree("tree").unwrap();
-let one = tree.branch("one").unwrap().as_iter::<i32>().expect("wrong type");
-one.for_each(|v| println!("v = {v}"));
-```
 
 # Example: Write i32 values in a branch
 

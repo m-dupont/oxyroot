@@ -71,15 +71,12 @@ impl Branch {
         }
     }
 
-    pub fn new(name: String) -> Self {
-        Branch::Base(TBranch::new(name))
-    }
-
     pub fn name(&self) -> &str {
         let b: &TBranch = self.into();
         b.name()
     }
 
+    /// Return the class name of the branch, ie TBranch or TBranchElement.
     pub fn class(&self) -> &str {
         match &self {
             Branch::Base(b) => b.class(),
@@ -266,7 +263,8 @@ impl Branch {
         }
     }
 
-    /// Create an iterator over the data of a column (`TBranch`)
+    /// Create an iterator over the data of a column (`TBranch`) but will not check if the provided `T` is
+    /// compatible with actual C++ type of the column.
     pub fn as_iter_unchecked<'a, T>(&'a self) -> impl Iterator<Item = T> + 'a
     where
         T: UnmarshalerInto<Item = T> + 'a,
