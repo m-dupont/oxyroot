@@ -125,8 +125,3 @@ where
         Ok(())
     }
 }
-
-#[derive(Default, Debug)]
-pub struct Sliced<T> {
-    inner: Vec<T>,
-}

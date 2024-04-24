@@ -1,7 +1,6 @@
-use crate::rcont::list::ReaderList;
-use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
+use crate::rbase;
+use crate::riofs::file::RootFileStreamerInfoContext;
 use crate::rtree::tree::tio_features::TioFeatures;
-use crate::{rbase, StateCallBack};
 
 #[derive(Default)]
 pub struct Clusters {

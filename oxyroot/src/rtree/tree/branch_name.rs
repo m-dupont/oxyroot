@@ -36,7 +36,7 @@ impl BranchName {
 
         match &self.name {
             None => {}
-            Some(name) => b.parent = Box::new(self.clone()).into(),
+            Some(_name) => b.parent = Box::new(self.clone()).into(),
         };
         b.name = Some(name.as_ref().to_string());
         b

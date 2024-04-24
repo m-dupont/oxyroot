@@ -30,7 +30,11 @@ pub fn parse_typename(typename: &str) -> i32 {
     0
 }
 
-pub fn header_bytes_from_type(ty: i32, streamer: Option<&Streamer>, class_name: &str) -> i32 {
+pub(crate) fn header_bytes_from_type(
+    ty: i32,
+    streamer: Option<&Streamer>,
+    class_name: &str,
+) -> i32 {
     trace!(
         "ty = {} streamer = {} class_name = {}",
         ty,

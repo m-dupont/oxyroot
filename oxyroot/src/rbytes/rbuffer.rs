@@ -7,7 +7,7 @@ use crate::rtypes;
 use crate::rtypes::factory::FactoryBuilderValue;
 use crate::rtypes::FactoryItemRead;
 use log::trace;
-use std::cmp::{max, min};
+use std::cmp::min;
 use std::collections::HashMap;
 use std::io::Read;
 use std::mem::size_of;

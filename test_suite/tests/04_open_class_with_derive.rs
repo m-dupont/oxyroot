@@ -80,6 +80,30 @@ fn t04_04_write_twopoints() -> anyhow::Result<()> {
     }
     Ok(())
 }
+#[test]
+fn t04_04_write_twopoints_slicable_uneeded_noerror() -> anyhow::Result<()> {
+    #[derive(ReadFromTree)]
+    #[oxyroot(slicable)]
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    #[derive(ReadFromTree)]
+    struct TwoPoints {
+        p1: Point,
+        p2: Point,
+    }
+
+    let file = "create_root_files_with_root/t04_04_write_twopoints.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+    for (i, p) in TwoPoints::from_tree(&tree)?.enumerate() {
+        assert_eq!(p.p1.x, i as i32);
+        assert_eq!(p.p2.y, (i * i) as i32);
+    }
+    Ok(())
+}
 
 #[test]
 fn t04_05_write_severalpoints() -> anyhow::Result<()> {

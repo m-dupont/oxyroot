@@ -1,6 +1,5 @@
 use darling::{ast, FromDeriveInput, FromField};
 use proc_macro2::{Ident, TokenStream};
-use std::any::Any;
 use std::collections::HashMap;
 
 use quote::{format_ident, quote, quote_spanned};
@@ -252,7 +251,7 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
 
     let ok = if slicable {
         quote!(
-                Ok(#iterator_name_sliced::new(tree, branch_name)?)
+            Ok(#iterator_name_sliced::new(tree, branch_name)?)
         )
     } else {
         quote!(Ok(#iterator_name::new(tree, branch_name)?))
@@ -260,46 +259,64 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
 
     let expanded = quote!(
 
-        impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
-            fn from_branch_tree(tree: &'a oxyroot::ReaderTree,
-                                branch_name: oxyroot::BranchName,
-                                opts: oxyroot::ReadFromTreeOption)
-            -> oxyroot::Result<impl Iterator<Item = oxyroot::ReadFromTreeResult<#name>> +'a >{
-                use oxyroot::ReadFromTreeResult;
-                struct #iterator_name<'a>  {
-                   #stru
-                }
-
-                impl<'a> #iterator_name<'a> {
-                    fn new(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<Self> {
-                        use oxyroot::ReadFromTree;
-                        #func
+            impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
+                fn from_branch_tree(tree: &'a oxyroot::ReaderTree,
+                                    branch_name: oxyroot::BranchName)
+                -> oxyroot::Result<impl Iterator<Item = oxyroot::ReadFromTreeResult<#name>> +'a >{
+                    use oxyroot::ReadFromTreeResult;
+                    struct #iterator_name<'a>  {
+                       #stru
                     }
-                }
 
-                impl Iterator for #iterator_name<'_> {
-                    type Item = oxyroot::ReadFromTreeResult<#name>;
-                    fn next(&mut self) -> Option<Self::Item> {
-                        Some(oxyroot::ReadFromTreeResult::OneValue(#name { #next }))
+                    impl<'a> #iterator_name<'a> {
+                        fn new(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<Self> {
+                            use oxyroot::ReadFromTree;
+                            #func
+                        }
                     }
+
+                    impl Iterator for #iterator_name<'_> {
+                        type Item = oxyroot::ReadFromTreeResult<#name>;
+                        fn next(&mut self) -> Option<Self::Item> {
+                            Some(oxyroot::ReadFromTreeResult::OneValue(#name { #next }))
+                        }
+                    }
+
+
+                   Ok(#iterator_name::new(tree, branch_name)?)
                 }
 
-                #iterator
 
-                #ok
-            }
-        }
+            fn from_branch_tree_sliced(tree: &'a oxyroot::ReaderTree,
+                                    branch_name: oxyroot::BranchName)
+                -> oxyroot::Result<impl Iterator<Item = oxyroot::ReadFromTreeResult<#name>> +'a >{
+                    use oxyroot::ReadFromTreeResult;
+                    struct #iterator_name<'a>  {
+                       #stru
+                    }
 
-    );
+                    impl<'a> #iterator_name<'a> {
+                        fn new(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<Self> {
+                            use oxyroot::ReadFromTree;
+                            #func
+                        }
+                    }
+
+                    impl Iterator for #iterator_name<'_> {
+                        type Item = oxyroot::ReadFromTreeResult<#name>;
+                        fn next(&mut self) -> Option<Self::Item> {
+                            Some(oxyroot::ReadFromTreeResult::OneValue(#name { #next }))
+                        }
+                    }
+
+                    #iterator
+
+                    #ok
+                }
+    }
+        );
 
     expanded.into()
-}
-
-fn is_slicable_type(ty: syn::Ident) -> bool {
-    if ty.to_string() == "String" {
-        return true;
-    }
-    unimplemented!()
 }
 
 // Add a bound `T: Marshaler` to every type parameter T.
@@ -354,7 +371,7 @@ fn write_struct_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> To
     }
 }
 
-fn write_struct_for_readtotree_sliced(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
+fn write_struct_for_readtotree_sliced(data: &Data, _opts_by_fiels: &OptionByField) -> TokenStream {
     match &data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
@@ -447,13 +464,13 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
                     match  opts_by_fiels.slicables.get(f.ident.as_ref().unwrap()) {
                         None => {
                             quote_spanned! {
-                                f.span() =>  #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name_ident.into(), oxyroot::ReadFromTreeOption::new())?)     ,
+                                f.span() =>  #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name_ident.into())?)     ,
                             }
                         }
                         Some(s) => {
                             let ty = syn::parse_str::<Expr>(s).unwrap();
                             quote_spanned! {
-                                f.span() =>  #field_name:Box::new(<#ty>::from_branch_tree(tree, #branch_name_ident.into(),  oxyroot::ReadFromTreeOption::new().with_sliced_type())?)     ,
+                                f.span() =>  #field_name:Box::new(<#ty>::from_branch_tree_sliced(tree, #branch_name_ident.into())?)     ,
                             }
                         }
                     }
@@ -536,7 +553,7 @@ fn write_func_for_readtotree_sliced(data: &Data, opts_by_fiels: &OptionByField) 
 
 
                     quote_spanned! {
-                        f.span() =>  #field_name:Box::new(<Slice<#field_type>>::from_branch_tree(tree, #branch_name_ident.into(), oxyroot::ReadFromTreeOption::new())?)     ,
+                        f.span() =>  #field_name:Box::new(<Slice<#field_type>>::from_branch_tree(tree, #branch_name_ident.into())?)     ,
                     }
                 });
                 quote!(  #(#branch_names)*   Ok(Self{  #(#recurse)* }))
@@ -608,7 +625,7 @@ fn write_next_for_readtotree_sliced(name: Ident, data: &Data) -> TokenStream {
                     quote_spanned! {
                         f.span() =>
                             let #field_name = self.#field_name.next()?.unwrap();
-                            let size_slice = #field_name.inner().len();
+                            let _size_slice = #field_name.inner().len();
                     }
                 });
                 let get_sliced = quote!(  #(#get_sliced)* );
@@ -634,7 +651,7 @@ fn write_next_for_readtotree_sliced(name: Ident, data: &Data) -> TokenStream {
                 quote!(
                     #get_sliced
                     let mut v = Vec::new();
-                    for i in 0..size_slice {
+                    for i in 0.._size_slice {
                         #get_slice_i
                         let  p = #name {
                             #ret

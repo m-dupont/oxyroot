@@ -205,11 +205,8 @@ pub use rtree::branch::Branch;
 pub use rtree::tree::reader::ReaderTree;
 
 pub use rtree::tree::traits::ReadFromTree;
-pub use rtree::tree::traits::ReadFromTreeOption;
 pub use rtree::tree::traits::ReadFromTreeResult;
 pub use rtree::tree::traits::WriteToTree;
-
-pub use rusty::Sliced;
 
 pub use rtree::tree::WriterTree;
 // pub use rtree::tree::Tree;
