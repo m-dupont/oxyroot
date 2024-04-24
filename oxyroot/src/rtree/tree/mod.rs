@@ -6,14 +6,14 @@ pub mod traits;
 
 pub mod branch_name;
 
-pub mod tree;
+pub mod base;
 
 // pub struct TioFeatures {
 //     val:
 // }
 // pub type WriterTree<T> = Tree<WBranch<T>>;
 
+pub use base::Tree;
 pub use reader::ReaderTree;
-pub use tree::Tree;
 pub use writer::StateCallBack;
 pub use writer::WriterTree;

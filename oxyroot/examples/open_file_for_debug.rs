@@ -28,7 +28,8 @@ fn main() -> anyhow::Result<()> {
 
     let file =
         "/home/mdupont/Documents/DocumentsSync_data/repositories/customTTreeExample/testFile.root";
-    let mut tree = RootFile::open(file).unwrap().get_tree("myTree")?;
+    let file = "oxyroot/tests/7_userinfo/tree_with_user_info_with_map.root";
+    let mut tree = RootFile::open(file).unwrap().get_tree("tree")?;
     // let mut Photon_E = tree.branch("branch1.").unwrap().as_iter::<String>()?;
 
     let v = myDetectorData::from_tree(&mut tree)?.collect::<Vec<_>>();

@@ -50,6 +50,10 @@ impl ReaderList {
         self.objs.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.objs.is_empty()
+    }
+
     pub fn remove(&mut self, i: usize) -> Box<dyn FactoryItemRead> {
         self.objs.remove(i)
     }

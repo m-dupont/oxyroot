@@ -3,8 +3,8 @@ use crate::rcont::objarray::WriterObjArray;
 use crate::rdict::StreamerInfo;
 use crate::riofs::file::RootFileStreamerInfoContext;
 use crate::rtree::branch::wbranch::WBranch;
+use crate::rtree::tree::base::Tree;
 use crate::rtree::tree::tio_features::TioFeatures;
-use crate::rtree::tree::tree::Tree;
 use crate::{rbase, rvers, Marshaler, Named, Object, RootFile};
 use log::trace;
 

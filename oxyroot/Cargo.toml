@@ -55,4 +55,6 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 
 
 
-
+[[example]]
+name = "open_file_for_debug"
+required-features = ["derive"]

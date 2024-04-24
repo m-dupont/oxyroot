@@ -5,6 +5,12 @@ pub struct BranchName {
     prefix_branch: Option<String>,
 }
 
+impl Default for BranchName {
+    fn default() -> Self {
+        BranchName::new()
+    }
+}
+
 impl BranchName {
     pub fn with_prefix<S: AsRef<str>>(mut self, prefix: S) -> Self {
         self.prefix_branch = Some(prefix.as_ref().to_string());
@@ -47,17 +53,17 @@ impl BranchName {
 
         if let Some(parent) = &self.parent {
             final_branch_name.push_str(&parent.final_name());
-            final_branch_name.push_str(".");
+            final_branch_name.push('.');
         }
 
         if let Some(prefix) = &self.prefix_branch {
-            final_branch_name.push_str(&prefix);
+            final_branch_name.push_str(prefix);
         }
 
         match &self.name {
             None => {}
             Some(s) => {
-                final_branch_name.push_str(&s);
+                final_branch_name.push_str(s);
             }
         }
         final_branch_name

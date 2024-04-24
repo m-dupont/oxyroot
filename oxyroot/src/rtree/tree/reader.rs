@@ -2,7 +2,7 @@ use crate::rbytes::{ensure_maximum_supported_version, ensure_minimum_supported_v
 use crate::rcont::list::ReaderList;
 use crate::rcont::objarray::ReaderObjArray;
 use crate::riofs::file::{RootFileReader, RootFileStreamerInfoContext};
-use crate::rtree::tree::tree::Tree;
+use crate::rtree::tree::base::Tree;
 use crate::rvers;
 use crate::{factory_all_for_register_impl, Branch, Object, RBuffer, Unmarshaler};
 use log::trace;
