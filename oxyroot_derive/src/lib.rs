@@ -1,5 +1,6 @@
 use darling::{ast, FromDeriveInput, FromField};
 use proc_macro2::{Ident, TokenStream};
+use std::any::Any;
 use std::collections::HashMap;
 
 use quote::{format_ident, quote, quote_spanned};
@@ -7,6 +8,7 @@ use quote::{format_ident, quote, quote_spanned};
 // use oxyroot;
 
 use syn::spanned::Spanned;
+use syn::Expr;
 use syn::{parse_macro_input, parse_quote, Fields, GenericParam, Generics};
 use syn::{Data, DeriveInput};
 
@@ -17,6 +19,7 @@ struct GOpts {
     // ident: syn::Ident,
     // rename: Option<String>,
     branch_prefix: Option<String>,
+    slicable: Option<bool>,
 
     // Receives the body of the struct or enum. We don't care about
     // struct fields because we previously told darling we only accept structs.
@@ -32,6 +35,7 @@ struct FOpts {
     rename: Option<String>,
     branch_prefix: Option<String>,
     absolute_name: Option<String>,
+    slicable: Option<String>,
 
     /// Get the ident of the field. For fields in tuple or newtype structs or
     /// enum bodies, this can be `None`.
@@ -44,6 +48,7 @@ struct OptionByField {
     local_branch_prefix: HashMap<Ident, String>,
     global_branch_prefix: HashMap<Ident, String>,
     absolute_names: HashMap<Ident, String>,
+    slicables: HashMap<Ident, String>,
 }
 
 ///
@@ -193,25 +198,74 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
                 .absolute_names
                 .insert(original_name.clone(), a.to_string());
         }
+
+        if let Some(a) = &f.slicable {
+            opts_by_fiels
+                .slicables
+                .insert(original_name.clone(), a.to_string());
+        }
     }
 
     // eprintln!("opts_by_fiels: {:#?}", opts_by_fiels);
 
     // Used in the quasi-quotation below as `#name`.
     let name = input.ident;
+    let slicable = opts.slicable.unwrap_or(false);
     let generics = add_trait_bounds(input.generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let func = write_func_for_readtotree(&input.data, &opts_by_fiels);
-    let stru = write_struct_for_readtotree(&input.data);
-    let next = write_next_for_readtotree(&input.data);
+    let func_sliced = write_func_for_readtotree_sliced(&input.data, &opts_by_fiels);
+    let stru = write_struct_for_readtotree(&input.data, &opts_by_fiels);
+    let stru_sliced = write_struct_for_readtotree_sliced(&input.data, &opts_by_fiels);
+
+    let next = write_next_for_readtotree(&input.data, &opts_by_fiels);
+    let next_sliced = write_next_for_readtotree_sliced(name.clone(), &input.data);
 
     let iterator_name = format_ident!("{name}Iterator");
+    let iterator_name_sliced = format_ident!("{name}IteratorSliced");
+
+    let iterator = if slicable {
+        quote!(
+                    use oxyroot::Slice;
+                    struct #iterator_name_sliced<'a>  {
+                       #stru_sliced
+                    }
+
+                    impl<'a> #iterator_name_sliced<'a> {
+                        fn new(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<Self> {
+                            use oxyroot::ReadFromTree;
+                            #func_sliced
+                        }
+                    }
+
+                    impl Iterator for #iterator_name_sliced<'_> {
+                        type Item = oxyroot::ReadFromTreeResult<#name>;
+                        fn next(&mut self) -> Option<Self::Item> {
+                            #next_sliced
+                        }
+                    }
+        )
+    } else {
+        quote!()
+    };
+
+    let ok = if slicable {
+        quote!(
+                Ok(#iterator_name_sliced::new(tree, branch_name)?)
+        )
+    } else {
+        quote!(Ok(#iterator_name::new(tree, branch_name)?))
+    };
 
     let expanded = quote!(
 
         impl<'a> #impl_generics  #ty_generics #where_clause oxyroot::ReadFromTree<'a> for #name{
-            fn from_branch_tree(tree: &'a oxyroot::ReaderTree, branch_name: oxyroot::BranchName) -> oxyroot::Result<impl Iterator<Item = #name> +'a >{
+            fn from_branch_tree(tree: &'a oxyroot::ReaderTree,
+                                branch_name: oxyroot::BranchName,
+                                opts: oxyroot::ReadFromTreeOption)
+            -> oxyroot::Result<impl Iterator<Item = oxyroot::ReadFromTreeResult<#name>> +'a >{
+                use oxyroot::ReadFromTreeResult;
                 struct #iterator_name<'a>  {
                    #stru
                 }
@@ -224,18 +278,28 @@ pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::Token
                 }
 
                 impl Iterator for #iterator_name<'_> {
-                    type Item = #name;
+                    type Item = oxyroot::ReadFromTreeResult<#name>;
                     fn next(&mut self) -> Option<Self::Item> {
-                        Some(#name { #next })
+                        Some(oxyroot::ReadFromTreeResult::OneValue(#name { #next }))
+                    }
                 }
-            }
-                Ok(#iterator_name::new(tree, branch_name)?)
+
+                #iterator
+
+                #ok
             }
         }
 
     );
 
     expanded.into()
+}
+
+fn is_slicable_type(ty: syn::Ident) -> bool {
+    if ty.to_string() == "String" {
+        return true;
+    }
+    unimplemented!()
 }
 
 // Add a bound `T: Marshaler` to every type parameter T.
@@ -248,7 +312,7 @@ fn add_trait_bounds(mut generics: Generics) -> Generics {
     generics
 }
 
-fn write_struct_for_readtotree(data: &Data) -> TokenStream {
+fn write_struct_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
     match &data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
@@ -256,9 +320,56 @@ fn write_struct_for_readtotree(data: &Data) -> TokenStream {
                     let field_name = f.ident.as_ref().unwrap();
                     let field_type = &f.ty;
 
-                    quote_spanned! {
-                        f.span() => #field_name: Box<dyn Iterator<Item=#field_type> + 'a>,
+                    match  opts_by_fiels.slicables.get(f.ident.as_ref().unwrap()) {
+                        None => {
+                                quote_spanned! {
+                                    f.span() => #field_name: Box<dyn Iterator<Item=oxyroot::ReadFromTreeResult<#field_type>> + 'a>,
+                                }
+                        }
+                        Some(s) => {
+                            let ty = syn::parse_str::<Expr>(s).unwrap();
+                            quote_spanned! {
+                                f.span() => #field_name: Box<dyn Iterator<Item=oxyroot::ReadFromTreeResult<#ty>> + 'a>,
+                            }
+                        }
                     }
+
+
+                });
+                quote!(#(#recurse)*)
+            }
+            Fields::Unnamed(_) => {
+                unimplemented!("Unnamed")
+            }
+            Fields::Unit => {
+                unimplemented!("Unit")
+            }
+        },
+        Data::Enum(_) => {
+            unimplemented!("Enum")
+        }
+        Data::Union(_) => {
+            unimplemented!("Union")
+        }
+    }
+}
+
+fn write_struct_for_readtotree_sliced(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
+    match &data {
+        Data::Struct(data) => match &data.fields {
+            Fields::Named(fields) => {
+                let recurse = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let field_type = &f.ty;
+
+
+
+                    quote_spanned! {
+                                f.span() =>  #field_name: Box<dyn Iterator<Item=oxyroot::ReadFromTreeResult<Slice<#field_type>>> + 'a>,
+                            }
+
+
+
                 });
                 quote!(#(#recurse)*)
             }
@@ -330,13 +441,102 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
                         Some(s) => {s.to_string()}
                     };
                     let field_type = &f.ty;
+                    let branch_name_ident = format_ident!("bn_{field_name}");
+
+
+                    match  opts_by_fiels.slicables.get(f.ident.as_ref().unwrap()) {
+                        None => {
+                            quote_spanned! {
+                                f.span() =>  #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name_ident.into(), oxyroot::ReadFromTreeOption::new())?)     ,
+                            }
+                        }
+                        Some(s) => {
+                            let ty = syn::parse_str::<Expr>(s).unwrap();
+                            quote_spanned! {
+                                f.span() =>  #field_name:Box::new(<#ty>::from_branch_tree(tree, #branch_name_ident.into(),  oxyroot::ReadFromTreeOption::new().with_sliced_type())?)     ,
+                            }
+                        }
+                    }
+
+
+                });
+                quote!(  #(#branch_names)*   Ok(Self{  #(#recurse)* }))
+            }
+            Fields::Unnamed(_) => {
+                unimplemented!("Unnamed")
+            }
+            Fields::Unit => {
+                unimplemented!("Unit")
+            }
+        },
+        Data::Enum(_) => {
+            unimplemented!("Enum")
+        }
+        Data::Union(_) => {
+            unimplemented!("Union")
+        }
+    }
+}
+
+fn write_func_for_readtotree_sliced(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
+    match &data {
+        Data::Struct(data) => match &data.fields {
+            Fields::Named(fields) => {
+                let branch_names = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let branch_name_ident = format_ident!("bn_{field_name}");
+                    let branch_name = match opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
+                        None => field_name.to_string(),
+                        Some(s) => s.to_string(),
+                    };
+
+                    let mut let_b =
+                        quote_spanned!(f.span() => let b = branch_name.make_child(#branch_name));
+
+                    let global_prefix = opts_by_fiels
+                        .global_branch_prefix
+                        .get(f.ident.as_ref().unwrap());
+
+                    if let Some(l) = global_prefix {
+                        let_b = quote_spanned!(f.span() => #let_b.with_prefix(#l));
+                    }
+
+                    let absolute_name = opts_by_fiels.absolute_names.get(f.ident.as_ref().unwrap());
+
+                    if let Some(a) = absolute_name {
+                        let_b = quote_spanned!(f.span() => #let_b.make_absolute(#a));
+                    }
+
+                    let local_prefix = opts_by_fiels
+                        .local_branch_prefix
+                        .get(f.ident.as_ref().unwrap());
+
+                    if let Some(l) = local_prefix {
+                        let_b = quote_spanned!(f.span() => #let_b.with_prefix(#l));
+                    }
+
+                    quote_spanned!(f.span() => let #branch_name_ident =
+                        {
+                            #let_b;
+                            b
+                        };
+                    )
+                });
+
+                let recurse = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let _branch_name = match  opts_by_fiels.renames.get(f.ident.as_ref().unwrap()) {
+                        None => {  field_name.to_string()}
+                        Some(s) => {s.to_string()}
+                    };
+                    let field_type = &f.ty;
 
 
                     let branch_name_ident = format_ident!("bn_{field_name}");
 
 
                     quote_spanned! {
-                        f.span() =>  #field_name:Box::new(<#field_type>::from_branch_tree(tree, #branch_name_ident.into())?)     ,
+                        f.span() =>  #field_name:Box::new(<Slice<#field_type>>::from_branch_tree(tree, #branch_name_ident.into(), oxyroot::ReadFromTreeOption::new())?)     ,
                     }
                 });
                 quote!(  #(#branch_names)*   Ok(Self{  #(#recurse)* }))
@@ -357,17 +557,92 @@ fn write_func_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> Toke
     }
 }
 
-fn write_next_for_readtotree(data: &Data) -> TokenStream {
+fn write_next_for_readtotree(data: &Data, opts_by_fiels: &OptionByField) -> TokenStream {
     match &data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
                 let recurse = fields.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
-                    quote_spanned! {
-                        f.span() => #field_name: self.#field_name.next()?,
+
+                    match opts_by_fiels.slicables.get(f.ident.as_ref().unwrap()) {
+                        None => {
+                            quote_spanned! {
+                                f.span() => #field_name: self.#field_name.next()?.unwrap(),
+                            }
+                        }
+                        Some(_) => {
+                            quote_spanned! {
+                                f.span() => #field_name: self.#field_name.next()?.unwrap_slice().into(),
+                            }
+                        }
                     }
+
+                    // quote_spanned! {
+                    //     f.span() => #field_name: self.#field_name.next()?.unwrap(),
+                    // }
                 });
                 quote!(  #(#recurse)* )
+            }
+            Fields::Unnamed(_) => {
+                unimplemented!("Unnamed")
+            }
+            Fields::Unit => {
+                unimplemented!("Unit")
+            }
+        },
+        Data::Enum(_) => {
+            unimplemented!("Enum")
+        }
+        Data::Union(_) => {
+            unimplemented!("Union")
+        }
+    }
+}
+
+fn write_next_for_readtotree_sliced(name: Ident, data: &Data) -> TokenStream {
+    match &data {
+        Data::Struct(data) => match &data.fields {
+            Fields::Named(fields) => {
+                let get_sliced = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    quote_spanned! {
+                        f.span() =>
+                            let #field_name = self.#field_name.next()?.unwrap();
+                            let size_slice = #field_name.inner().len();
+                    }
+                });
+                let get_sliced = quote!(  #(#get_sliced)* );
+
+                let recurse = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let field_namei = format_ident!("{field_name}i");
+                    quote_spanned! {
+                        f.span() => let #field_namei = #field_name.inner()[i];
+                    }
+                });
+                let get_slice_i = quote!(  #(#recurse)* );
+
+                let recurse = fields.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let field_namei = format_ident!("{field_name}i");
+                    quote_spanned! {
+                        f.span() => #field_name: #field_namei,
+                    }
+                });
+                let ret = quote!(  #(#recurse)* );
+
+                quote!(
+                    #get_sliced
+                    let mut v = Vec::new();
+                    for i in 0..size_slice {
+                        #get_slice_i
+                        let  p = #name {
+                            #ret
+                        };
+                        v.push(p);
+                    }
+                    Some(oxyroot::ReadFromTreeResult::Slice(Slice::new(v)))
+                )
             }
             Fields::Unnamed(_) => {
                 unimplemented!("Unnamed")

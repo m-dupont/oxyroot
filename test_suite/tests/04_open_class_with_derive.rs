@@ -80,3 +80,32 @@ fn t04_04_write_twopoints() -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn t04_05_write_severalpoints() -> anyhow::Result<()> {
+    #[derive(ReadFromTree, Debug)]
+    #[oxyroot(slicable)]
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    #[derive(ReadFromTree, Debug)]
+    struct SeveralPoints {
+        #[oxyroot(slicable = "Point")]
+        points: Vec<Point>,
+    }
+
+    let file = "create_root_files_with_root/t04_05_write_severalpoints.root";
+
+    let tree = RootFile::open(file)?.get_tree("myTree")?;
+
+    for (k, p) in SeveralPoints::from_tree(&tree)?.enumerate() {
+        println!("k = {k}, p = {:?}", p);
+        for (i, pp) in p.points.iter().enumerate() {
+            assert_eq!(pp.x, i as i32);
+            assert_eq!(pp.y, (i * i) as i32);
+        }
+    }
+    Ok(())
+}

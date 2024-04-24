@@ -41,6 +41,9 @@ impl<T> Slice<T> {
     pub fn inner(&self) -> &Vec<T> {
         &self.inner
     }
+    pub fn new(v: Vec<T>) -> Self {
+        Slice { inner: v }
+    }
 }
 
 impl<T> From<Slice<T>> for Vec<T> {
@@ -121,4 +124,9 @@ where
 
         Ok(())
     }
+}
+
+#[derive(Default, Debug)]
+pub struct Sliced<T> {
+    inner: Vec<T>,
 }
