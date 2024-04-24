@@ -150,9 +150,50 @@ struct OptionByField {
 ///    c: f64,     // will be read from branch *"branch_c"* as 64 bits float
 ///   #[oxyroot(absolute_name = "zweig_s")]
 ///   s: String,  // will be read from branch *"zweig_s"* as String
+/// }
+/// ```
 ///
+/// - Use `#[oxyroot(slicable)]` if the C++ class has a `std::vector` as a member.  
+/// ```no_run
+/// use oxyroot::ReadFromTree;
+///
+/// #[derive(ReadFromTree)]
+/// #[oxyroot(slicable)]
+/// struct Point {
+///     x: i32, // will be read from branch "points.x" as 32 bits integer
+///     y: i32, // will be read from branch "points.y" as 32 bits integer
 /// }
 ///
+/// #[derive(ReadFromTree)]
+/// struct SeveralPoints {
+///     #[oxyroot(slicable = "Point")]
+///     points: Vec<Point>, // will be read from branches "points.x" and "points.y" as a vector of
+///                         // Point
+/// }
+/// ```
+/// This combinaison can be used to read `TTree` created from C++ classes like:
+/// ```c++
+/// class Point {
+///     public:
+///         int x = 0;
+///         int y = 0;
+/// };
+/// class SeveralPoints {
+///     public:
+///         std::vector<Point> points;
+/// };
+///
+/// TTree *myTree = new TTree("myTree", "");
+/// SeveralPoints tp;
+/// for (int i = 0; i < 10; ++i)
+/// {
+///     Point p;
+///     p.x = i;
+///     p.y = i*i;
+///     tp.points.push_back(p);
+///     myTree->Fill();
+/// }
+/// ```
 ///
 #[proc_macro_derive(ReadFromTree, attributes(oxyroot))]
 pub fn derive_ead_from_tree(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

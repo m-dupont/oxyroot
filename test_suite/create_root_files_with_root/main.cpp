@@ -138,7 +138,6 @@ void t04_05_write_severalpoints()
         return;
     }
     TTree *myTree = new TTree("myTree", "");
-
     SeveralPoints tp;
 
     //obj_for_branch1.points.push_back(p);
