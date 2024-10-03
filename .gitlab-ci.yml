@@ -38,13 +38,16 @@ test_full:
   parallel:
     matrix:
       - ROOT_VERSION:
+          - "https://root.cern/download/root_v6.32.06.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz"
           - "https://root.cern/download/root_v6.30.04.Linux-ubuntu22.04-x86_64-gcc11.4.tar.gz"
           - "https://root.cern/download/root_v6.28.12.Linux-ubuntu22-x86_64-gcc11.4.tar.gz"
           - "https://root.cern/download/root_v6.26.14.Linux-ubuntu22-x86_64-gcc11.4.tar.gz"
         IMAGE: [ "rust:latest", "rustlang/rust:nightly" ]
   script:
-    - apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev
-    - wget  $ROOT_VERSION -O /tmp/root.tar.gz
+    - cat /etc/os-release
+    - gcc --version
+    - apt-get update && apt-get install -y libx11-dev libxpm-dev libxft-dev libxext-dev libtbb12
+    - wget --no-verbose $ROOT_VERSION -O /tmp/root.tar.gz
     - tar -xzf /tmp/root.tar.gz -C /opt
     - source /opt/root/bin/thisroot.sh
     - root --version

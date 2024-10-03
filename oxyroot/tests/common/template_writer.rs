@@ -1,7 +1,7 @@
 use anyhow::Result;
-use log::trace;
+use log::{trace, warn};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 use std::{fs, path};
 
 pub struct TemplateWriter {
@@ -102,8 +102,16 @@ impl TemplateWriter {
             .arg("gen.C")
             .current_dir(&self.out_dir)
             .output()?;
+
+        if !out.status.success() {
+            eprintln!("stdout: {}", String::from_utf8(out.stdout)?);
+            eprintln!("stderr: {}", String::from_utf8(out.stderr)?);
+        } else {
+            trace!("{}", String::from_utf8(out.stdout)?);
+        }
+
         assert!(out.status.success());
-        trace!("{}", String::from_utf8(out.stdout)?);
+
         Ok(())
     }
 
