@@ -23,17 +23,148 @@ lazy_static! {
 }
 
 #[derive(Debug, Default)]
-struct ElementStrings {
-    class: String,
-    f_name: String,
-    data: HashMap<String, String>,
+pub(crate) struct ElementStrings {
+    pub(crate) class: String,
+    pub(crate) f_name: String,
+    pub(crate) fTitle: String,
+    pub(crate) fSize: i32,
+    pub(crate) fType: i32,
+    pub(crate) fTypeName: String,
+    pub(crate) fBaseVersion: Option<i32>,
+    pub(crate) fCountName: Option<String>,
+    pub(crate) fCountClass: Option<String>,
+    pub(crate) fCountVersion: Option<i32>,
+    pub(crate) fSTLtype: Option<i32>,
 }
 
 impl ElementStrings {
-    fn get_property(&self, key: &str) -> Result<&String> {
-        self.data
-            .get(key)
-            .ok_or(Error::StreamerCanNotFoundProperty(key.to_string()))
+    fn etype(&self) -> Enum {
+        Enum::from_i32(self.fType)
+    }
+
+    fn esize(&self) -> i32 {
+        self.fSize
+    }
+
+    fn build_streamer(&self, mut streamer_element: StreamerElement) -> Streamer {
+        match self.etype() {
+            Enum::Named(named) => match named {
+                EnumNamed::Long64
+                | EnumNamed::Int
+                | EnumNamed::Long
+                | EnumNamed::Double
+                | EnumNamed::Counter
+                | EnumNamed::Short
+                | EnumNamed::Float
+                | EnumNamed::Float16
+                | EnumNamed::Double32
+                | EnumNamed::UInt
+                | EnumNamed::Bits
+                | EnumNamed::UShort
+                | EnumNamed::UChar
+                | EnumNamed::Char
+                | EnumNamed::CharStar
+                | EnumNamed::Bool => {
+                    let basic = StreamerBasicType {
+                        element: streamer_element,
+                    };
+                    Streamer::BasicType(basic)
+                }
+                EnumNamed::TNamed | EnumNamed::Base | EnumNamed::TObject => {
+                    let vbase = self.fBaseVersion.unwrap();
+
+                    let base = StreamerBase {
+                        element: streamer_element,
+                        vbase,
+                    };
+                    Streamer::Base(base)
+                }
+                EnumNamed::OffsetP16 => {
+                    let cvers = self.fCountVersion.unwrap();
+                    let cname = self.fCountName.as_ref().unwrap();
+                    let ccls = self.fCountClass.as_ref().unwrap();
+
+                    let s = StreamerBasicPointer {
+                        element: streamer_element,
+                        cvers,
+                        cname: cname.to_string(),
+                        ccls: ccls.to_string(),
+                    };
+                    Streamer::BasicPointer(s)
+                }
+                EnumNamed::Any => {
+                    let s = StreamerObjectAny {
+                        element: streamer_element,
+                    };
+                    Streamer::ObjectAny(s)
+                }
+                EnumNamed::Object => {
+                    let s = StreamerObject {
+                        element: streamer_element,
+                    };
+                    Streamer::Object(s)
+                }
+                EnumNamed::ObjectP | EnumNamed::Objectp => {
+                    let s = StreamerObjectPointer {
+                        element: streamer_element,
+                    };
+                    Streamer::ObjectPointer(s)
+                }
+                EnumNamed::TString => {
+                    let s = StreamerString {
+                        element: streamer_element,
+                    };
+                    Streamer::String(s)
+                }
+                EnumNamed::Stl => {
+                    let vtype = ESTLType::from_i32(self.fSTLtype.unwrap()).unwrap();
+                    let _ctype = Enum::from_i32(self.fSTLtype.unwrap());
+                    let ctype = Enum::Named(EnumNamed::Object);
+                    streamer_element.etype = Enum::Named(EnumNamed::Streamer);
+                    let s = StreamerSTL {
+                        element: streamer_element,
+                        vtype,
+                        ctype,
+                    };
+                    Streamer::Stl(s)
+                }
+                _ => {
+                    unimplemented!(
+                        "populate_db: named type: {:?} -- class = {}",
+                        named,
+                        self.f_name
+                    );
+                }
+            },
+            Enum::Int(i) => match i {
+                23 | 31 => {
+                    let basic = StreamerBasicType {
+                        element: streamer_element,
+                    };
+                    Streamer::BasicType(basic)
+                }
+                41..=48 | 51 | 53 => {
+                    let cvers = self.fCountVersion.unwrap();
+                    let cname = self.fCountName.as_ref().unwrap();
+                    let ccls = self.fCountClass.as_ref().unwrap();
+
+                    let s = StreamerBasicPointer {
+                        element: streamer_element,
+                        cvers,
+                        cname: cname.to_string(),
+                        ccls: ccls.to_string(),
+                    };
+                    Streamer::BasicPointer(s)
+                }
+                _ => {
+                    unimplemented!("populate_db: int type: {:?} -- class = {}", i, self.f_name);
+                }
+            },
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.f_name
     }
 }
 
@@ -51,9 +182,37 @@ fn generate_elements_strings(lines: Vec<Vec<&str>>) -> Vec<ElementStrings> {
 
         for line in elements_lines.iter().skip(1) {
             //let line = line.split_ascii_whitespace().collect::<Vec<_>>();
-            let ty = &line[0..30].trim();
-            let name = &line[30..50].trim();
-            element.data.insert(ty.to_string(), name.to_string());
+            let key = &line[0..30].trim();
+            let value = &line[30..50].trim();
+
+            match *key {
+                "fSize" => {
+                    element.fSize = value.parse::<_>().unwrap();
+                }
+                "fType" => {
+                    element.fType = value.parse::<_>().unwrap();
+                }
+                "fTypeName" => {
+                    element.fTypeName = value.to_string();
+                }
+                "fCountVersion" => {
+                    element.fCountVersion = Some(value.parse::<_>().unwrap());
+                }
+                "fCountName" => {
+                    element.fCountName = Some(value.to_string());
+                }
+                "fCountClass" => {
+                    element.fCountClass = Some(value.to_string());
+                }
+
+                "fBaseVersion" => {
+                    element.fBaseVersion = Some(value.parse::<_>().unwrap());
+                }
+                "fSTLtype" => {
+                    element.fSTLtype = Some(value.parse::<_>().unwrap());
+                }
+                _ => {}
+            }
         }
         // println!("element = {:?}", element);
         ret.push(element);
@@ -62,17 +221,22 @@ fn generate_elements_strings(lines: Vec<Vec<&str>>) -> Vec<ElementStrings> {
 }
 
 #[derive(Debug, Default)]
-struct ClassStrings {
-    class: String,
-    f_name: String,
-    data: HashMap<String, String>,
+pub(crate) struct ClassStrings {
+    pub(crate) class: String,
+    pub(crate) fName: String,
+    pub(crate) fCheckSum: u32,
+    pub(crate) fClassVersion: i32,
 }
 
 impl ClassStrings {
-    fn get_property(&self, key: &str) -> Result<&String> {
-        self.data
-            .get(key)
-            .ok_or(Error::StreamerCanNotFoundProperty(key.to_string()))
+    pub(crate) fn rvers(&self) -> i32 {
+        let rvers = self.fClassVersion;
+        let rvers = if rvers < 0 { 1 } else { rvers };
+        rvers
+    }
+
+    pub fn name(&self) -> &str {
+        &self.fName
     }
 }
 
@@ -84,13 +248,20 @@ fn generate_class_strings(elements_lines: Vec<&str>) -> ClassStrings {
     let r = RE.captures(header).unwrap();
     assert_eq!(r.len(), 3);
     element.class = r["class"].to_string();
-    element.f_name = r["name"].to_string();
+    element.fName = r["name"].to_string();
 
     for line in elements_lines.iter().skip(1) {
         let line = line.split_ascii_whitespace().collect::<Vec<_>>();
-        element
-            .data
-            .insert(line[0].to_string(), line[1].to_string());
+        let key = line[0];
+        let value = line[1];
+        if key == "fCheckSum" {
+            let value = value.parse::<u32>().unwrap();
+            element.fCheckSum = value;
+        }
+        if key == "fClassVersion" {
+            let value = value.parse::<i32>().unwrap();
+            element.fClassVersion = value;
+        }
     }
     // println!("element = {:?}", element);
     element
@@ -209,7 +380,7 @@ fn generate_class(dump: &str) -> Result<Vec<ClassStreamerStrings>> {
             class: generate_class_strings(current_class.get_streamer_info),
             elements: generate_elements_strings(current_class.get_elements),
         };
-        trace!(";generate_class.c.class.name:{:?}", c.class.f_name);
+        trace!(";generate_class.c.class.name:{:?}", c.class.fName);
 
         // assert_eq!(
         //     c.class.f_name,
@@ -230,33 +401,22 @@ pub fn populate_db(db: &mut DbStreamer, dump: &'static str) -> Result<()> {
     let mut id_elements = 0;
 
     for class_str in classes_str {
-        let class_name = &class_str.class.f_name;
-        trace!(";populate_db.class_name:{}", class_name);
-        if class_name == "TArray" {
-            trace!("de");
-        }
         let class = &class_str.class;
-        let elements = class_str.elements;
+        trace!(";populate_db.class_name:{}", class.name());
 
-        let chksum = class.get_property("fCheckSum")?.parse::<u32>().unwrap();
-        let rvers = class.get_property("fClassVersion")?.parse::<i32>().unwrap();
-        let rvers = if rvers < 0 { 1 } else { rvers };
-        let mut streamer_info = StreamerInfo::new(&class.f_name, chksum, rvers);
+        let mut streamer_info = StreamerInfo::new(&class.name(), class.fCheckSum, class.rvers());
         // let he = titles.get(class_name as &str);
 
-        for element_str in elements {
-            let name = &element_str.f_name;
+        for element_str in class_str.elements {
+            let mut streamer_element = StreamerElement::new(
+                element_str.name(),
+                element_str.etype(),
+                element_str.esize(),
+                id_elements,
+            );
 
-            let etype = Enum::from_i32(element_str.get_property("fType")?.parse::<i32>().unwrap());
-
-            let ename = element_str.get_property("fTypeName")?;
-
-            let esize = element_str.get_property("fSize")?.parse::<i32>().unwrap();
-
-            let mut streamer_element = StreamerElement::new(name, etype, esize, id_elements);
-
-            if let Some(he) = titles.get(class_name as &str) {
-                if let Some(h) = he.get(name as &str) {
+            if let Some(he) = titles.get(class.name()) {
+                if let Some(h) = he.get(element_str.name()) {
                     if let Some(title) = h.get("title") {
                         streamer_element.named =
                             streamer_element.named.with_title(title.to_string());
@@ -265,151 +425,19 @@ pub fn populate_db(db: &mut DbStreamer, dump: &'static str) -> Result<()> {
             }
 
             id_elements += 1;
-            streamer_element.ename = ename.to_string();
+            streamer_element.ename = element_str.fTypeName.clone();
 
             // trace!(";populate_db.element_str:{:?}", element_str);
             // trace!(";populate_db.streamer_element:{:?}", streamer_element);
 
-            matches!(streamer_element.etype, Enum::Named(_));
-            match streamer_element.etype {
-                Enum::Named(named) => match named {
-                    EnumNamed::Long64
-                    | EnumNamed::Int
-                    | EnumNamed::Long
-                    | EnumNamed::Double
-                    | EnumNamed::Counter
-                    | EnumNamed::Short
-                    | EnumNamed::Float
-                    | EnumNamed::Float16
-                    | EnumNamed::Double32
-                    | EnumNamed::UInt
-                    | EnumNamed::Bits
-                    | EnumNamed::UShort
-                    | EnumNamed::UChar
-                    | EnumNamed::Char
-                    | EnumNamed::CharStar
-                    | EnumNamed::Bool => {
-                        let basic = StreamerBasicType {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::BasicType(basic));
-                    }
-                    EnumNamed::TNamed | EnumNamed::Base | EnumNamed::TObject => {
-                        let vbase = element_str
-                            .get_property("fBaseVersion")?
-                            .parse::<i32>()
-                            .unwrap();
-                        let base = StreamerBase {
-                            element: streamer_element,
-                            vbase,
-                        };
-                        streamer_info.elems.push(Streamer::Base(base));
-                    }
-                    EnumNamed::OffsetP16 => {
-                        let cvers = element_str
-                            .get_property("fCountVersion")?
-                            .parse::<i32>()
-                            .unwrap();
-                        let cname = element_str.get_property("fCountName")?;
-                        let ccls = element_str.get_property("fCountClass")?;
-
-                        let s = StreamerBasicPointer {
-                            element: streamer_element,
-                            cvers,
-                            cname: cname.to_string(),
-                            ccls: ccls.to_string(),
-                        };
-                        streamer_info.elems.push(Streamer::BasicPointer(s));
-                    }
-                    EnumNamed::Any => {
-                        let s = StreamerObjectAny {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::ObjectAny(s));
-                    }
-                    EnumNamed::Object => {
-                        let s = StreamerObject {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::Object(s));
-                    }
-                    EnumNamed::ObjectP | EnumNamed::Objectp => {
-                        let s = StreamerObjectPointer {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::ObjectPointer(s));
-                    }
-                    EnumNamed::TString => {
-                        let s = StreamerString {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::String(s));
-                    }
-                    EnumNamed::Stl => {
-                        let vtype = ESTLType::from_i32(
-                            element_str
-                                .get_property("fSTLtype")?
-                                .parse::<i32>()
-                                .unwrap(),
-                        )
-                        .unwrap();
-
-                        let _ctype = Enum::from_i32(
-                            element_str
-                                .get_property("fSTLtype")?
-                                .parse::<i32>()
-                                .unwrap(),
-                        );
-
-                        let ctype = Enum::Named(EnumNamed::Object);
-
-                        streamer_element.etype = Enum::Named(EnumNamed::Streamer);
-
-                        let s = StreamerSTL {
-                            element: streamer_element,
-                            vtype,
-                            ctype,
-                        };
-
-                        streamer_info.elems.push(Streamer::Stl(s));
-                    }
-                    _ => {
-                        unimplemented!("populate_db: named type: {:?} -- class = {}", named, name);
-                    }
-                },
-                Enum::Int(i) => match i {
-                    23 | 31 => {
-                        let basic = StreamerBasicType {
-                            element: streamer_element,
-                        };
-                        streamer_info.elems.push(Streamer::BasicType(basic));
-                    }
-                    41..=48 | 51 | 53 => {
-                        let cvers = element_str
-                            .get_property("fCountVersion")?
-                            .parse::<i32>()
-                            .unwrap();
-                        let cname = element_str.get_property("fCountName")?;
-                        let ccls = element_str.get_property("fCountClass")?;
-
-                        let s = StreamerBasicPointer {
-                            element: streamer_element,
-                            cvers,
-                            cname: cname.to_string(),
-                            ccls: ccls.to_string(),
-                        };
-                        streamer_info.elems.push(Streamer::BasicPointer(s));
-                    }
-                    _ => {
-                        unimplemented!("populate_db: int type: {:?} -- class = {}", i, name);
-                    }
-                },
-            };
+            matches!(element_str.etype(), Enum::Named(_));
+            let streamer = element_str.build_streamer(streamer_element);
+            streamer_info.elems.push(streamer);
         }
 
         let key = format!("{}-{}", streamer_info.name(), streamer_info.clsver());
         streamer_info.id = id_elements;
-        db.insert(key, streamer_info);
+        db.insert(streamer_info);
     }
     Ok(())
 }

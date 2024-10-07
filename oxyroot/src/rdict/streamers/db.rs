@@ -3,6 +3,7 @@ use crate::rdict::streamers::streamers_db_gen::populate_db;
 use crate::rdict::StreamerInfo;
 use crate::riofs::dir::TDirectoryFile;
 use crate::rtypes::factory::FactoryItemWrite;
+use crate::Named;
 use lazy_static::lazy_static;
 use log::trace;
 use std::collections::HashMap;
@@ -20,8 +21,9 @@ impl DbStreamer {
         }
     }
 
-    pub fn insert(&mut self, key: String, value: StreamerInfo) {
-        self.map.insert(key, value);
+    pub fn insert(&mut self, streamer_info: StreamerInfo) {
+        let key = format!("{}-{}", streamer_info.name(), streamer_info.clsver());
+        self.map.insert(key, streamer_info);
     }
 
     pub fn get(&self, key: &str, vers: i16) -> Option<StreamerInfo> {
