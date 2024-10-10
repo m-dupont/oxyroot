@@ -263,10 +263,10 @@ fn main() {
     let content_titles = fs::read_to_string("/tmp/oxyroot.json").unwrap();
     let infos_titles: StreamerInfosTitles = serde_json::from_str(&content_titles).unwrap();
 
-    let dump = include_str!("/tmp/rust/gen_streamers/gen_all.txt");
+    let dump = fs::read_to_string("/tmp/rust/gen_streamers/gen_all.txt").unwrap();
 
     // let titles = make_titles();
-    let classes_str = generate_class(dump).unwrap();
+    let classes_str = generate_class(&dump).unwrap();
 
     let mut populate_db = Vec::new();
 
