@@ -8,7 +8,8 @@ use log::trace;
 
 pub(crate) mod db;
 pub(crate) mod streamer_types;
-pub(crate) mod streamers_db_gen;
+pub(crate) mod streamers_db_gen_helpers;
+mod streamers_db_generated;
 
 pub(crate) fn make_streamer_for_marshaler_type<T: Marshaler>() -> StreamerInfo {
     let st = match T::kind() {

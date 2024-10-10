@@ -25,63 +25,15 @@ fn gen_one_cat_streamers_with_root(class: &str) -> Result<String> {
         r#"{{
 auto name = "{CLASS}";
 
-
+  cout << ";get_streamer_info name=" << name << endl;
   auto s = TClass::GetClass(name)->GetStreamerInfo();
   s->Dump();
 
-cout << ";" << name << ".name#" << s->GetName() << endl;
-cout << ";" << name << ".fCheckSum#" << s->GetCheckSum() << endl;
-cout << ";" << name << ".fClassVersion#" << s->GetClassVersion() << endl;
-cout << ";" << name << ".class#" << s->IsA()->GetName() << endl;
 
-  auto fArr = s->GetElements();
-  for (int i = 0; i <= fArr->GetLast(); i++)
-  {{
-    TStreamerElement* element = (TStreamerElement*)fArr->At(i);
-    auto element_name = element->GetName();
-
-    cout << ";" << name << ".elements." << element_name <<  ".name#" << element->GetName() << endl;
-    cout << ";" << name << ".elements." << element_name <<  ".class#" << element->IsA()->GetName() << endl;
-    cout << ";" << name << ".elements." << element_name <<  ".title#" << element->GetTitle() << endl;
-    cout << ";" << name << ".elements." << element_name <<  ".fType#" << element->GetType() << endl;
-    cout << ";" << name << ".elements." << element_name <<  ".fTypeName#" << element->GetTypeName() << endl;
-    cout << ";" << name << ".elements." << element_name <<  ".fArrayLength#" << element->GetArrayLength() << endl;
-    //cout << ";" << name << ".elements." << element_name <<  ".fSize#" << element->GetSize() << endl;
-
-
-    //element->Dump();
-
-        {{
-                auto base = dynamic_cast<TStreamerBase*>(element);
-                if(base) {{
-                cout << ";" << name << ".elements." << element_name <<  ".fBaseVersion#" << base->GetBaseVersion() << endl;
-                cout << ";" << name << ".elements." << element_name <<  ".fSize#" << 0 << endl;
-                }} else {{
-                    cout << ";" << name << ".elements." << element_name <<  ".fSize#" << element->GetSize() / 8 << endl;
-                        }}
-        }}
-
-{{
-     auto base = dynamic_cast<TStreamerBasicPointer*>(element);
-        if(base) {{
-        cout << ";" << name << ".elements." << element_name <<  ".fCountVersion#" << base->GetCountVersion() << endl;
-        cout << ";" << name << ".elements." << element_name <<  ".fCountName#" << base->GetCountName() << endl;
-        cout << ";" << name << ".elements." << element_name <<  ".fCountClass#" << base->GetCountClass() << endl;
-    }}
-}}
-
-{{
-     auto base = dynamic_cast<TStreamerSTL*>(element);
-        if(base) {{
-        cout << ";" << name << ".elements." << element_name <<  ".fSTLtype#" << base->GetSTLtype() << endl;
-    }}
-}}
-
-    // cout << ";" << name << ".elements." << element_name <<  ".fBaseVersion:" << element->GetBaseVersion() << endl;
-
-  }}
-  //fArr->Dump();
-
+  auto a = s->GetElements();
+  cout << ";get_elements name=" << name << endl;
+  a->Dump();
+  cout << ";End name=" << name << endl;
 
 }}
 "#,
@@ -201,7 +153,7 @@ fn main() -> Result<()> {
         // "TF1NormSum",
         // "TF1Parameters",
         // "TFormula",
-        // "TGraph",
+        "TGraph",
         // "TGraphErrors",
         // "TGraphAsymmErrors",
         // "TGraphMultiErrors",
@@ -269,8 +221,6 @@ fn main() -> Result<()> {
         "TCanvas",
         "TPad",
     ];
-
-    // let classes = vec!["TLeafElement", "TArrayC"];
 
     let _dump = gen_cat_streamers_with_root(&classes)?;
 

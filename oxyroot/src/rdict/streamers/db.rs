@@ -1,9 +1,9 @@
 use crate::rdict::error::Result;
-use crate::rdict::streamers::streamers_db_gen::populate_db;
+use crate::rdict::streamers::streamers_db_generated::populate_db;
 use crate::rdict::StreamerInfo;
 use crate::riofs::dir::TDirectoryFile;
+use crate::root::traits::Named;
 use crate::rtypes::factory::FactoryItemWrite;
-use crate::Named;
 use lazy_static::lazy_static;
 use log::trace;
 use std::collections::HashMap;
@@ -55,7 +55,7 @@ lazy_static! {
     pub static ref DBSTREAMER: DbStreamer = {
         let mut db = DbStreamer::new();
 
-        populate_db(&mut db, DUMP).unwrap();
+        populate_db(&mut db).unwrap();
 
         db
     };
@@ -75,7 +75,9 @@ where
     trace!(";streamer_info_from.typename: {}", typename);
     trace!(";streamer_info_from.vers: {}", vers);
 
-    let si = DBSTREAMER.get(typename, vers).unwrap();
+    let si = DBSTREAMER
+        .get(typename, vers)
+        .expect(&format!("can not extract streamer for '{}'", typename));
 
     trace!(";streamer_info_from.si: {:?}", si);
 

@@ -13,7 +13,7 @@ pub enum CantMakeError {
 
 pub type Result<T> = std::result::Result<T, CantMakeError>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Enum {
     Named(EnumNamed),
     Int(i32),
@@ -49,7 +49,7 @@ impl Enum {
     }
 }
 
-#[derive(FromPrimitive, ToPrimitive, Default, Debug, Copy, Clone)]
+#[derive(FromPrimitive, ToPrimitive, Default, Debug, Copy, Clone, PartialEq)]
 pub enum EnumNamed {
     #[default]
     Base = 0,
